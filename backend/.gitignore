@@ -1,0 +1,33 @@
+# dependencies
+/node_modules
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# coverage
+/coverage
+
+# environment variables
+.env
+
+# uploads (if storing locally)
+uploads/
+tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+
+context.md
