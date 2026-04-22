@@ -1,26 +1,239 @@
+/* ───────────────────────────────────────────
+   Google Fonts — must be first @import
+─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ───────────────────────────────────────────
+   Tailwind v4 theme tokens
+─────────────────────────────────────────── */
+@theme {
+  /* Brand colors */
+  --color-primary: #5845cb;
+  --color-primary-light: #7C6CF2;
+  --color-primary-glow: #A88BFF;
+  --color-primary-fixed: #e4dfff;
+  --color-primary-container: #7160e6;
+
+  --color-secondary: #674ab9;
+  --color-secondary-container: #a88bff;
+  --color-secondary-fixed: #e8ddff;
+
+  --color-tertiary: #a01e96;
+  --color-tertiary-fixed: #ffd7f3;
+  --color-tertiary-container: #bf3db2;
+
+  /* Surfaces */
+  --color-surface: #fcf8ff;
+  --color-surface-dim: #dad7f6;
+  --color-surface-bright: #fcf8ff;
+  --color-surface-variant: #e3dffe;
+  --color-surface-container: #efebff;
+  --color-surface-container-low: #f6f2ff;
+  --color-surface-container-high: #e9e5ff;
+  --color-surface-container-highest: #e3dffe;
+  --color-surface-container-lowest: #ffffff;
+
+  /* Text / on-colors */
+  --color-on-surface: #1a1930;
+  --color-on-surface-variant: #474554;
+  --color-on-primary: #ffffff;
+  --color-on-secondary: #ffffff;
+
+  /* Utility */
+  --color-outline: #787585;
+  --color-outline-variant: #c8c4d6;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+
+  /* Fonts */
+  --font-headline: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+
+  /* Animation durations */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow-pulse: glow-pulse 3s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.7s ease-out forwards;
+  --animate-fade-up: fade-up 0.7s ease-out forwards;
+  --animate-scan-line: scan-line 2.5s linear infinite;
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-btn-glow: btn-glow 3s ease-in-out infinite;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ───────────────────────────────────────────
+   Keyframes
+─────────────────────────────────────────── */
+@keyframes float {
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
   }
 }
 
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 108, 242, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px rgba(124, 108, 242, 0.18);
+  }
+}
+
+@keyframes btn-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 8px 30px -8px rgba(88, 69, 203, 0.35);
+  }
+
+  50% {
+    box-shadow: 0 8px 48px -4px rgba(124, 108, 242, 0.65);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    top: 0%;
+  }
+
+  100% {
+    top: 100%;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ───────────────────────────────────────────
+   Base styles
+─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  background-color: #fcf8ff;
+  color: #1a1930;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ───────────────────────────────────────────
+   Utility classes
+─────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #5845cb, #a88bff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ambient-shadow {
+  box-shadow: 0 32px 64px -12px rgba(26, 25, 48, 0.06);
+}
+
+.glass-panel {
+  background: rgba(252, 248, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glow-button {
+  background: linear-gradient(135deg, #5845cb, #a88bff);
+  animation: btn-glow 3s ease-in-out infinite;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+
+.glow-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.glow-button:active {
+  transform: scale(0.97);
+}
+
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 40px 80px -16px rgba(88, 69, 203, 0.18);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
 }
