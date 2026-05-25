@@ -27,3 +27,8 @@ test('rules routine generation returns an independent copy', () => {
   routine.morning.pop();
   assert.equal(generateRulesRoutine().morning.length, 3);
 });
+test('calendar parsing rejects impossible dates', () => {
+  assert.equal(parseCalendarDate('2026-02-29'), null);
+  assert.equal(parseCalendarDate('2026-04-31'), null);
+  assert.equal(parseCalendarDate('2026-00-10'), null);
+});
