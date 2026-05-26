@@ -45,3 +45,7 @@ test('accepts month-end calendar dates 001', () => {
   assert.deepEqual(parseCalendarDate('2026-01-31'), { year: 2026, month: 1, day: 31 });
   assert.deepEqual(parseCalendarDate('2026-06-30'), { year: 2026, month: 6, day: 30 });
 });
+test('handles leap-day rules 002', () => {
+  assert.equal(parseCalendarDate('2024-02-29').day, 29);
+  assert.equal(parseCalendarDate('2023-02-29'), null);
+});
