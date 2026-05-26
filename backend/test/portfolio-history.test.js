@@ -41,3 +41,7 @@ test('calendar parsing rejects impossible dates', () => {
   assert.equal(parseCalendarDate('2026-04-31'), null);
   assert.equal(parseCalendarDate('2026-00-10'), null);
 });
+test('accepts month-end calendar dates 001', () => {
+  assert.deepEqual(parseCalendarDate('2026-01-31'), { year: 2026, month: 1, day: 31 });
+  assert.deepEqual(parseCalendarDate('2026-06-30'), { year: 2026, month: 6, day: 30 });
+});
