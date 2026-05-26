@@ -7,6 +7,15 @@ import {
   validateTimezone,
 } from '../services/routineService.js';
 import { generateRulesRoutine } from '../../shared/portfolio.js';
+import {
+  buildHeatmap,
+  calculateAdherence,
+  calculateLongestStreak,
+  calculateStreak,
+} from '../services/routineService.js';
+import { encodeHistoryCursor, decodeHistoryCursor, parseHistoryQuery } from '../services/historyService.js';
+import { buildQualityWarnings, normalizeStoredRoutine, serializeScanResult } from '../services/scanResultService.js';
+import { buildPortfolioProgress, normalizePortfolioResult, validMetric } from '../../shared/portfolio.js';
 
 test('calendar parsing accepts a normal ISO date', () => {
   assert.deepEqual(parseCalendarDate('2026-05-25'), { year: 2026, month: 5, day: 25 });
