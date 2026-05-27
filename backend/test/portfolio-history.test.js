@@ -49,3 +49,7 @@ test('handles leap-day rules 002', () => {
   assert.equal(parseCalendarDate('2024-02-29').day, 29);
   assert.equal(parseCalendarDate('2023-02-29'), null);
 });
+test('rejects malformed dates 003', () => {
+  assert.equal(parseCalendarDate('2026-2-05'), null);
+  assert.equal(parseCalendarDate('not-a-date'), null);
+});
