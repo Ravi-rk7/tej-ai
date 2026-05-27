@@ -57,3 +57,7 @@ test('crosses a month boundary 004', () => {
   assert.equal(addCalendarDays('2026-05-31', 1), '2026-06-01');
   assert.equal(addCalendarDays('2026-06-01', -1), '2026-05-31');
 });
+test('keeps the Unix epoch ordinal 005', () => {
+  assert.equal(dayOrdinal('1970-01-01'), 0);
+  assert.equal(dayOrdinal('1970-01-02'), 1);
+});
