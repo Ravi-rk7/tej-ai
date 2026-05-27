@@ -53,3 +53,7 @@ test('rejects malformed dates 003', () => {
   assert.equal(parseCalendarDate('2026-2-05'), null);
   assert.equal(parseCalendarDate('not-a-date'), null);
 });
+test('crosses a month boundary 004', () => {
+  assert.equal(addCalendarDays('2026-05-31', 1), '2026-06-01');
+  assert.equal(addCalendarDays('2026-06-01', -1), '2026-05-31');
+});
