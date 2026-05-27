@@ -61,3 +61,7 @@ test('keeps the Unix epoch ordinal 005', () => {
   assert.equal(dayOrdinal('1970-01-01'), 0);
   assert.equal(dayOrdinal('1970-01-02'), 1);
 });
+test('accepts an IANA timezone 006', () => {
+  assert.equal(validateTimezone('Europe/London'), true);
+  assert.equal(validateTimezone('America/New_York'), true);
+});
