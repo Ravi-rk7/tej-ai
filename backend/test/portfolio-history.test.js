@@ -65,3 +65,7 @@ test('accepts an IANA timezone 006', () => {
   assert.equal(validateTimezone('Europe/London'), true);
   assert.equal(validateTimezone('America/New_York'), true);
 });
+test('rejects an unsafe timezone 007', () => {
+  assert.equal(validateTimezone('posix/UTC'), false);
+  assert.equal(validateTimezone('not/a/zone'), false);
+});
