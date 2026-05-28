@@ -69,3 +69,7 @@ test('rejects an unsafe timezone 007', () => {
   assert.equal(validateTimezone('posix/UTC'), false);
   assert.equal(validateTimezone('not/a/zone'), false);
 });
+test('handles an empty streak 008', () => {
+  assert.equal(calculateLongestStreak([], '2026-05-25'), 0);
+  assert.equal(calculateStreak([], '2026-05-25').state, 'inactive');
+});
