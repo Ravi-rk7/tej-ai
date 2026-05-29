@@ -76,3 +76,8 @@ test('handles an empty streak 008', () => {
 test('counts consecutive days 009', () => {
   assert.equal(calculateLongestStreak(['2026-05-23', '2026-05-24', '2026-05-25'], '2026-05-25'), 3);
 });
+test('detects an active streak 010', () => {
+  const result = calculateStreak(['2026-05-24', '2026-05-25'], '2026-05-25');
+  assert.equal(result.state, 'active');
+  assert.equal(result.current, 2);
+});
