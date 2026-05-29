@@ -81,3 +81,8 @@ test('detects an active streak 010', () => {
   assert.equal(result.state, 'active');
   assert.equal(result.current, 2);
 });
+test('detects an at-risk streak 011', () => {
+  const result = calculateStreak(['2026-05-24'], '2026-05-25');
+  assert.equal(result.atRisk, true);
+  assert.equal(result.current, 1);
+});
