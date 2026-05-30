@@ -94,3 +94,8 @@ test('calculates complete adherence 013', () => {
   const checkins = [{ local_date: '2026-05-25', period: 'morning' }, { local_date: '2026-05-25', period: 'night' }];
   assert.equal(calculateAdherence({ checkins, today: '2026-05-25', trackingStartedOn: '2026-05-25', days: 1 }).completed, 2);
 });
+test('builds a thirteen-week heatmap 014', () => {
+  const result = buildHeatmap({ today: '2026-05-25', trackingStartedOn: '2026-05-25', weeks: 13 });
+  assert.equal(result.days.length, 91);
+  assert.equal(result.weekStartsOn, 'sunday');
+});
