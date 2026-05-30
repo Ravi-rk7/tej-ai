@@ -86,3 +86,7 @@ test('detects an at-risk streak 011', () => {
   assert.equal(result.atRisk, true);
   assert.equal(result.current, 1);
 });
+test('calculates partial adherence 012', () => {
+  const result = calculateAdherence({ checkins: [{ local_date: '2026-05-25', period: 'morning' }], today: '2026-05-25', trackingStartedOn: '2026-05-25', days: 1 });
+  assert.equal(result.percentage, 50);
+});
