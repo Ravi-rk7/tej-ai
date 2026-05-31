@@ -99,3 +99,8 @@ test('builds a thirteen-week heatmap 014', () => {
   assert.equal(result.days.length, 91);
   assert.equal(result.weekStartsOn, 'sunday');
 });
+test('marks a complete heatmap day 015', () => {
+  const checkins = [{ local_date: '2026-05-25', period: 'morning' }, { local_date: '2026-05-25', period: 'night' }];
+  const day = buildHeatmap({ today: '2026-05-25', trackingStartedOn: '2026-05-25', weeks: 13, checkins }).days.find(item => item.date === '2026-05-25');
+  assert.equal(day.state, 'complete');
+});
