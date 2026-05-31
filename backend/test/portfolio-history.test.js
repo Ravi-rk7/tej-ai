@@ -104,3 +104,8 @@ test('marks a complete heatmap day 015', () => {
   const day = buildHeatmap({ today: '2026-05-25', trackingStartedOn: '2026-05-25', weeks: 13, checkins }).days.find(item => item.date === '2026-05-25');
   assert.equal(day.state, 'complete');
 });
+test('preserves routine safety copy 016', () => {
+  const routine = generateRulesRoutine();
+  assert.equal(routine.safety.dermatologist, null);
+  assert.match(routine.safety.patchTest, /Patch-test/);
+});
