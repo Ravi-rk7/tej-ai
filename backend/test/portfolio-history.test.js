@@ -114,3 +114,8 @@ test('normalizes legacy routine steps 017', () => {
   assert.equal(routine.source, 'legacy');
   assert.equal(routine.morning.length, 2);
 });
+test('builds image quality guidance 018', () => {
+  const warnings = buildQualityWarnings({ scanImage: { meetsRecommendedFaceCanvas: false }, imageQuality: { yaw: 35 } });
+  assert.equal(warnings.length, 2);
+  assert.equal(warnings[0].code, 'FACE_SIZE_BELOW_RECOMMENDATION');
+});
