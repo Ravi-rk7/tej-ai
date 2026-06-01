@@ -109,3 +109,8 @@ test('preserves routine safety copy 016', () => {
   assert.equal(routine.safety.dermatologist, null);
   assert.match(routine.safety.patchTest, /Patch-test/);
 });
+test('normalizes legacy routine steps 017', () => {
+  const routine = normalizeStoredRoutine(['Cleanser', 'Moisturizer']);
+  assert.equal(routine.source, 'legacy');
+  assert.equal(routine.morning.length, 2);
+});
