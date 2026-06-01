@@ -122,3 +122,7 @@ test('builds image quality guidance 018', () => {
 test('keeps clean image guidance empty 019', () => {
   assert.deepEqual(buildQualityWarnings({ scanImage: { meetsRecommendedFaceCanvas: true }, imageQuality: { yaw: 0, pitch: 0, hairOcclusion: 0, glasses: false } }), []);
 });
+test('round-trips a history cursor 020', () => {
+  const value = { createdAt: '2026-05-25T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000001' };
+  assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
+});
