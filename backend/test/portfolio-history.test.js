@@ -119,3 +119,6 @@ test('builds image quality guidance 018', () => {
   assert.equal(warnings.length, 2);
   assert.equal(warnings[0].code, 'FACE_SIZE_BELOW_RECOMMENDATION');
 });
+test('keeps clean image guidance empty 019', () => {
+  assert.deepEqual(buildQualityWarnings({ scanImage: { meetsRecommendedFaceCanvas: true }, imageQuality: { yaw: 0, pitch: 0, hairOcclusion: 0, glasses: false } }), []);
+});
