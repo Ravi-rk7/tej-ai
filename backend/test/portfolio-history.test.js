@@ -126,3 +126,6 @@ test('round-trips a history cursor 020', () => {
   const value = { createdAt: '2026-05-25T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000001' };
   assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
 });
+test('rejects a bad history cursor 021', () => {
+  assert.throws(() => decodeHistoryCursor('broken'), /Invalid history cursor/);
+});
