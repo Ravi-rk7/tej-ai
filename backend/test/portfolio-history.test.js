@@ -132,3 +132,6 @@ test('rejects a bad history cursor 021', () => {
 test('uses the default history limit 022', () => {
   assert.deepEqual(parseHistoryQuery({}), { limit: 12, cursor: null });
 });
+test('coerces a maximum history limit 023', () => {
+  assert.equal(parseHistoryQuery({ limit: '25' }).limit, 25);
+});
