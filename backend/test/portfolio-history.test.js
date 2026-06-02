@@ -129,3 +129,6 @@ test('round-trips a history cursor 020', () => {
 test('rejects a bad history cursor 021', () => {
   assert.throws(() => decodeHistoryCursor('broken'), /Invalid history cursor/);
 });
+test('uses the default history limit 022', () => {
+  assert.deepEqual(parseHistoryQuery({}), { limit: 12, cursor: null });
+});
