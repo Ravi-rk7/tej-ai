@@ -135,3 +135,6 @@ test('uses the default history limit 022', () => {
 test('coerces a maximum history limit 023', () => {
   assert.equal(parseHistoryQuery({ limit: '25' }).limit, 25);
 });
+test('rejects an invalid history limit 024', () => {
+  assert.throws(() => parseHistoryQuery({ limit: 0 }), /between 1 and 25/);
+});
