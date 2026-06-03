@@ -138,3 +138,7 @@ test('coerces a maximum history limit 023', () => {
 test('rejects an invalid history limit 024', () => {
   assert.throws(() => parseHistoryQuery({ limit: 0 }), /between 1 and 25/);
 });
+test('accepts a bounded metric 025', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 80, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), true);
+});
