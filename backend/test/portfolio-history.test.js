@@ -142,3 +142,7 @@ test('accepts a bounded metric 025', () => {
   const metric = { key: 'glow', label: 'Glow', value: 80, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
   assert.equal(validMetric(metric), true);
 });
+test('rejects a metric direction typo 026', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 80, min: 0, max: 100, unit: 'points', direction: 'sideways', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), false);
+});
