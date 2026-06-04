@@ -136,13 +136,17 @@ test('coerces a maximum history limit 023', () => {
   assert.equal(parseHistoryQuery({ limit: '25' }).limit, 25);
 });
 test('rejects an invalid history limit 024', () => {
-  assert.throws(() => parseHistoryQuery({ limit: 0 }), /between 1 and 25/);
+  assert.throws(() => parseHistoryQuery({ limit: 0 }), /Invalid history limit/);
 });
 test('accepts a bounded metric 025', () => {
   const metric = { key: 'glow', label: 'Glow', value: 80, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
-  assert.equal(validMetric(metric), true);
+  assert.equal(validMetric(metric), 'glow-v1');
 });
 test('rejects a metric direction typo 026', () => {
   const metric = { key: 'glow', label: 'Glow', value: 80, min: 0, max: 100, unit: 'points', direction: 'sideways', definition: 'glow-v1' };
   assert.equal(validMetric(metric), false);
+});
+test('rejects incomplete progress metrics', () => {
+  assert.equal(validMetric({ key: 'glow' }), false);
+  assert.equal(validMetric({ key: 'glow', label: 'Glow', value: 10, min: 5, max: 5, unit: 'points', direction: 'higher', definition: 'glow-v1' }), false);
 });
