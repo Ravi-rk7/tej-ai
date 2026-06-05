@@ -159,3 +159,7 @@ test('reports a progress baseline 028', () => {
   const result = buildPortfolioProgress([{ scanId: 'a', createdAt: '2026-06-01T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: metric, metrics: [] }, { scanId: 'b', createdAt: '2026-06-02T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: { ...metric, value: 55 }, metrics: [] }]);
   assert.equal(result[0].baselineDelta, 5);
 });
+test('serializes score bounds 029', () => {
+  const result = serializeScanResult({ id: 'scan-029', created_at: '2026-06-03T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 0, concerns: [], routine: [], metrics: {} });
+  assert.equal(result.glowScore, 0);
+});
