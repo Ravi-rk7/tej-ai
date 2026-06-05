@@ -154,3 +154,8 @@ test('drops unsupported observations 027', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-027', createdAt: '2026-06-03T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [], observations: [{ key: 'x', label: 'X', kind: 'unsupported', value: 'bad' }] });
   assert.deepEqual(result.observations, []);
 });
+test('reports a progress baseline 028', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 50, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  const result = buildPortfolioProgress([{ scanId: 'a', createdAt: '2026-06-01T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: metric, metrics: [] }, { scanId: 'b', createdAt: '2026-06-02T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: { ...metric, value: 55 }, metrics: [] }]);
+  assert.equal(result[0].baselineDelta, 5);
+});
