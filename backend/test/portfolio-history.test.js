@@ -150,3 +150,7 @@ test('rejects incomplete progress metrics', () => {
   assert.equal(validMetric({ key: 'glow' }), false);
   assert.equal(validMetric({ key: 'glow', label: 'Glow', value: 10, min: 5, max: 5, unit: 'points', direction: 'higher', definition: 'glow-v1' }), false);
 });
+test('drops unsupported observations 027', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-027', createdAt: '2026-06-03T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [], observations: [{ key: 'x', label: 'X', kind: 'unsupported', value: 'bad' }] });
+  assert.deepEqual(result.observations, []);
+});
