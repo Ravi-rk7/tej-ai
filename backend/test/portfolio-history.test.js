@@ -147,7 +147,7 @@ test('rejects a metric direction typo 026', () => {
   assert.equal(validMetric(metric), false);
 });
 test('rejects incomplete progress metrics', () => {
-  assert.equal(validMetric({ key: 'glow' }), false);
+  assert.equal(validMetric({ key: 'glow' }), null);
   assert.equal(validMetric({ key: 'glow', label: 'Glow', value: 10, min: 5, max: 5, unit: 'points', direction: 'higher', definition: 'glow-v1' }), false);
 });
 test('drops unsupported observations 027', () => {
@@ -170,4 +170,8 @@ test('normalizes missing scan scores 030', () => {
 test('accepts an ISO month end 031', () => {
   assert.equal(parseCalendarDate('2026-07-31').day, 31);
   assert.equal(parseCalendarDate('2026-07-31').month, 7);
+});
+test('keeps incomplete metrics out of progress groups', () => {
+  const metric = { key: 'glow', value: 80, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), null);
 });
