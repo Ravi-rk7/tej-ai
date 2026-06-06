@@ -167,3 +167,7 @@ test('normalizes missing scan scores 030', () => {
   const result = serializeScanResult({ id: 'scan-030', created_at: '2026-06-03T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: null, concerns: [], routine: [], metrics: {} });
   assert.equal(result.glowScore, null);
 });
+test('accepts an ISO month end 031', () => {
+  assert.equal(parseCalendarDate('2026-07-31').day, 31);
+  assert.equal(parseCalendarDate('2026-07-31').month, 7);
+});
