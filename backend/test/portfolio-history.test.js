@@ -175,3 +175,7 @@ test('keeps incomplete metrics out of progress groups', () => {
   const metric = { key: 'glow', value: 80, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
   assert.equal(validMetric(metric), null);
 });
+test('keeps year rollover arithmetic covered 032', () => {
+  assert.equal(addCalendarDays('2026-12-31', 1), '2027-01-01');
+  assert.equal(addCalendarDays('2027-01-01', -1), '2026-12-31');
+});
