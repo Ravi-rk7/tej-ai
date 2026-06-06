@@ -163,3 +163,7 @@ test('serializes score bounds 029', () => {
   const result = serializeScanResult({ id: 'scan-029', created_at: '2026-06-03T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 0, concerns: [], routine: [], metrics: {} });
   assert.equal(result.glowScore, 0);
 });
+test('normalizes missing scan scores 030', () => {
+  const result = serializeScanResult({ id: 'scan-030', created_at: '2026-06-03T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: null, concerns: [], routine: [], metrics: {} });
+  assert.equal(result.glowScore, null);
+});
