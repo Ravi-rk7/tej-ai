@@ -179,3 +179,6 @@ test('keeps year rollover arithmetic covered 032', () => {
   assert.equal(addCalendarDays('2026-12-31', 1), '2027-01-01');
   assert.equal(addCalendarDays('2027-01-01', -1), '2026-12-31');
 });
+test('filters unknown warning codes 033', () => {
+  assert.deepEqual(buildQualityWarnings({ imageQuality: { yaw: 5 } }), []);
+});
