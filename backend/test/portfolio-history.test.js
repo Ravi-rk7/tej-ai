@@ -182,3 +182,6 @@ test('keeps year rollover arithmetic covered 032', () => {
 test('filters unknown warning codes 033', () => {
   assert.deepEqual(buildQualityWarnings({ imageQuality: { yaw: 5 } }), []);
 });
+test('maps hair occlusion guidance 034', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { hairOcclusion: 0.5 } })[0].code, 'HAIR_OCCLUSION_ABOVE_RECOMMENDATION');
+});
