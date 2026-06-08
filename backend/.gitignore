@@ -17,6 +17,16 @@ pids
 
 # environment variables
 .env
+.env.local
+
+# uploads
+/uploads
+
+# macOS
+.DS_Store
+*.swp
+*.swo
+*~
 
 # uploads (if storing locally)
 uploads/
@@ -30,4 +40,4 @@ Thumbs.db
 .vscode
 .idea
 
-context.md
+prompt.md

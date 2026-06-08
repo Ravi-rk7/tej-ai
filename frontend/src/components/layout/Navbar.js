@@ -55,7 +55,7 @@ export default function Navbar() {
       {/* CTA */}
       <div className="hidden md:flex items-center gap-3">
         <Link
-          href="/scan"
+          href="/login"
           className="px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200"
           style={{ color: "#5845cb", fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >

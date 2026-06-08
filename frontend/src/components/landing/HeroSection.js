@@ -66,7 +66,7 @@ export default function HeroSection() {
               className="text-[2.75rem] md:text-[3.5rem] lg:text-[4rem] font-black leading-[1.08] tracking-tight"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#1a1930" }}
             >
-              Know What's Wrong{" "}
+              Know What&apos;s Wrong{" "}
               <br className="hidden md:block" />
               With Your Skin —
               <br />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createSubscription } from "@/lib/api";
 
 const BENEFITS = [
     "Track Glow Score daily",
@@ -8,11 +9,20 @@ const BENEFITS = [
     "Smarter routines",
 ];
 
+const PLANS = [
+    { slug: "starter", label: "Starter", price: "$6.99/mo", scans: "15 scans" },
+    { slug: "growth", label: "Growth", price: "$12.99/mo", scans: "30 scans" },
+    { slug: "pro", label: "Pro", price: "$19.99/mo", scans: "50 scans" },
+];
+
 export default function PaywallModal({
     open,
     onClose,
-    onUnlock,
 }) {
+    const [selectedPlan, setSelectedPlan] = useState("starter");
+    const [loading, setLoading] = useState(false);
+    const [checkoutError, setCheckoutError] = useState(null);
+
     useEffect(() => {
         if (!open) return;
         const previousOverflow = document.body.style.overflow;
@@ -21,6 +31,22 @@ export default function PaywallModal({
             document.body.style.overflow = previousOverflow;
         };
     }, [open]);
+
+    const handleUpgrade = async () => {
+        setLoading(true);
+        setCheckoutError(null);
+
+        try {
+            const { checkoutUrl } = await createSubscription(selectedPlan);
+            if (!checkoutUrl) {
+                throw new Error("Checkout URL was not returned");
+            }
+            window.location.href = checkoutUrl;
+        } catch (error) {
+            setCheckoutError(error?.message || "Something went wrong. Please try again.");
+            setLoading(false);
+        }
+    };
 
     if (!open) return null;
 
@@ -101,56 +127,65 @@ export default function PaywallModal({
                     ))}
                 </ul>
 
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <article
-                        className="rounded-2xl p-4 sm:p-5"
-                        style={{
-                            border: "2px solid #5845cb",
-                            background: "#fff",
-                            boxShadow: "0 14px 32px -20px rgba(88,69,203,0.45)",
-                        }}
-                    >
-                        <span
-                            className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em]"
-                            style={{ background: "#e4dfff", color: "#5845cb", fontFamily: "'Inter', sans-serif" }}
-                        >
-                            Most Popular
-                        </span>
-                        <p className="mt-3 text-sm font-semibold" style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}>
-                            Starter
-                        </p>
-                        <p className="mt-1 text-[36px] leading-none font-black" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            $6.99
-                        </p>
-                    </article>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {PLANS.map((plan) => {
+                        const active = selectedPlan === plan.slug;
 
-                    <article
-                        className="rounded-2xl p-4 sm:p-5"
-                        style={{
-                            border: "1px solid rgba(200,196,214,0.75)",
-                            background: "#fff",
-                        }}
-                    >
-                        <p className="text-sm font-semibold" style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}>
-                            Pro
-                        </p>
-                        <p className="mt-1 text-[36px] leading-none font-black" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            $12.99
-                        </p>
-                    </article>
+                        return (
+                            <button
+                                key={plan.slug}
+                                type="button"
+                                onClick={() => setSelectedPlan(plan.slug)}
+                                className="rounded-2xl p-4 text-left transition"
+                                style={{
+                                    border: active ? "2px solid #5845cb" : "1px solid rgba(200,196,214,0.75)",
+                                    background: "#fff",
+                                    boxShadow: active ? "0 14px 32px -20px rgba(88,69,203,0.45)" : "none",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                {plan.slug === "growth" && (
+                                    <span
+                                        className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em]"
+                                        style={{ background: "#e4dfff", color: "#5845cb", fontFamily: "'Inter', sans-serif" }}
+                                    >
+                                        Popular
+                                    </span>
+                                )}
+                                <p className="mt-3 text-sm font-semibold" style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}>
+                                    {plan.label}
+                                </p>
+                                <p className="mt-1 text-2xl leading-none font-black" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                                    {plan.price}
+                                </p>
+                                <p className="mt-2 text-xs font-semibold" style={{ color: "#787585", fontFamily: "'Inter', sans-serif" }}>
+                                    {plan.scans}
+                                </p>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 <button
                     type="button"
-                    onClick={onUnlock}
+                    onClick={handleUpgrade}
+                    disabled={loading}
                     className="glow-button mt-6 w-full rounded-full py-4 px-6 text-base font-bold"
                     style={{
                         color: "#fff",
                         fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        cursor: loading ? "not-allowed" : "pointer",
+                        opacity: loading ? 0.72 : 1,
                     }}
                 >
-                    Unlock My Skin Plan
+                    {loading ? "Redirecting to checkout..." : "Upgrade Now"}
                 </button>
+
+                {checkoutError && (
+                    <p className="text-center text-sm font-semibold mt-3" style={{ color: "#ba1a1a", fontFamily: "'Inter', sans-serif" }}>
+                        {checkoutError}
+                    </p>
+                )}
             </div>
         </div>
     );

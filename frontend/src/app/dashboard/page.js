@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
+import { supabase } from "@/lib/supabaseClient";
 
 const scoreHistory = [
     { date: "Apr 10, 2026", score: 68 },
@@ -201,12 +204,42 @@ function ScoreHistoryCards({ entries }) {
 }
 
 export default function DashboardPage() {
+    const router = useRouter();
+    const [upgradeSuccess] = useState(() => {
+        if (typeof window === "undefined") {
+            return false;
+        }
+
+        return new URLSearchParams(window.location.search).get("upgrade") === "success";
+    });
     const hasHistory = scoreHistory.length > 0;
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                router.push("/login");
+            }
+        });
+    }, [router]);
 
     return (
         <AppLayout>
             <div className="min-h-screen px-5 sm:px-8 lg:px-12 py-9 lg:py-11">
                 <div className="mx-auto w-full max-w-6xl">
+                    {upgradeSuccess && (
+                        <div
+                            className="rounded-2xl border px-4 py-3 mb-6 text-sm font-semibold"
+                            style={{
+                                background: "#ecfdf3",
+                                borderColor: "#bbf7d0",
+                                color: "#166534",
+                                fontFamily: "'Inter', sans-serif",
+                            }}
+                        >
+                            You&apos;re now on a paid plan. Your scan limit has been updated.
+                        </div>
+                    )}
+
                     <header className="mb-7 md:mb-9">
                         <h1
                             className="text-4xl md:text-5xl font-black tracking-tight"

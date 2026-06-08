@@ -1,22 +1,41 @@
 {
-  "name": "backend",
+  "name": "tej-ai-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Production-grade backend for TejAi AI skincare SaaS",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "smoke": "node scripts/smoke-test.js",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
-  "keywords": [],
-  "author": "Ravikiran",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": ["skincare", "ai", "saas", "nodejs", "express"],
+  "author": "TejAi Team",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^1.15.2",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "multer": "^2.1.1"
+    "@supabase/supabase-js": "^2.41.0",
+    "@upstash/ratelimit": "^1.0.0",
+    "@upstash/redis": "^1.26.0",
+    "axios": "^1.6.5",
+    "cloudinary": "^1.40.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.33.5",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

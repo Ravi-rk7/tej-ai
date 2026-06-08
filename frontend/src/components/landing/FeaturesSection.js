@@ -138,7 +138,7 @@ export default function FeaturesSection() {
             className="text-lg max-w-xl text-center"
             style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}
           >
-            Our proprietary AI breaks down your skin's unique profile and delivers instant, actionable results.
+            Our proprietary AI breaks down your skin&apos;s unique profile and delivers instant, actionable results.
           </p>
         </div>
 

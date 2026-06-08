@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { scanSkinFile, isLimitError, isUnauthorizedError } from "@/lib/api";
 
 /* ─── States ─────────────────────────────────────── */
 const STATE = {
@@ -11,6 +11,7 @@ const STATE = {
   PREVIEW: "preview",
   SCANNING: "scanning",
   DONE: "done",
+  ERROR: "error",
 };
 
 /* ─── Scanning Line (overlay on preview) ─────────── */
@@ -290,6 +291,58 @@ function PreviewPanel({ src, state, onRemove }) {
   );
 }
 
+/* ─── Error Banner ───────────────────────────────── */
+function ErrorBanner({ message, onDismiss }) {
+  return (
+    <div
+      className="flex items-start gap-3 rounded-2xl px-4 py-3.5"
+      style={{
+        background: "#fff0f0",
+        border: "1px solid rgba(186,26,26,0.25)",
+        animation: "fade-in 0.3s ease-out forwards",
+      }}
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#ba1a1a"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ flexShrink: 0, marginTop: 1 }}
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <p
+        className="text-sm flex-1"
+        style={{ fontFamily: "'Inter', sans-serif", color: "#ba1a1a", fontWeight: 600 }}
+      >
+        {message}
+      </p>
+      <button
+        onClick={onDismiss}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: "#ba1a1a",
+          opacity: 0.6,
+          padding: 0,
+          lineHeight: 1,
+          flexShrink: 0,
+        }}
+        aria-label="Dismiss error"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 /* ─── Scan Button ────────────────────────────────── */
 function ScanButton({ state, onClick }) {
   const disabled = state === STATE.EMPTY || state === STATE.HOVER;
@@ -372,7 +425,7 @@ function TrustRow() {
   const items = [
     { icon: "⚡", text: "Takes ~30 seconds" },
     { icon: "🔒", text: "Your photo is private" },
-    { icon: "✅", text: "No signup needed" },
+    { icon: "✅", text: "Sign in to save results" },
   ];
   return (
     <div className="flex flex-wrap items-center justify-center gap-5">
@@ -391,10 +444,30 @@ function TrustRow() {
 }
 
 /* ─── Main component ─────────────────────────────── */
-export default function ScanUploader({ onScanComplete }) {
+function FaceGuidanceBanner() {
+  return (
+    <p
+      className="rounded-2xl px-4 py-3.5 text-sm font-semibold leading-6"
+      style={{
+        background: "rgba(255,240,212,0.75)",
+        border: "1px solid rgba(138,92,0,0.20)",
+        color: "#7a5200",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      For best results: use a well-lit, front-facing photo where your face fills
+      most of the frame. Minimum face width: 400px.
+    </p>
+  );
+}
+
+export default function ScanUploader({ onScanComplete, onLimitReached }) {
+  const router = useRouter();
   const [state, setState] = useState(STATE.EMPTY);
   const [imageSrc, setImageSrc] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [dragDepth, setDragDepth] = useState(0);
+  const [errorMessage, setErrorMessage] = useState(null);
   const fileInputRef = useRef(null);
 
   /* Track drag depth to avoid flicker when hovering child elements */
@@ -415,6 +488,8 @@ export default function ScanUploader({ onScanComplete }) {
 
   const processFile = useCallback(file => {
     if (!file || !file.type.startsWith("image/")) return;
+    setErrorMessage(null);
+    setImageFile(file);
     const reader = new FileReader();
     reader.onload = e => {
       setImageSrc(e.target.result);
@@ -433,31 +508,72 @@ export default function ScanUploader({ onScanComplete }) {
 
   const handleRemove = useCallback(() => {
     setImageSrc(null);
+    setImageFile(null);
+    setErrorMessage(null);
     setState(STATE.EMPTY);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
-  const handleScan = useCallback(() => {
-    if (state !== STATE.PREVIEW) return;
-    setState(STATE.SCANNING);
-    // Simulate scan — in production this calls the backend
-    setTimeout(() => {
-      setState(STATE.DONE);
-      if (typeof onScanComplete === "function") {
-        onScanComplete();
-      }
-      // TODO: navigate to /results with actual data
-    }, 4000);
-  }, [state, onScanComplete]);
+  const handleScan = useCallback(async () => {
+    if (state !== STATE.PREVIEW || !imageFile) return;
 
-  const hasImage = state === STATE.PREVIEW || state === STATE.SCANNING || state === STATE.DONE;
+    setState(STATE.SCANNING);
+    setErrorMessage(null);
+
+    try {
+      const data = await scanSkinFile(imageFile);
+
+      // Persist results so the Results page can read them without URL params
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("tejai_scan_result", JSON.stringify(data));
+      }
+
+      setState(STATE.DONE);
+
+      if (typeof onScanComplete === "function") {
+        onScanComplete(data);
+      }
+
+      router.push("/results");
+    } catch (err) {
+      // 403 with "scan limit reached" → trigger paywall
+      if (isLimitError(err)) {
+        setState(STATE.PREVIEW);
+        if (typeof onLimitReached === "function") {
+          onLimitReached();
+        }
+        return;
+      }
+
+      if (isUnauthorizedError(err)) {
+        router.push("/login");
+        return;
+      }
+
+      // All other errors → show inline banner and reset to preview state
+      setState(STATE.ERROR);
+      setErrorMessage(
+        err?.message || "Something went wrong. Please try again."
+      );
+    }
+  }, [state, imageFile, onScanComplete, onLimitReached, router]);
+
+  const hasImage =
+    state === STATE.PREVIEW ||
+    state === STATE.SCANNING ||
+    state === STATE.DONE ||
+    state === STATE.ERROR;
+
+  // Treat ERROR state as PREVIEW for button/panel rendering
+  const displayState = state === STATE.ERROR ? STATE.PREVIEW : state;
 
   return (
     <div className="flex flex-col gap-5">
+      <FaceGuidanceBanner />
       {/* Drop zone — show only when no image */}
       {!hasImage && (
         <DropZone
-          state={state}
+          state={displayState}
           onFile={processFile}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -470,16 +586,25 @@ export default function ScanUploader({ onScanComplete }) {
       {hasImage && imageSrc && (
         <PreviewPanel
           src={imageSrc}
-          state={state}
+          state={displayState}
           onRemove={handleRemove}
         />
       )}
 
+      {/* Inline error banner */}
+      {errorMessage && (
+        <ErrorBanner
+          message={errorMessage}
+          onDismiss={() => setErrorMessage(null)}
+        />
+      )}
+
       {/* CTA Button */}
-      <ScanButton state={state} onClick={handleScan} />
+      <ScanButton state={displayState} onClick={handleScan} />
 
       {/* Trust row */}
       <TrustRow />
     </div>
   );
 }
+
