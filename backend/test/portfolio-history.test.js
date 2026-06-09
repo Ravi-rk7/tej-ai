@@ -207,3 +207,6 @@ test('retains a normalized skin type 040', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-040', createdAt: '2026-06-10T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, skinType: 'combination', metrics: [] });
   assert.equal(result.skinType, 'combination');
 });
+test('handles progress with no results 041', () => {
+  assert.deepEqual(buildPortfolioProgress([]), []);
+});
