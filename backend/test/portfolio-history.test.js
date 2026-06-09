@@ -199,3 +199,7 @@ test('rejects a missing metric definition 038', () => {
   const metric = { key: 'pores', label: 'Pores', value: 1, min: 0, max: 5, unit: 'level', direction: 'lower' };
   assert.equal(validMetric(metric), null);
 });
+test('normalizes an empty observation list 039', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-039', createdAt: '2026-06-10T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
+  assert.deepEqual(result.observations, []);
+});
