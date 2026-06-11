@@ -223,3 +223,6 @@ test('keeps empty quality warnings out of legacy metrics 044', () => {
   const result = serializeScanResult({ id: 'scan-044', created_at: '2026-06-10T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 72, concerns: [], routine: [], metrics: {} });
   assert.deepEqual(result.warnings, []);
 });
+test('covers forward date arithmetic 045', () => {
+  assert.equal(addCalendarDays('2026-06-10', 7), '2026-06-17');
+});
