@@ -226,3 +226,6 @@ test('keeps empty quality warnings out of legacy metrics 044', () => {
 test('covers forward date arithmetic 045', () => {
   assert.equal(addCalendarDays('2026-06-10', 7), '2026-06-17');
 });
+test('covers backward date arithmetic 046', () => {
+  assert.equal(addCalendarDays('2026-06-10', -7), '2026-06-03');
+});
