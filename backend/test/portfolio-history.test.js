@@ -229,3 +229,6 @@ test('covers forward date arithmetic 045', () => {
 test('covers backward date arithmetic 046', () => {
   assert.equal(addCalendarDays('2026-06-10', -7), '2026-06-03');
 });
+test('rejects impossible month days 047', () => {
+  assert.equal(parseCalendarDate('2026-06-31'), null);
+});
