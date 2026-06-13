@@ -241,3 +241,6 @@ test('rejects a timezone with a leading slash 049', () => {
 test('finds the longest separated run 050', () => {
   assert.equal(calculateLongestStreak(['2026-06-01', '2026-06-02', '2026-06-10'], '2026-06-10'), 2);
 });
+test('does not mark an old run at risk 051', () => {
+  assert.equal(calculateStreak(['2026-06-01'], '2026-06-10').state, 'inactive');
+});
