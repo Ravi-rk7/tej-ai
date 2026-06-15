@@ -265,3 +265,6 @@ test('maps hair occlusion guidance 056', () => {
 test('parses a small history page 057', () => {
   assert.equal(parseHistoryQuery({ limit: 3 }).limit, 3);
 });
+test('rejects a non-numeric history limit 058', () => {
+  assert.throws(() => parseHistoryQuery({ limit: 'many' }), /Invalid history limit/);
+});
