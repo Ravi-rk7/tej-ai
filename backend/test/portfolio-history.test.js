@@ -287,3 +287,8 @@ test('retains a normalized skin type 062', () => {
 test('handles progress with no results 063', () => {
   assert.deepEqual(buildPortfolioProgress([]), []);
 });
+test('keeps one-point progress deltas null 064', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 70, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  const result = buildPortfolioProgress([{ scanId: 'one', createdAt: '2026-06-10T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: metric, metrics: [] }]);
+  assert.equal(result[0].previousDelta, null);
+});
