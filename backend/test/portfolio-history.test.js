@@ -312,3 +312,6 @@ test('rejects impossible month days 069', () => {
 test('accepts a second valid timezone 070', () => {
   assert.equal(validateTimezone('Asia/Kolkata'), true);
 });
+test('rejects a timezone with a leading slash 071', () => {
+  assert.equal(validateTimezone('/UTC'), false);
+});
