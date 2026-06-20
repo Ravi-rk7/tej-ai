@@ -309,3 +309,6 @@ test('covers backward date arithmetic 068', () => {
 test('rejects impossible month days 069', () => {
   assert.equal(parseCalendarDate('2026-06-31'), null);
 });
+test('accepts a second valid timezone 070', () => {
+  assert.equal(validateTimezone('Asia/Kolkata'), true);
+});
