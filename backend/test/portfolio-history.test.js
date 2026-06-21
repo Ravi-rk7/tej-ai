@@ -321,3 +321,7 @@ test('finds the longest separated run 072', () => {
 test('does not mark an old run at risk 073', () => {
   assert.equal(calculateStreak(['2026-06-01'], '2026-06-10').state, 'inactive');
 });
+test('counts only supported adherence periods 074', () => {
+  const result = calculateAdherence({ checkins: [{ local_date: '2026-06-10', period: 'morning' }, { local_date: '2026-06-10', period: 'afternoon' }], today: '2026-06-10', trackingStartedOn: '2026-06-10', days: 1 });
+  assert.equal(result.completed, 1);
+});
