@@ -315,3 +315,6 @@ test('accepts a second valid timezone 070', () => {
 test('rejects a timezone with a leading slash 071', () => {
   assert.equal(validateTimezone('/UTC'), false);
 });
+test('finds the longest separated run 072', () => {
+  assert.equal(calculateLongestStreak(['2026-06-01', '2026-06-02', '2026-06-10'], '2026-06-10'), 2);
+});
