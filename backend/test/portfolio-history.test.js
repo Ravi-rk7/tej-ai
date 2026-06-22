@@ -329,3 +329,7 @@ test('marks a partial heatmap day 075', () => {
   const map = buildHeatmap({ today: '2026-06-10', trackingStartedOn: '2026-06-10', weeks: 13, checkins: [{ local_date: '2026-06-10', period: 'morning' }] });
   assert.equal(map.days.find(day => day.date === '2026-06-10').state, 'partial');
 });
+test('normalizes a routine title fallback 076', () => {
+  const routine = normalizeStoredRoutine({ morning: [{ title: 'Cleanser' }], night: [] });
+  assert.equal(routine.morning[0].name, 'Cleanser');
+});
