@@ -333,3 +333,6 @@ test('normalizes a routine title fallback 076', () => {
   const routine = normalizeStoredRoutine({ morning: [{ title: 'Cleanser' }], night: [] });
   assert.equal(routine.morning[0].name, 'Cleanser');
 });
+test('filters unknown warning codes 077', () => {
+  assert.deepEqual(buildQualityWarnings({ imageQuality: { yaw: 5 } }), []);
+});
