@@ -325,3 +325,7 @@ test('counts only supported adherence periods 074', () => {
   const result = calculateAdherence({ checkins: [{ local_date: '2026-06-10', period: 'morning' }, { local_date: '2026-06-10', period: 'afternoon' }], today: '2026-06-10', trackingStartedOn: '2026-06-10', days: 1 });
   assert.equal(result.completed, 1);
 });
+test('marks a partial heatmap day 075', () => {
+  const map = buildHeatmap({ today: '2026-06-10', trackingStartedOn: '2026-06-10', weeks: 13, checkins: [{ local_date: '2026-06-10', period: 'morning' }] });
+  assert.equal(map.days.find(day => day.date === '2026-06-10').state, 'partial');
+});
