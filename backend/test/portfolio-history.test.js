@@ -339,3 +339,6 @@ test('filters unknown warning codes 077', () => {
 test('maps hair occlusion guidance 078', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { hairOcclusion: 0.5 } })[0].code, 'HAIR_OCCLUSION_ABOVE_RECOMMENDATION');
 });
+test('parses a small history page 079', () => {
+  assert.equal(parseHistoryQuery({ limit: 3 }).limit, 3);
+});
