@@ -349,3 +349,7 @@ test('accepts a lower-valued metric 081', () => {
   const metric = { key: 'pores', label: 'Pores', value: 1, min: 0, max: 5, unit: 'level', direction: 'lower', definition: 'pores-v1' };
   assert.equal(validMetric(metric), 'pores-v1');
 });
+test('rejects a missing metric definition 082', () => {
+  const metric = { key: 'pores', label: 'Pores', value: 1, min: 0, max: 5, unit: 'level', direction: 'lower' };
+  assert.equal(validMetric(metric), null);
+});
