@@ -345,3 +345,7 @@ test('parses a small history page 079', () => {
 test('rejects a non-numeric history limit 080', () => {
   assert.throws(() => parseHistoryQuery({ limit: 'many' }), /Invalid history limit/);
 });
+test('accepts a lower-valued metric 081', () => {
+  const metric = { key: 'pores', label: 'Pores', value: 1, min: 0, max: 5, unit: 'level', direction: 'lower', definition: 'pores-v1' };
+  assert.equal(validMetric(metric), 'pores-v1');
+});
