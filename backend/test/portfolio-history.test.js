@@ -360,3 +360,6 @@ test('normalizes an empty observation list 083', () => {
 test('rejects blank routine names 084', () => {
   assert.equal(normalizeStoredRoutine({ morning: [{ name: '  ' }], night: [] }), null);
 });
+test('maps a yaw warning 085', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { yaw: -31 } })[0].code, 'FACE_YAW_ABOVE_RECOMMENDATION');
+});
