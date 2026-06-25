@@ -363,3 +363,6 @@ test('rejects blank routine names 084', () => {
 test('maps a yaw warning 085', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { yaw: -31 } })[0].code, 'FACE_YAW_ABOVE_RECOMMENDATION');
 });
+test('maps face size guidance 086', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { faceRatio: 0.4 } })[0].code, 'FACE_SIZE_BELOW_RECOMMENDATION');
+});
