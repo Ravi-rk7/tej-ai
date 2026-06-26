@@ -366,3 +366,7 @@ test('maps a yaw warning 085', () => {
 test('maps face size guidance 086', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { faceRatio: 0.4 } })[0].code, 'FACE_SIZE_BELOW_RECOMMENDATION');
 });
+test('round-trips a second cursor 087', () => {
+  const value = { createdAt: '2026-07-01T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000004' };
+  assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
+});
