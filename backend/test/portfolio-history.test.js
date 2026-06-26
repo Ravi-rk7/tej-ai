@@ -370,3 +370,6 @@ test('round-trips a second cursor 087', () => {
   const value = { createdAt: '2026-07-01T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000004' };
   assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
 });
+test('rejects a missing cursor object 088', () => {
+  assert.equal(decodeHistoryCursor(undefined), null);
+});
