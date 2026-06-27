@@ -383,3 +383,7 @@ test('accepts a neutral metric direction 091', () => {
   const metric = { key: 'texture', label: 'Texture', value: 2, min: 0, max: 5, unit: 'level', direction: 'neutral', definition: 'texture-v1' };
   assert.equal(validMetric(metric), 'texture-v1');
 });
+test('rejects an inverted metric range 092', () => {
+  const metric = { key: 'texture', label: 'Texture', value: 2, min: 5, max: 0, unit: 'level', direction: 'neutral', definition: 'texture-v1' };
+  assert.equal(validMetric(metric), false);
+});
