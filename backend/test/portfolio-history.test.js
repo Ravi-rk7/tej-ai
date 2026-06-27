@@ -373,3 +373,6 @@ test('round-trips a second cursor 087', () => {
 test('rejects a missing cursor object 088', () => {
   assert.equal(decodeHistoryCursor(undefined), null);
 });
+test('parses an explicit history limit 089', () => {
+  assert.equal(parseHistoryQuery({ limit: '12' }).limit, 12);
+});
