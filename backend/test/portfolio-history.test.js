@@ -379,3 +379,7 @@ test('parses an explicit history limit 089', () => {
 test('rejects a negative history limit 090', () => {
   assert.throws(() => parseHistoryQuery({ limit: -1 }), /Invalid history limit/);
 });
+test('accepts a neutral metric direction 091', () => {
+  const metric = { key: 'texture', label: 'Texture', value: 2, min: 0, max: 5, unit: 'level', direction: 'neutral', definition: 'texture-v1' };
+  assert.equal(validMetric(metric), 'texture-v1');
+});
