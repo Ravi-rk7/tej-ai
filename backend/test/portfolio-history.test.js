@@ -376,3 +376,6 @@ test('rejects a missing cursor object 088', () => {
 test('parses an explicit history limit 089', () => {
   assert.equal(parseHistoryQuery({ limit: '12' }).limit, 12);
 });
+test('rejects a negative history limit 090', () => {
+  assert.throws(() => parseHistoryQuery({ limit: -1 }), /Invalid history limit/);
+});
