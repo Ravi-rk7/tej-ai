@@ -395,3 +395,9 @@ test('drops an invalid portfolio metric 094', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-094', createdAt: '2026-07-01T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [{ key: 'bad', label: 'Bad', value: 4, min: 0, max: 5, unit: 'level', direction: 'sideways', definition: 'bad-v1' }] });
   assert.deepEqual(result.metrics, []);
 });
+test('keeps progress input immutable 095', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 70, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  const input = [{ scanId: 'one', createdAt: '2026-07-01T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: metric, metrics: [] }];
+  buildPortfolioProgress(input);
+  assert.equal(input[0].overallScore.value, 70);
+});
