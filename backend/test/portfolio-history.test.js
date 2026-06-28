@@ -387,3 +387,7 @@ test('rejects an inverted metric range 092', () => {
   const metric = { key: 'texture', label: 'Texture', value: 2, min: 5, max: 0, unit: 'level', direction: 'neutral', definition: 'texture-v1' };
   assert.equal(validMetric(metric), false);
 });
+test('normalizes a portfolio routine fallback 093', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-093', createdAt: '2026-07-01T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
+  assert.equal(result.routine.source, 'rules');
+});
