@@ -401,3 +401,7 @@ test('keeps progress input immutable 095', () => {
   buildPortfolioProgress(input);
   assert.equal(input[0].overallScore.value, 70);
 });
+test('serializes a null skin type 096', () => {
+  const result = serializeScanResult({ id: 'scan-096', created_at: '2026-07-01T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 70, skin_type: null, concerns: [], routine: [], metrics: {} });
+  assert.equal(result.skinType, null);
+});
