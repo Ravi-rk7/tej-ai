@@ -408,3 +408,6 @@ test('serializes a null skin type 096', () => {
 test('covers June month rollover 097', () => {
   assert.equal(addCalendarDays('2026-06-30', 1), '2026-07-01');
 });
+test('covers July month rollover 098', () => {
+  assert.equal(addCalendarDays('2026-07-31', 1), '2026-08-01');
+});
