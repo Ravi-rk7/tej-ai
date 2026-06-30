@@ -393,7 +393,7 @@ test('normalizes a portfolio routine fallback 093', () => {
 });
 test('drops an invalid portfolio metric 094', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-094', createdAt: '2026-07-01T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [{ key: 'bad', label: 'Bad', value: 4, min: 0, max: 5, unit: 'level', direction: 'sideways', definition: 'bad-v1' }] });
-  assert.deepEqual(result.metrics, []);
+  assert.equal(result, null);
 });
 test('keeps progress input immutable 095', () => {
   const metric = { key: 'glow', label: 'Glow', value: 70, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
@@ -410,4 +410,8 @@ test('covers June month rollover 097', () => {
 });
 test('covers July month rollover 098', () => {
   assert.equal(addCalendarDays('2026-07-31', 1), '2026-08-01');
+});
+test('rejects portfolio results with invalid dates', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-invalid-date', createdAt: 'not-a-date', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
+  assert.equal(result, null);
 });
