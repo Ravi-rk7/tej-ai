@@ -418,3 +418,6 @@ test('rejects portfolio results with invalid dates', () => {
 test('rejects a date with trailing text 099', () => {
   assert.equal(parseCalendarDate('2026-07-01x'), null);
 });
+test('accepts a regional timezone 100', () => {
+  assert.equal(validateTimezone('Australia/Sydney'), true);
+});
