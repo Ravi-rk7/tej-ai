@@ -421,3 +421,6 @@ test('rejects a date with trailing text 099', () => {
 test('accepts a regional timezone 100', () => {
   assert.equal(validateTimezone('Australia/Sydney'), true);
 });
+test('rejects a timezone with a bad segment 101', () => {
+  assert.equal(validateTimezone('America/'), false);
+});
