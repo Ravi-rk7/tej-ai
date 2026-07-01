@@ -415,3 +415,6 @@ test('rejects portfolio results with invalid dates', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-invalid-date', createdAt: 'not-a-date', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
   assert.equal(result, null);
 });
+test('rejects a date with trailing text 099', () => {
+  assert.equal(parseCalendarDate('2026-07-01x'), null);
+});
