@@ -435,3 +435,7 @@ test('adherence uses both routine periods 104', () => {
   assert.equal(result.completed, 1);
   assert.equal(result.possible, 2);
 });
+test('marks a missed day in the heatmap 105', () => {
+  const map = buildHeatmap({ today: '2026-07-04', trackingStartedOn: '2026-07-04', weeks: 13 });
+  assert.equal(map.days.find(day => day.date === '2026-07-04').state, 'missed');
+});
