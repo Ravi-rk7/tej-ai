@@ -427,3 +427,6 @@ test('rejects a timezone with a bad segment 101', () => {
 test('counts a separated longest run 102', () => {
   assert.equal(calculateLongestStreak(['2026-07-01', '2026-07-03', '2026-07-04'], '2026-07-04'), 2);
 });
+test('keeps a missing current day at risk 103', () => {
+  assert.equal(calculateStreak(['2026-07-03'], '2026-07-04').state, 'at_risk');
+});
