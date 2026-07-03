@@ -439,3 +439,6 @@ test('marks a missed day in the heatmap 105', () => {
   const map = buildHeatmap({ today: '2026-07-04', trackingStartedOn: '2026-07-04', weeks: 13 });
   assert.equal(map.days.find(day => day.date === '2026-07-04').state, 'missed');
 });
+test('keeps generated routine source stable 106', () => {
+  assert.equal(generateRulesRoutine().source, 'rules');
+});
