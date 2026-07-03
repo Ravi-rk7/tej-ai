@@ -442,3 +442,7 @@ test('marks a missed day in the heatmap 105', () => {
 test('keeps generated routine source stable 106', () => {
   assert.equal(generateRulesRoutine().source, 'rules');
 });
+test('normalizes a night routine step 107', () => {
+  const routine = normalizeStoredRoutine({ morning: [], night: [{ name: 'Moisturizer', instructions: 'Apply' }] });
+  assert.equal(routine.night[0].name, 'Moisturizer');
+});
