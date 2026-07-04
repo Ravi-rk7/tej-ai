@@ -449,3 +449,6 @@ test('normalizes a night routine step 107', () => {
 test('rejects routine whitespace-only steps 108', () => {
   assert.equal(normalizeStoredRoutine({ morning: [], night: [{ name: ' ' }] }), null);
 });
+test('maps a pitch threshold warning 109', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { pitch: -45 } })[0].code, 'FACE_PITCH_ABOVE_RECOMMENDATION');
+});
