@@ -452,3 +452,6 @@ test('rejects routine whitespace-only steps 108', () => {
 test('maps a pitch threshold warning 109', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { pitch: -45 } })[0].code, 'FACE_PITCH_ABOVE_RECOMMENDATION');
 });
+test('maps a hair occlusion threshold 110', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { hairOcclusion: 0.41 } })[0].code, 'HAIR_OCCLUSION_ABOVE_RECOMMENDATION');
+});
