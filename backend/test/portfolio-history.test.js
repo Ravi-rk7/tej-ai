@@ -465,3 +465,6 @@ test('treats an empty cursor as absent 112', () => {
 test('parses the minimum history limit 113', () => {
   assert.equal(parseHistoryQuery({ limit: '1' }).limit, 1);
 });
+test('rejects a decimal history limit 114', () => {
+  assert.throws(() => parseHistoryQuery({ limit: '2.5' }), /Invalid history limit/);
+});
