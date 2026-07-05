@@ -462,3 +462,6 @@ test('preserves cursor timestamps 111', () => {
 test('treats an empty cursor as absent 112', () => {
   assert.equal(decodeHistoryCursor(''), null);
 });
+test('parses the minimum history limit 113', () => {
+  assert.equal(parseHistoryQuery({ limit: '1' }).limit, 1);
+});
