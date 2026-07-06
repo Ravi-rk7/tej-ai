@@ -468,3 +468,7 @@ test('parses the minimum history limit 113', () => {
 test('rejects a decimal history limit 114', () => {
   assert.throws(() => parseHistoryQuery({ limit: '2.5' }), /Invalid history limit/);
 });
+test('accepts a metric at its maximum 115', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 100, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), 'glow-v1');
+});
