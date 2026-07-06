@@ -472,3 +472,7 @@ test('accepts a metric at its maximum 115', () => {
   const metric = { key: 'glow', label: 'Glow', value: 100, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
   assert.equal(validMetric(metric), 'glow-v1');
 });
+test('rejects a metric below its minimum 116', () => {
+  const metric = { key: 'glow', label: 'Glow', value: -1, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), false);
+});
