@@ -480,3 +480,7 @@ test('normalizes provider mapping metadata 117', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-117', createdAt: '2026-07-04T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v2' }, metrics: [] });
   assert.equal(result.provider.mappingVersion, 'categories-v2');
 });
+test('keeps unsupported observation kinds out 118', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-118', createdAt: '2026-07-04T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [], observations: [{ key: 'x', label: 'X', kind: 'other', value: 'X' }] });
+  assert.equal(result.observations.length, 0);
+});
