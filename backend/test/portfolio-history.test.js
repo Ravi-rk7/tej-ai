@@ -493,3 +493,6 @@ test('serializes legacy provider defaults 120', () => {
   const result = serializeScanResult({ id: 'scan-120', created_at: '2026-07-04T12:00:00.000Z', glow_score: 55, concerns: [], routine: [], metrics: {} });
   assert.equal(result.provider.name, 'ailabtools');
 });
+test('covers a summer month boundary 121', () => {
+  assert.equal(addCalendarDays('2026-07-31', 1), '2026-08-01');
+});
