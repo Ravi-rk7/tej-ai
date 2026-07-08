@@ -489,3 +489,7 @@ test('keeps progress baseline for one scan 119', () => {
   const result = buildPortfolioProgress([{ scanId: 'one', createdAt: '2026-07-04T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: metric, metrics: [] }]);
   assert.equal(result[0].baselineDelta, null);
 });
+test('serializes legacy provider defaults 120', () => {
+  const result = serializeScanResult({ id: 'scan-120', created_at: '2026-07-04T12:00:00.000Z', glow_score: 55, concerns: [], routine: [], metrics: {} });
+  assert.equal(result.provider.name, 'ailabtools');
+});
