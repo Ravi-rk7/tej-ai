@@ -496,3 +496,6 @@ test('serializes legacy provider defaults 120', () => {
 test('covers a summer month boundary 121', () => {
   assert.equal(addCalendarDays('2026-07-31', 1), '2026-08-01');
 });
+test('covers a short forward range 122', () => {
+  assert.equal(addCalendarDays('2026-07-08', 3), '2026-07-11');
+});
