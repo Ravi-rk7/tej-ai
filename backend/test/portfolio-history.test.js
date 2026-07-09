@@ -499,3 +499,6 @@ test('covers a summer month boundary 121', () => {
 test('covers a short forward range 122', () => {
   assert.equal(addCalendarDays('2026-07-08', 3), '2026-07-11');
 });
+test('rejects a date with trailing text 123', () => {
+  assert.equal(parseCalendarDate('2026-07-01x'), null);
+});
