@@ -502,3 +502,6 @@ test('covers a short forward range 122', () => {
 test('rejects a date with trailing text 123', () => {
   assert.equal(parseCalendarDate('2026-07-01x'), null);
 });
+test('accepts a regional timezone 124', () => {
+  assert.equal(validateTimezone('Australia/Sydney'), true);
+});
