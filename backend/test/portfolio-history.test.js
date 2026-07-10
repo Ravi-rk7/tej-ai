@@ -508,3 +508,6 @@ test('accepts a regional timezone 124', () => {
 test('rejects a timezone with a bad segment 125', () => {
   assert.equal(validateTimezone('America/'), false);
 });
+test('counts a separated longest run 126', () => {
+  assert.equal(calculateLongestStreak(['2026-07-01', '2026-07-03', '2026-07-04'], '2026-07-04'), 2);
+});
