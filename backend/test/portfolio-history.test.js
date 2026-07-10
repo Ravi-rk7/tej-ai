@@ -514,3 +514,8 @@ test('counts a separated longest run 126', () => {
 test('keeps a missing current day at risk 127', () => {
   assert.equal(calculateStreak(['2026-07-03'], '2026-07-04').state, 'at_risk');
 });
+test('adherence uses both routine periods 128', () => {
+  const result = calculateAdherence({ checkins: [{ local_date: '2026-07-04', period: 'night' }], today: '2026-07-04', trackingStartedOn: '2026-07-04', days: 1 });
+  assert.equal(result.completed, 1);
+  assert.equal(result.possible, 2);
+});
