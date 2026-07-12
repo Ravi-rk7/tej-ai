@@ -530,3 +530,6 @@ test('normalizes a night routine step 131', () => {
   const routine = normalizeStoredRoutine({ morning: [], night: [{ name: 'Moisturizer', instructions: 'Apply' }] });
   assert.equal(routine.night[0].name, 'Moisturizer');
 });
+test('rejects routine whitespace-only steps 132', () => {
+  assert.equal(normalizeStoredRoutine({ morning: [], night: [{ name: ' ' }] }), null);
+});
