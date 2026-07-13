@@ -539,3 +539,7 @@ test('maps a pitch threshold warning 133', () => {
 test('maps a hair occlusion threshold 134', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { hairOcclusion: 0.41 } })[0].code, 'HAIR_OCCLUSION_ABOVE_RECOMMENDATION');
 });
+test('preserves cursor timestamps 135', () => {
+  const value = { createdAt: '2026-07-04T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000005' };
+  assert.equal(decodeHistoryCursor(encodeHistoryCursor(value)).createdAt, value.createdAt);
+});
