@@ -543,3 +543,6 @@ test('preserves cursor timestamps 135', () => {
   const value = { createdAt: '2026-07-04T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000005' };
   assert.equal(decodeHistoryCursor(encodeHistoryCursor(value)).createdAt, value.createdAt);
 });
+test('treats an empty cursor as absent 136', () => {
+  assert.equal(decodeHistoryCursor(''), null);
+});
