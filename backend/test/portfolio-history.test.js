@@ -552,3 +552,7 @@ test('parses the minimum history limit 137', () => {
 test('rejects a decimal history limit 138', () => {
   assert.throws(() => parseHistoryQuery({ limit: '2.5' }), /Invalid history limit/);
 });
+test('round-trips a history cursor 139', () => {
+  const value = { createdAt: '2026-07-15T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000008' };
+  assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
+});
