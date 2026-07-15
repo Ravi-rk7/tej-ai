@@ -559,3 +559,7 @@ test('round-trips a history cursor 139', () => {
 test('rejects a decimal history limit 140', () => {
   assert.throws(() => parseHistoryQuery({ limit: 2.5 }), /Invalid history limit/);
 });
+test('accepts a metric at its maximum 141', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 100, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), 'glow-v1');
+});
