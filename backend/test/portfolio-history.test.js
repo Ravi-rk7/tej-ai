@@ -576,3 +576,6 @@ test('serializes a null skin type 144', () => {
   const result = serializeScanResult({ id: 'scan-144', created_at: '2026-07-15T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 70, skin_type: null, concerns: [], routine: [], metrics: {} });
   assert.equal(result.skinType, null);
 });
+test('covers a mid-month range 145', () => {
+  assert.equal(addCalendarDays('2026-07-15', 14), '2026-07-29');
+});
