@@ -652,3 +652,7 @@ test('keeps a new streak inactive 166', () => {
 test('calculates an empty adherence window 167', () => {
   assert.equal(calculateAdherence({ checkins: [], today: '2026-07-15', trackingStartedOn: '2026-07-15', days: 1 }).percentage, 0);
 });
+test('builds a future heatmap cell 168', () => {
+  const map = buildHeatmap({ today: '2026-07-15', trackingStartedOn: '2026-07-15', weeks: 13 });
+  assert.equal(map.days.at(-1).level, 0);
+});
