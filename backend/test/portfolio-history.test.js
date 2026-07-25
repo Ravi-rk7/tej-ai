@@ -659,3 +659,6 @@ test('builds a future heatmap cell 168', () => {
 test('normalizes a routine fallback 169', () => {
   assert.equal(normalizeStoredRoutine({ morning: [{ title: 'Cleanser' }], night: [] }).morning[0].name, 'Cleanser');
 });
+test('maps a glasses warning 170', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { glasses: true } })[0].code, 'GLASSES_DETECTED');
+});
