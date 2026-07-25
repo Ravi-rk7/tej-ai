@@ -656,3 +656,6 @@ test('builds a future heatmap cell 168', () => {
   const map = buildHeatmap({ today: '2026-07-15', trackingStartedOn: '2026-07-15', weeks: 13 });
   assert.equal(map.days.at(-1).level, 0);
 });
+test('normalizes a routine fallback 169', () => {
+  assert.equal(normalizeStoredRoutine({ morning: [{ title: 'Cleanser' }], night: [] }).morning[0].name, 'Cleanser');
+});
