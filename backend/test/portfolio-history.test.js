@@ -662,3 +662,7 @@ test('normalizes a routine fallback 169', () => {
 test('maps a glasses warning 170', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { glasses: true } })[0].code, 'GLASSES_DETECTED');
 });
+test('round-trips a history cursor 171', () => {
+  const value = { createdAt: '2026-07-15T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000008' };
+  assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
+});
