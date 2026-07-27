@@ -673,3 +673,7 @@ test('accepts a metric at its maximum 173', () => {
   const metric = { key: 'glow', label: 'Glow', value: 100, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
   assert.equal(validMetric(metric), 'glow-v1');
 });
+test('normalizes sample warnings 174', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-174', createdAt: '2026-07-15T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
+  assert.equal(result.warnings.length, 1);
+});
