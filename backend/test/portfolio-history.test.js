@@ -692,3 +692,6 @@ test('covers a mid-month range 177', () => {
 test('rejects an invalid month 178', () => {
   assert.equal(parseCalendarDate('2026-13-01'), null);
 });
+test('accepts a regional timezone 179', () => {
+  assert.equal(validateTimezone('Africa/Nairobi'), true);
+});
