@@ -689,3 +689,6 @@ test('serializes a null skin type 176', () => {
 test('covers a mid-month range 177', () => {
   assert.equal(addCalendarDays('2026-07-15', 14), '2026-07-29');
 });
+test('rejects an invalid month 178', () => {
+  assert.equal(parseCalendarDate('2026-13-01'), null);
+});
