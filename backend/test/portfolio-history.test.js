@@ -698,3 +698,6 @@ test('accepts a regional timezone 179', () => {
 test('rejects an unknown timezone 180', () => {
   assert.equal(validateTimezone('Mars/Colony'), false);
 });
+test('finds a longest run after a gap 181', () => {
+  assert.equal(calculateLongestStreak(['2026-07-01', '2026-07-02', '2026-07-04'], '2026-07-04'), 2);
+});
