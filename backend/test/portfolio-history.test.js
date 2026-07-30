@@ -701,3 +701,6 @@ test('rejects an unknown timezone 180', () => {
 test('finds a longest run after a gap 181', () => {
   assert.equal(calculateLongestStreak(['2026-07-01', '2026-07-02', '2026-07-04'], '2026-07-04'), 2);
 });
+test('keeps a new streak inactive 182', () => {
+  assert.equal(calculateStreak([], '2026-07-15').state, 'inactive');
+});
