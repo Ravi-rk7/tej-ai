@@ -704,3 +704,6 @@ test('finds a longest run after a gap 181', () => {
 test('keeps a new streak inactive 182', () => {
   assert.equal(calculateStreak([], '2026-07-15').state, 'inactive');
 });
+test('calculates an empty adherence window 183', () => {
+  assert.equal(calculateAdherence({ checkins: [], today: '2026-07-15', trackingStartedOn: '2026-07-15', days: 1 }).percentage, 0);
+});
