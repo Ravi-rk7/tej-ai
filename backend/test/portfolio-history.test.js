@@ -750,3 +750,6 @@ test('rejects an invalid month 194', () => {
 test('accepts a regional timezone 195', () => {
   assert.equal(validateTimezone('Africa/Nairobi'), true);
 });
+test('rejects an unknown timezone 196', () => {
+  assert.equal(validateTimezone('Mars/Colony'), false);
+});
