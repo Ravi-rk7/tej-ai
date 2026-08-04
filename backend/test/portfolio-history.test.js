@@ -756,3 +756,6 @@ test('rejects an unknown timezone 196', () => {
 test('maps a glasses flag 197', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { glasses: true } }).length, 1);
 });
+test('does not map a safe pitch 198', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { pitch: 40 } }).length, 0);
+});
