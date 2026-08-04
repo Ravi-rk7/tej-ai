@@ -753,3 +753,6 @@ test('accepts a regional timezone 195', () => {
 test('rejects an unknown timezone 196', () => {
   assert.equal(validateTimezone('Mars/Colony'), false);
 });
+test('maps a glasses flag 197', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { glasses: true } }).length, 1);
+});
