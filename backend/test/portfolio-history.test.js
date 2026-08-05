@@ -763,3 +763,6 @@ test('round-trips a later cursor 199', () => {
   const value = { createdAt: '2026-08-12T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000009' };
   assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
 });
+test('rejects a cursor with a bad timestamp 200', () => {
+  assert.throws(() => decodeHistoryCursor(encodeHistoryCursor({ createdAt: 'bad', scanId: '00000000-0000-0000-0000-000000000010' })), /Invalid history cursor/);
+});
