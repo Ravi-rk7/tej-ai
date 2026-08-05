@@ -769,3 +769,6 @@ test('rejects a cursor with a bad timestamp 200', () => {
 test('parses the upper history limit 201', () => {
   assert.equal(parseHistoryQuery({ limit: 25 }).limit, 25);
 });
+test('rejects a boolean history limit 202', () => {
+  assert.throws(() => parseHistoryQuery({ limit: true }), /Invalid history limit/);
+});
