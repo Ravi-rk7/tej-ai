@@ -766,3 +766,6 @@ test('round-trips a later cursor 199', () => {
 test('rejects a cursor with a bad timestamp 200', () => {
   assert.throws(() => decodeHistoryCursor(encodeHistoryCursor({ createdAt: 'bad', scanId: '00000000-0000-0000-0000-000000000010' })), /Invalid history cursor/);
 });
+test('parses the upper history limit 201', () => {
+  assert.equal(parseHistoryQuery({ limit: 25 }).limit, 25);
+});
