@@ -759,3 +759,7 @@ test('maps a glasses flag 197', () => {
 test('does not map a safe pitch 198', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { pitch: 40 } }).length, 0);
 });
+test('round-trips a later cursor 199', () => {
+  const value = { createdAt: '2026-08-12T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000009' };
+  assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
+});
