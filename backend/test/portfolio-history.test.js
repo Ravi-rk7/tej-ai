@@ -772,3 +772,7 @@ test('parses the upper history limit 201', () => {
 test('rejects a boolean history limit 202', () => {
   assert.throws(() => parseHistoryQuery({ limit: true }), /Invalid history limit/);
 });
+test('accepts a zero-valued metric 203', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 0, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), 'glow-v1');
+});
