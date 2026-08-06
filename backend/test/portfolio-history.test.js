@@ -776,3 +776,7 @@ test('accepts a zero-valued metric 203', () => {
   const metric = { key: 'glow', label: 'Glow', value: 0, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
   assert.equal(validMetric(metric), 'glow-v1');
 });
+test('rejects a metric with a long key 204', () => {
+  const metric = { key: 'x'.repeat(81), label: 'Glow', value: 50, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), false);
+});
