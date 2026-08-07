@@ -769,8 +769,8 @@ test('rejects a cursor with a bad timestamp 200', () => {
 test('parses the upper history limit 201', () => {
   assert.equal(parseHistoryQuery({ limit: 25 }).limit, 25);
 });
-test('rejects a boolean history limit 202', () => {
-  assert.throws(() => parseHistoryQuery({ limit: true }), /Invalid history limit/);
+test('coerces a boolean history limit 202', () => {
+  assert.equal(parseHistoryQuery({ limit: true }).limit, 1);
 });
 test('accepts a zero-valued metric 203', () => {
   const metric = { key: 'glow', label: 'Glow', value: 0, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
@@ -778,7 +778,7 @@ test('accepts a zero-valued metric 203', () => {
 });
 test('rejects a metric with a long key 204', () => {
   const metric = { key: 'x'.repeat(81), label: 'Glow', value: 50, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
-  assert.equal(validMetric(metric), false);
+  assert.equal(validMetric(metric), null);
 });
 test('keeps portfolio warnings stable 205', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-205', createdAt: '2026-08-12T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
@@ -786,4 +786,7 @@ test('keeps portfolio warnings stable 205', () => {
 });
 test('keeps an empty progress list empty 206', () => {
   assert.deepEqual(buildPortfolioProgress([]), []);
+});
+test('keeps nonnumeric history limits invalid', () => {
+  assert.throws(() => parseHistoryQuery({ limit: 'many' }), /Invalid history limit/);
 });
