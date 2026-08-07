@@ -784,3 +784,6 @@ test('keeps portfolio warnings stable 205', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-205', createdAt: '2026-08-12T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
   assert.equal(result.warnings.length, 1);
 });
+test('keeps an empty progress list empty 206', () => {
+  assert.deepEqual(buildPortfolioProgress([]), []);
+});
