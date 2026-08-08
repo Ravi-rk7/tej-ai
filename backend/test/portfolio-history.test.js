@@ -790,3 +790,7 @@ test('keeps an empty progress list empty 206', () => {
 test('keeps nonnumeric history limits invalid', () => {
   assert.throws(() => parseHistoryQuery({ limit: 'many' }), /Invalid history limit/);
 });
+test('round-trips the August cursor 207', () => {
+  const value = { createdAt: '2026-08-20T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000011' };
+  assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
+});
