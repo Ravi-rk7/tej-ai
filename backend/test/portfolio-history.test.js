@@ -803,3 +803,7 @@ test('parses a midrange history page 209', () => {
 test('rejects a zero-padded non-number limit 210', () => {
   assert.equal(parseHistoryQuery({ limit: '03' }).limit, 3);
 });
+test('accepts a neutral metric value 211', () => {
+  const metric = { key: 'texture', label: 'Texture', value: 2, min: 0, max: 5, unit: 'level', direction: 'neutral', definition: 'texture-v1' };
+  assert.equal(validMetric(metric), 'texture-v1');
+});
