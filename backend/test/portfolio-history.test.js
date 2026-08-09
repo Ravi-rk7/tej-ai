@@ -800,3 +800,6 @@ test('rejects cursor JSON without scan id 208', () => {
 test('parses a midrange history page 209', () => {
   assert.equal(parseHistoryQuery({ limit: 13 }).limit, 13);
 });
+test('rejects a zero-padded non-number limit 210', () => {
+  assert.equal(parseHistoryQuery({ limit: '03' }).limit, 3);
+});
