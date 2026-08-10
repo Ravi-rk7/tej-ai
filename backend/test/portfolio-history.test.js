@@ -811,3 +811,7 @@ test('rejects an invalid metric unit 212', () => {
   const metric = { key: 'texture', label: 'Texture', value: 2, min: 0, max: 5, unit: 2, direction: 'neutral', definition: 'texture-v1' };
   assert.equal(validMetric(metric), null);
 });
+test('normalizes a portfolio provider name 213', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-213', createdAt: '2026-08-20T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
+  assert.equal(result.provider.name, 'facepp');
+});
