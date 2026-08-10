@@ -807,3 +807,7 @@ test('accepts a neutral metric value 211', () => {
   const metric = { key: 'texture', label: 'Texture', value: 2, min: 0, max: 5, unit: 'level', direction: 'neutral', definition: 'texture-v1' };
   assert.equal(validMetric(metric), 'texture-v1');
 });
+test('rejects an invalid metric unit 212', () => {
+  const metric = { key: 'texture', label: 'Texture', value: 2, min: 0, max: 5, unit: 2, direction: 'neutral', definition: 'texture-v1' };
+  assert.equal(validMetric(metric), null);
+});
