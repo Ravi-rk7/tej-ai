@@ -819,3 +819,8 @@ test('filters an invalid portfolio observation 214', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-214', createdAt: '2026-08-20T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [], observations: [null] });
   assert.deepEqual(result.observations, []);
 });
+test('keeps a progress group latest value 215', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 73, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  const result = buildPortfolioProgress([{ scanId: 'one', createdAt: '2026-08-20T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: metric, metrics: [] }]);
+  assert.equal(result[0].latest, 73);
+});
