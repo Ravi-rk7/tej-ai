@@ -815,3 +815,7 @@ test('normalizes a portfolio provider name 213', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-213', createdAt: '2026-08-20T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
   assert.equal(result.provider.name, 'facepp');
 });
+test('filters an invalid portfolio observation 214', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-214', createdAt: '2026-08-20T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [], observations: [null] });
+  assert.deepEqual(result.observations, []);
+});
