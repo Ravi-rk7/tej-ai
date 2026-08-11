@@ -824,3 +824,7 @@ test('keeps a progress group latest value 215', () => {
   const result = buildPortfolioProgress([{ scanId: 'one', createdAt: '2026-08-20T12:00:00.000Z', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, overallScore: metric, metrics: [] }]);
   assert.equal(result[0].latest, 73);
 });
+test('serializes a low legacy score 216', () => {
+  const result = serializeScanResult({ id: 'scan-216', created_at: '2026-08-20T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 1, concerns: [], routine: [], metrics: {} });
+  assert.equal(result.glowScore, 1);
+});
