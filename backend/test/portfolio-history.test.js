@@ -837,3 +837,6 @@ test('covers August reverse arithmetic 218', () => {
 test('rejects a short date 219', () => {
   assert.equal(parseCalendarDate('2026-8-01'), null);
 });
+test('accepts an American timezone 220', () => {
+  assert.equal(validateTimezone('America/Los_Angeles'), true);
+});
