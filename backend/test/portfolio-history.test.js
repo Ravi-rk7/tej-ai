@@ -831,3 +831,6 @@ test('serializes a low legacy score 216', () => {
 test('covers August month end 217', () => {
   assert.equal(addCalendarDays('2026-08-31', 1), '2026-09-01');
 });
+test('covers August reverse arithmetic 218', () => {
+  assert.equal(addCalendarDays('2026-09-01', -1), '2026-08-31');
+});
