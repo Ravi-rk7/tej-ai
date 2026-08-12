@@ -834,3 +834,6 @@ test('covers August month end 217', () => {
 test('covers August reverse arithmetic 218', () => {
   assert.equal(addCalendarDays('2026-09-01', -1), '2026-08-31');
 });
+test('rejects a short date 219', () => {
+  assert.equal(parseCalendarDate('2026-8-01'), null);
+});
