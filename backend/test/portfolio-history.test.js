@@ -843,3 +843,6 @@ test('accepts an American timezone 220', () => {
 test('rejects a missing timezone name 221', () => {
   assert.equal(validateTimezone('America/'), false);
 });
+test('keeps longest streak order stable 222', () => {
+  assert.equal(calculateLongestStreak(['2026-08-03', '2026-08-01', '2026-08-02'], '2026-08-03'), 3);
+});
