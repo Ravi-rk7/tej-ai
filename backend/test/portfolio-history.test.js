@@ -849,3 +849,7 @@ test('keeps longest streak order stable 222', () => {
 test('keeps inactive streak current zero 223', () => {
   assert.equal(calculateStreak([], '2026-08-20').current, 0);
 });
+test('counts a morning adherence check-in 224', () => {
+  const checkins = [{ local_date: '2026-08-20', period: 'morning' }];
+  assert.equal(calculateAdherence({ checkins, today: '2026-08-20', trackingStartedOn: '2026-08-20', days: 1 }).completed, 1);
+});
