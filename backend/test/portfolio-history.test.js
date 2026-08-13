@@ -846,3 +846,6 @@ test('rejects a missing timezone name 221', () => {
 test('keeps longest streak order stable 222', () => {
   assert.equal(calculateLongestStreak(['2026-08-03', '2026-08-01', '2026-08-02'], '2026-08-03'), 3);
 });
+test('keeps inactive streak current zero 223', () => {
+  assert.equal(calculateStreak([], '2026-08-20').current, 0);
+});
