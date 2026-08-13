@@ -840,3 +840,6 @@ test('rejects a short date 219', () => {
 test('accepts an American timezone 220', () => {
   assert.equal(validateTimezone('America/Los_Angeles'), true);
 });
+test('rejects a missing timezone name 221', () => {
+  assert.equal(validateTimezone('America/'), false);
+});
