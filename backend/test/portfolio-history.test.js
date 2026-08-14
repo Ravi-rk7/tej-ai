@@ -857,3 +857,6 @@ test('marks future heatmap cells correctly 225', () => {
   const map = buildHeatmap({ today: '2026-08-20', trackingStartedOn: '2026-08-20', weeks: 13 });
   assert.equal(map.days.at(-1).state, 'future');
 });
+test('keeps routine safety copy textual 226', () => {
+  assert.equal(typeof generateRulesRoutine().safety.cautions, 'string');
+});
