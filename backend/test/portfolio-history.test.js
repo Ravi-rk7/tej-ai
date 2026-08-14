@@ -853,3 +853,7 @@ test('counts a morning adherence check-in 224', () => {
   const checkins = [{ local_date: '2026-08-20', period: 'morning' }];
   assert.equal(calculateAdherence({ checkins, today: '2026-08-20', trackingStartedOn: '2026-08-20', days: 1 }).completed, 1);
 });
+test('marks future heatmap cells correctly 225', () => {
+  const map = buildHeatmap({ today: '2026-08-20', trackingStartedOn: '2026-08-20', weeks: 13 });
+  assert.equal(map.days.at(-1).state, 'future');
+});
