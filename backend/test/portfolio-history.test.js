@@ -864,3 +864,7 @@ test('normalizes a routine instruction 227', () => {
   const routine = normalizeStoredRoutine({ morning: [{ name: 'Cleanser', instructions: 'Rinse' }], night: [] });
   assert.equal(routine.morning[0].instructions, 'Rinse');
 });
+test('rejects blank routine instructions only by name 228', () => {
+  const routine = normalizeStoredRoutine({ morning: [{ name: 'Cleanser', instructions: '' }], night: [] });
+  assert.equal(routine.morning[0].name, 'Cleanser');
+});
