@@ -868,3 +868,6 @@ test('rejects blank routine instructions only by name 228', () => {
   const routine = normalizeStoredRoutine({ morning: [{ name: 'Cleanser', instructions: '' }], night: [] });
   assert.equal(routine.morning[0].name, 'Cleanser');
 });
+test('maps glasses quality warnings 229', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { glasses: true } })[0].code, 'GLASSES_DETECTED');
+});
