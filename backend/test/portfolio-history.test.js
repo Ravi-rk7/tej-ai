@@ -860,3 +860,7 @@ test('marks future heatmap cells correctly 225', () => {
 test('keeps routine safety copy textual 226', () => {
   assert.equal(typeof generateRulesRoutine().safety.cautions, 'string');
 });
+test('normalizes a routine instruction 227', () => {
+  const routine = normalizeStoredRoutine({ morning: [{ name: 'Cleanser', instructions: 'Rinse' }], night: [] });
+  assert.equal(routine.morning[0].instructions, 'Rinse');
+});
