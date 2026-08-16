@@ -871,3 +871,6 @@ test('rejects blank routine instructions only by name 228', () => {
 test('maps glasses quality warnings 229', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { glasses: true } })[0].code, 'GLASSES_DETECTED');
 });
+test('keeps safe hair occlusion quiet 230', () => {
+  assert.deepEqual(buildQualityWarnings({ imageQuality: { hairOcclusion: 0.4 } }), []);
+});
