@@ -874,3 +874,7 @@ test('maps glasses quality warnings 229', () => {
 test('keeps safe hair occlusion quiet 230', () => {
   assert.deepEqual(buildQualityWarnings({ imageQuality: { hairOcclusion: 0.4 } }), []);
 });
+test('round-trips the August cursor 231', () => {
+  const value = { createdAt: '2026-08-20T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000011' };
+  assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
+});
