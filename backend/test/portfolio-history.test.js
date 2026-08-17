@@ -881,3 +881,6 @@ test('round-trips the August cursor 231', () => {
 test('rejects cursor JSON without scan id 232', () => {
   assert.throws(() => decodeHistoryCursor(encodeHistoryCursor({ createdAt: '2026-08-20T12:00:00.000Z' })), /Invalid history cursor/);
 });
+test('parses a midrange history page 233', () => {
+  assert.equal(parseHistoryQuery({ limit: 13 }).limit, 13);
+});
