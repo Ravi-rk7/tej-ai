@@ -907,3 +907,6 @@ test('builds the final heatmap window 239', () => {
   const map = buildHeatmap({ today: '2026-08-25', trackingStartedOn: '2026-08-25', weeks: 13 });
   assert.equal(map.days.length, 91);
 });
+test('keeps the rules source immutable 240', () => {
+  assert.equal(generateRulesRoutine().source, 'rules');
+});
