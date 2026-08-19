@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test --test-concurrency=1 test/app.test.js test/authRateLimit.test.js test/env.test.js",
-    "test:watch": "node --test --watch --test-concurrency=1 test/app.test.js test/authRateLimit.test.js test/env.test.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test:watch": "node --test --watch --test-concurrency=1 test/*.test.js",
     "test:rls": "node scripts/verify-rls-isolation.js",
     "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",
@@ -24,7 +24,6 @@
     "@upstash/ratelimit": "^1.0.0",
     "@upstash/redis": "^1.26.0",
     "axios": "^1.19.0",
-    "cloudinary": "^2.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^5.2.1",
@@ -35,10 +34,10 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
     "@eslint/js": "^9.39.4",
     "eslint": "^9.39.4",
     "globals": "^16.4.0",
+    "nodemon": "^3.0.2",
     "prettier": "^3.1.1"
   },
   "engines": {

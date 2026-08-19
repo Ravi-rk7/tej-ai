@@ -41,6 +41,23 @@ test('validateEnvironment rejects malformed service URLs', () => {
     );
 });
 
+test('validateEnvironment prevents a configurable provider SSRF target', () => {
+    const source = {
+        ...validEnvironment(),
+        NODE_ENV: 'production',
+        SUPABASE_URL: 'https://example.supabase.co',
+        UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+        FRONTEND_URL: 'https://app.tejai.example',
+        DODO_API_BASE_URL: 'https://live.dodopayments.com',
+        AILAB_API_URL: 'https://127.0.0.1/internal',
+    };
+
+    assert.throws(
+        () => validateEnvironment({ source }),
+        /AILAB_API_URL must use the official provider host/
+    );
+});
+
 test('validateEnvironment rejects localhost and test payments in production', () => {
     const source = {
         ...validEnvironment(),

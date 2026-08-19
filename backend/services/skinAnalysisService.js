@@ -1,33 +1,44 @@
 import axios from 'axios';
+import FormData from 'form-data';
 import { z } from 'zod';
 import env from '../config/env.js';
 import logger from '../utils/logger.js';
+import { MAX_IMAGE_BYTES } from './imageService.js';
 
 const API_TIMEOUT_MS = 8000;
 const RETRY_ATTEMPTS = 1;
-const AILAB_SKIN_ANALYSIS_URL = 'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro';
-
-const ImageUrlSchema = z.string().url('Invalid image URL format');
+const MAX_PROVIDER_BODY_BYTES = MAX_IMAGE_BYTES + (256 * 1024);
 
 const ExternalMetricSchema = z.union([
     z.number(),
     z.object({
         score: z.number().optional(),
+        value: z.number().optional(),
     }).passthrough(),
 ]).optional();
 
-const ExternalResponseSchema = z.object({
-    skin_type: z.string().optional(),
+const ResultSchema = z.object({
+    skin_type: z.union([z.string(), z.number(), z.object({
+        skin_type: z.union([z.string(), z.number()]).optional(),
+    }).passthrough()]).optional(),
     skinType: z.string().optional(),
     acne: ExternalMetricSchema,
     pigmentation: ExternalMetricSchema,
+    skin_spot: ExternalMetricSchema,
     texture: ExternalMetricSchema,
 }).passthrough();
 
-const buildServiceError = (publicMessage, statusCode, details) => {
+const ExternalResponseSchema = z.object({
+    error_code: z.number().optional(),
+    error_msg: z.string().optional(),
+    result: ResultSchema.optional(),
+}).merge(ResultSchema).passthrough();
+
+const buildServiceError = (publicMessage, statusCode, details, publicCode) => {
     const error = new Error(publicMessage);
     error.publicMessage = publicMessage;
     error.statusCode = statusCode;
+    error.publicCode = publicCode;
     if (details) {
         error.details = details;
     }
@@ -46,73 +57,18 @@ const extractMetric = (metricValue) => {
     if (typeof metricValue === 'number') {
         return clampMetric(metricValue);
     }
-    return clampMetric(metricValue?.score);
+    return clampMetric(metricValue?.score ?? metricValue?.value);
 };
 
-const titleCase = (value) => value
+const titleCase = (value) => String(value)
     .toLowerCase()
     .split(/\s+/)
     .filter(Boolean)
     .map((word) => `${word[0].toUpperCase()}${word.slice(1)}`)
     .join(' ');
 
-const isPrivateIpv4Host = (hostname) => {
-    const match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-    if (!match) {
-        return false;
-    }
-
-    const octets = match.slice(1).map(Number);
-    if (octets.some((part) => part < 0 || part > 255)) {
-        return true;
-    }
-
-    const [a, b] = octets;
-    if (a === 10 || a === 127) return true;
-    if (a === 169 && b === 254) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    return false;
-};
-
-const validateImageUrlSecurity = (imageUrl) => {
-    const parsed = new URL(imageUrl);
-
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-        throw buildServiceError('imageUrl must use http or https', 400);
-    }
-
-    const host = parsed.hostname.toLowerCase();
-    if (host === 'localhost' || host === '::1' || host.startsWith('127.')) {
-        throw buildServiceError('imageUrl host is not allowed', 400);
-    }
-
-    if (isPrivateIpv4Host(host) || host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80:')) {
-        throw buildServiceError('imageUrl host is not allowed', 400);
-    }
-
-    const allowedDomainsRaw = process.env.SKIN_ANALYSIS_ALLOWED_DOMAINS;
-    if (allowedDomainsRaw) {
-        const allowedDomains = allowedDomainsRaw
-            .split(',')
-            .map((domain) => domain.trim().toLowerCase())
-            .filter(Boolean);
-
-        const isAllowed = allowedDomains.some((allowedDomain) => (
-            host === allowedDomain || host.endsWith(`.${allowedDomain}`)
-        ));
-
-        if (!isAllowed) {
-            throw buildServiceError('imageUrl domain is not allowed', 400);
-        }
-    }
-};
-
 const shouldRetry = (error, attempt) => {
-    if (attempt >= RETRY_ATTEMPTS) {
-        return false;
-    }
-    if (!axios.isAxiosError(error)) {
+    if (attempt >= RETRY_ATTEMPTS || !axios.isAxiosError(error)) {
         return false;
     }
 
@@ -126,10 +82,20 @@ const shouldRetry = (error, attempt) => {
 const normalizeResponse = (apiData) => {
     const parsed = ExternalResponseSchema.parse(apiData);
 
+    if (parsed.error_code && parsed.error_code !== 0) {
+        throw buildServiceError(
+            'Skin analysis request was rejected',
+            400,
+            parsed.error_msg,
+            'SKIN_ANALYSIS_REJECTED'
+        );
+    }
+
+    const result = parsed.result || parsed;
     const metrics = {
-        acne: extractMetric(parsed.acne),
-        pigmentation: extractMetric(parsed.pigmentation),
-        texture: extractMetric(parsed.texture),
+        acne: extractMetric(result.acne),
+        pigmentation: extractMetric(result.pigmentation ?? result.skin_spot),
+        texture: extractMetric(result.texture),
     };
 
     const concerns = [];
@@ -137,42 +103,47 @@ const normalizeResponse = (apiData) => {
     if (metrics.pigmentation >= 50) concerns.push('Pigmentation');
     if (metrics.texture < 40) concerns.push('Texture');
 
+    const skinTypeValue = typeof result.skin_type === 'object'
+        ? result.skin_type.skin_type
+        : (result.skin_type ?? result.skinType ?? 'Unknown');
+
     return {
-        skinType: titleCase(parsed.skin_type || parsed.skinType || 'Unknown'),
+        skinType: titleCase(skinTypeValue),
         concerns,
         metrics,
     };
 };
 
-/**
- * Run skin analysis against external API and return normalized output.
- */
-export const runSkinAnalysis = async (imageUrl) => {
-    let validatedImageUrl = '';
+export const createProviderForm = (imageBuffer) => {
+    const form = new FormData();
+    form.append('image', imageBuffer, {
+        filename: 'scan.jpg',
+        contentType: 'image/jpeg',
+        knownLength: imageBuffer.length,
+    });
+    return form;
+};
 
-    try {
-        validatedImageUrl = ImageUrlSchema.parse(imageUrl);
-        validateImageUrlSecurity(validatedImageUrl);
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            throw buildServiceError(error.errors[0].message, 400);
-        }
-        throw error;
+/**
+ * Send transient JPEG bytes directly to AILabTools using its multipart API.
+ */
+export const runSkinAnalysis = async (imageBuffer) => {
+    if (!Buffer.isBuffer(imageBuffer) || imageBuffer.length === 0) {
+        throw buildServiceError('A processed scan image is required', 500);
     }
 
     for (let attempt = 0; attempt <= RETRY_ATTEMPTS; attempt += 1) {
         try {
-            const response = await axios.post(
-                AILAB_SKIN_ANALYSIS_URL,
-                { image_url: validatedImageUrl },
-                {
-                    headers: {
-                        'ailabapi-api-key': env.AILAB_API_KEY,
-                        'Content-Type': 'application/json',
-                    },
-                    timeout: API_TIMEOUT_MS,
-                }
-            );
+            const form = createProviderForm(imageBuffer);
+            const response = await axios.post(env.AILAB_API_URL, form, {
+                headers: {
+                    ...form.getHeaders(),
+                    'ailabapi-api-key': env.AILAB_API_KEY,
+                },
+                timeout: API_TIMEOUT_MS,
+                maxBodyLength: MAX_PROVIDER_BODY_BYTES,
+                maxContentLength: MAX_PROVIDER_BODY_BYTES,
+            });
 
             const normalized = normalizeResponse(response.data);
             logger.info('Skin analysis completed', {
@@ -181,6 +152,10 @@ export const runSkinAnalysis = async (imageUrl) => {
             });
             return normalized;
         } catch (error) {
+            if (error.publicMessage) {
+                throw error;
+            }
+
             if (error instanceof z.ZodError) {
                 throw buildServiceError('Skin analysis response format is invalid', 502);
             }

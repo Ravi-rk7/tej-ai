@@ -11,10 +11,9 @@ Node.js backend for TejAi, an AI-powered skincare SaaS.
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22
 - npm or yarn
 - Supabase account
-- Cloudinary account
 - OpenAI API key
 - Upstash Redis account
 - Dodo Payments account
@@ -42,12 +41,7 @@ cp .env.example .env
 - Run the SQL from `db/schema.sql` in the SQL editor
 - Enable RLS policies as specified
 
-4. **Create Cloudinary upload preset**
-
-- Go to Cloudinary > Settings > Upload > Presets
-- Create preset named `tej_ai_scan` with folder `tej_ai_scans`
-
-5. **Start server**
+4. **Start server**
 
 ```bash
 npm run dev  # Development with nodemon
@@ -145,9 +139,9 @@ backend/
 
 ### `imageService.js`
 
-- Uploads images to Cloudinary CDN
-- Validates image dimensions
-- Cleans up local files after upload
+- Verifies JPEG signatures and decoded content
+- Bounds image size and resolution before provider calls
+- Normalizes orientation, strips metadata, and clears transient buffers
 
 ### `paymentService.js`
 
@@ -170,7 +164,8 @@ backend/
 3. **Auth** → Verify Supabase JWT (if route protected)
 4. **Rate Limit** → Check 10 req/min per user
 5. **Scan Limit** → Check subscription scan quota
-6. **Error Handler** → Catch and format errors
+6. **Image Upload** → Bound, validate, and normalize one in-memory JPEG
+7. **Error Handler** → Catch and format errors
 
 ---
 
@@ -179,7 +174,7 @@ backend/
 ### `skin_analysis`
 
 - Stores all skin analysis results
-- User FK, image URL, Glow Score, concerns, routine
+- User FK, Glow Score, concerns, and routine; raw images are not retained
 - Indexed by user_id and created_at for fast queries
 
 ### `subscriptions`
@@ -257,7 +252,7 @@ Log levels: error, warn, info, http, debug
 ## 🎯 Performance Optimizations
 
 - ✅ Parallel API calls where possible
-- ✅ Image CDN via Cloudinary
+- ✅ Memory-bounded transient JPEG processing
 - ✅ Redis-backed rate limiting (distributed)
 - ✅ Database indexes on frequently queried columns
 - ✅ 15-second timeouts on external API calls
@@ -270,16 +265,12 @@ Log levels: error, warn, info, http, debug
 ```
 SUPABASE_URL              PostgreSQL database & auth endpoint
 SUPABASE_SERVICE_ROLE_KEY Admin key for server-side operations
-CLOUDINARY_CLOUD_NAME     Your Cloudinary project name
-CLOUDINARY_API_KEY        Cloudinary API key
-CLOUDINARY_API_SECRET     Cloudinary API secret
-AILAB_API_KEY            AILabTools authentication
+AILABTOOLS_API_KEY       AILabTools authentication
 AILAB_API_URL            AILabTools endpoint (default provided)
 OPENAI_API_KEY           OpenAI API authentication
 UPSTASH_REDIS_REST_URL   Redis serverless REST URL
 UPSTASH_REDIS_REST_TOKEN Redis authentication token
 DODO_API_KEY             Dodo Payments API key
-DODO_SECRET_KEY          Dodo Payments secret
 DODO_WEBHOOK_SECRET      For webhook signature verification
 FRONTEND_URL             CORS origin (e.g., http://localhost:3000)
 PORT                     Server port (default: 3001)
@@ -297,7 +288,7 @@ NODE_ENV                 Environment (development/production)
 | @upstash/ratelimit    | Distributed rate limiting |
 | @upstash/redis        | Redis serverless client   |
 | axios                 | HTTP requests             |
-| cloudinary            | Image CDN                 |
+| sharp                  | Safe image normalization  |
 | zod                   | Input validation          |
 | multer                | File upload handling      |
 | winston               | Logging                   |

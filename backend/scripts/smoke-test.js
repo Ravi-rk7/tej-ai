@@ -24,10 +24,15 @@ async function run() {
     }
 
     try {
+        const form = new FormData();
+        form.append(
+            'image',
+            new Blob([Buffer.from([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }),
+            'scan.jpg'
+        );
         const res = await fetch(`${BASE}/api/scan`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageBase64: 'fake', mimeType: 'image/jpeg' }),
+            body: form,
         });
         if (res.status === 401) {
             console.log('POST /api/scan (no auth) -> 401 Unauthorized (correct)');

@@ -33,7 +33,7 @@ This will install all packages from `package.json`:
 - Express, CORS, Multer for server
 - Supabase SDK for database
 - Upstash Redis for rate limiting
-- Cloudinary SDK for image hosting
+- Sharp for transient image normalization
 - Zod for validation
 - Winston for logging
 - And others...
@@ -96,42 +96,12 @@ curl http://localhost:3001/api/health
 
 ---
 
-### 2. Cloudinary Setup
+### 2. Transient image processing
 
-#### Create Account
-
-1. Go to [cloudinary.com](https://cloudinary.com)
-2. Sign up / Log in
-3. Go to Dashboard
-
-#### Get Credentials
-
-1. Dashboard shows:
-   - `Cloud name`
-   - `API Key`
-2. Click Settings → API Keys
-3. Copy the `API Secret`
-4. Add to `.env`:
-   ```
-   CLOUDINARY_CLOUD_NAME=xxx
-   CLOUDINARY_API_KEY=xxx
-   CLOUDINARY_API_SECRET=xxx
-   ```
-
-#### Create Upload Preset
-
-1. Go to Settings → Upload
-2. Scroll to "Upload presets"
-3. Click "Add upload preset"
-4. Settings:
-   - **Preset name**: `tej_ai_scan`
-   - **Folder**: `tej_ai_scans`
-   - **Maximum file size**: 8 MB (8388608 bytes)
-   - **Allowed formats**: JPEG, PNG, WebP
-   - **Quality**: Auto
-5. Click "Save"
-
-This preset is referenced in `services/imageService.js`.
+No image-hosting account or upload preset is required. The API accepts one
+authenticated `multipart/form-data` field named `image`, validates a JPG/JPEG
+within the 8 MB boundary, normalizes it in bounded memory, sends the transient
+bytes directly to AILabTools, and clears both source and normalized buffers.
 
 ---
 
@@ -287,7 +257,7 @@ In `services/paymentService.js`, plans are defined:
 
 - Backend running on `http://localhost:3001`
 - Valid Supabase JWT token (get by authenticating via Supabase)
-- Test image file (JPEG/PNG/WebP, max 8MB)
+- Test image file (JPG/JPEG, max 8 MB)
 
 ### 1. Health Check (No Auth Required)
 
@@ -320,7 +290,6 @@ Expected response:
 {
   "success": true,
   "data": {
-    "imageUrl": "https://res.cloudinary.com/...",
     "glowScore": 78,
     "trend": "↑",
     "skinType": "oily",
@@ -468,7 +437,7 @@ Then follow interactive prompts.
 - [ ] Database backups configured
 - [ ] Error logs monitored
 - [ ] Rate limits tested
-- [ ] Cloudinary webhook signature verified
+- [ ] Transient upload rejection matrix verified
 
 ---
 
@@ -509,14 +478,14 @@ npm install
 
 ### Image upload fails
 
-**Symptoms**: "Upload to Cloudinary failed"
+**Symptoms**: JPG upload is rejected before analysis
 
 **Solutions**:
 
-1. Verify Cloudinary credentials
-2. Confirm upload preset `tej_ai_scan` exists
-3. Check image is valid JPEG/PNG/WebP
-4. Verify file size < 8MB
+1. Check the file is a valid JPG/JPEG, not only renamed as one.
+2. Verify the file is no larger than 8 MB.
+3. Verify dimensions are at least 200x200px and no side exceeds 8192px.
+4. Review the stable `IMAGE_*` error code returned by the API.
 
 ### Rate limiting too strict
 

@@ -21,7 +21,6 @@ cp .env.example .env
 **Need credentials? Quick links:**
 
 - [Supabase](https://supabase.com) → Create project → Copy API keys
-- [Cloudinary](https://cloudinary.com) → Dashboard → API keys
 - [OpenAI](https://platform.openai.com) → API keys → Create key
 - [Upstash](https://console.upstash.com) → Create Redis → Copy REST URL/Token
 - [AILabTools](https://ailab.example.com) → API key
@@ -70,7 +69,7 @@ backend/
 │
 ├── 🧠 Services (6 integrations)
 │   ├── Supabase (PostgreSQL + Auth)
-│   ├── Cloudinary (Image hosting)
+│   ├── Sharp (Transient image normalization)
 │   ├── AILabTools (Skin analysis)
 │   ├── OpenAI (Routine generation)
 │   ├── Upstash Redis (Rate limiting)
@@ -119,7 +118,6 @@ Expected response:
 {
   "success": true,
   "data": {
-    "imageUrl": "https://res.cloudinary.com/...",
     "glowScore": 78,
     "skinType": "oily",
     "concerns": ["Mild Acne"],
@@ -205,7 +203,6 @@ See [PROJECT_STATUS.md](../PROJECT_STATUS.md) for detailed integration steps.
 ## 📞 Quick Links
 
 - **Supabase Dashboard**: https://app.supabase.com
-- **Cloudinary Dashboard**: https://cloudinary.com/console
 - **OpenAI Platform**: https://platform.openai.com
 - **Upstash Console**: https://console.upstash.com
 - **Express Docs**: https://expressjs.com

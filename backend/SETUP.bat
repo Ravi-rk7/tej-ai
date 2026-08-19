@@ -40,7 +40,7 @@ if not exist .env (
     echo WARNING: Edit .env with your service credentials:
     echo   - SUPABASE_URL
     echo   - SUPABASE_SERVICE_ROLE_KEY
-    echo   - CLOUDINARY_CLOUD_NAME
+    echo   - AILABTOOLS_API_KEY
     echo   - OPENAI_API_KEY
     echo   - UPSTASH_REDIS_REST_URL
     echo   - DODO_API_KEY
@@ -64,7 +64,7 @@ echo.
 echo 1. Edit .env with your service credentials:
 echo    notepad .env
 echo.
-echo 2. Verify credentials in Supabase, Cloudinary, etc.
+echo 2. Verify credentials in Supabase, AILabTools, and the other configured services.
 echo.
 echo 3. Import database schema:
 echo    - Go to Supabase SQL Editor

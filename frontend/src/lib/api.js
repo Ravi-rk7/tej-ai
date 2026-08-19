@@ -38,10 +38,13 @@ const request = async (path, options = {}) => {
     const { authenticated = true, ...fetchOptions } = options;
     const token = authenticated ? await getJwtToken() : null;
 
-    const headers = {
-        "Content-Type": "application/json",
-        ...(fetchOptions.headers || {}),
-    };
+    const isMultipart = typeof FormData !== "undefined"
+        && fetchOptions.body instanceof FormData;
+    const headers = { ...(fetchOptions.headers || {}) };
+
+    if (!isMultipart && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+    }
 
     if (token) {
         headers.Authorization = `Bearer ${token}`;
@@ -76,43 +79,17 @@ const request = async (path, options = {}) => {
     return body?.data;
 };
 
-export const scanSkin = async (imageUrl) =>
-    request("/api/scan", {
-        method: "POST",
-        body: JSON.stringify({ imageUrl }),
-    });
-
-const readFileAsBase64 = (file) =>
-    new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const result = String(reader.result || "");
-            const [, base64] = result.split(",");
-
-            if (!base64) {
-                reject(new Error("Failed to read image data"));
-                return;
-            }
-
-            resolve(base64);
-        };
-        reader.onerror = () => reject(new Error("Failed to read image file"));
-        reader.readAsDataURL(file);
-    });
-
 /**
- * Convert a File object to raw base64, then call POST /api/scan.
- * Returns the full analysis payload from the server.
+ * Send one JPG as multipart data. The browser supplies the multipart boundary;
+ * setting Content-Type manually would make the request invalid.
  */
 export const scanSkinFile = async (file) => {
-    const imageBase64 = await readFileAsBase64(file);
+    const form = new FormData();
+    form.append("image", file, "scan.jpg");
 
     return request("/api/scan", {
         method: "POST",
-        body: JSON.stringify({
-            imageBase64,
-            mimeType: file.type || "image/jpeg",
-        }),
+        body: form,
     });
 };
 

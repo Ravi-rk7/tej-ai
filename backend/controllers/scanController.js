@@ -1,43 +1,28 @@
-import { z } from 'zod';
 import logger from '../utils/logger.js';
 import { asyncHandler, errorResponse, successResponse } from '../utils/responseFormatter.js';
 import { runSkinAnalysis } from '../services/skinAnalysisService.js';
 import { generateAIRoutine } from '../services/aiRoutineService.js';
 import { calculateGlowScore } from '../services/glowScoreService.js';
 import { saveSkinAnalysis } from '../services/supabaseService.js';
-import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
-
-const ScanRequestSchema = z.object({
-    imageBase64: z.string().min(1).optional(),
-    mimeType: z.string().min(1).optional(),
-    imageUrl: z.string().url('imageUrl must be a valid URL').optional(),
-}).refine(
-    (data) => data.imageBase64 || data.imageUrl,
-    { message: 'Either imageBase64 or imageUrl must be provided' }
-);
+import { releaseScanImage } from '../middleware/imageUploadMiddleware.js';
 
 /**
  * POST /api/scan
- * Analyze remote image and run full skin analysis
+ * Analyze one validated, normalized, transient in-memory JPEG.
  */
 export const scan = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+
     try {
-        const body = ScanRequestSchema.parse(req.body);
-        const userId = req.user.id;
-
-        logger.info('Scan request started', { userId });
-
-        let resolvedImageUrl = body.imageUrl;
-
-        if (body.imageBase64) {
-            const mimeType = body.mimeType || 'image/jpeg';
-            const dataUri = `data:${mimeType};base64,${body.imageBase64}`;
-            resolvedImageUrl = await uploadToCloudinary(dataUri);
-        }
+        logger.info('Scan request started', {
+            userId,
+            width: req.scanImage.width,
+            height: req.scanImage.height,
+        });
 
         let skinAnalysis;
         try {
-            skinAnalysis = await runSkinAnalysis(resolvedImageUrl);
+            skinAnalysis = await runSkinAnalysis(req.scanImage.buffer);
         } catch (serviceError) {
             const statusCode = serviceError.statusCode || 502;
             const message = serviceError.publicMessage || 'Skin analysis service is unavailable';
@@ -46,17 +31,14 @@ export const scan = asyncHandler(async (req, res) => {
                 statusCode,
                 error: serviceError.message,
             });
-            return errorResponse(res, message, statusCode);
+            return errorResponse(res, message, statusCode, serviceError.publicCode);
         }
 
         const { skinType, concerns, metrics } = skinAnalysis;
-
         const { score: glowScore, trend } = await calculateGlowScore(metrics, userId);
-
-        const routine = await generateAIRoutine(skinAnalysis.skinType, skinAnalysis.concerns);
+        const routine = await generateAIRoutine(skinType, concerns);
 
         await saveSkinAnalysis(userId, {
-            imageUrl: resolvedImageUrl,
             glowScore,
             skinType,
             concerns,
@@ -71,17 +53,20 @@ export const scan = asyncHandler(async (req, res) => {
             glowScore,
             concerns,
             routine,
+            ...(!req.scanImage.meetsRecommendedFaceCanvas
+                ? {
+                    imageGuidance: 'For best results, use a photo where the face is at least 400px wide.',
+                }
+                : {}),
         });
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return errorResponse(res, error.errors[0].message, 400);
-        }
-
         logger.error('Scan endpoint failed', {
-            userId: req.user?.id,
+            userId,
             message: error.message,
         });
         return errorResponse(res, 'Unable to process scan request', 500);
+    } finally {
+        releaseScanImage(req);
     }
 });
 

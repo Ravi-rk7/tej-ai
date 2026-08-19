@@ -35,7 +35,8 @@ export const saveScan = async (data) => {
     try {
         const payload = {
             user_id: data.user_id,
-            image_url: data.image_url,
+            image_url: null,
+            image_retained: false,
             glow_score: data.glow_score,
             concerns: data.concerns ?? [],
             routine: data.routine ?? {},
@@ -116,8 +117,6 @@ export const getLastScan = async (user_id) => {
  * Save skin analysis result to Supabase
  */
 export const saveSkinAnalysis = async (userId, {
-    imageUrl,
-    cloudinaryPublicId,
     glowScore,
     skinType,
     concerns,
@@ -127,7 +126,6 @@ export const saveSkinAnalysis = async (userId, {
 }) => {
     const saved = await saveScan({
         user_id: userId,
-        image_url: imageUrl,
         glow_score: glowScore,
         concerns,
         routine,
@@ -135,7 +133,6 @@ export const saveSkinAnalysis = async (userId, {
 
     return {
         ...saved,
-        cloudinary_public_id: cloudinaryPublicId,
         skin_type: skinType,
         raw_api_response: rawApiResponse,
         face_maps: faceMaps,

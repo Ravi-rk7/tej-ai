@@ -10,7 +10,7 @@
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
-    "test": "npm --prefix backend test",
+    "test": "npm --prefix backend test && npm --prefix frontend test",
     "build": "npm --prefix frontend run build",
     "audit": "npm --prefix backend audit --omit=dev && npm --prefix frontend audit --omit=dev",
     "check": "npm run lint && npm test && npm run build"

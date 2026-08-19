@@ -2,6 +2,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+export const DEFAULT_AILAB_API_URL =
+    'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro';
+
 export const REQUIRED_RUNTIME_ENV = Object.freeze([
     'FRONTEND_URL',
     'SUPABASE_URL',
@@ -63,6 +66,8 @@ export const validateEnvironment = ({
 
     assertValidUrl('SUPABASE_URL', source.SUPABASE_URL);
     assertValidUrl('UPSTASH_REDIS_REST_URL', source.UPSTASH_REDIS_REST_URL);
+    const ailabApiUrl = source.AILAB_API_URL || DEFAULT_AILAB_API_URL;
+    assertValidUrl('AILAB_API_URL', ailabApiUrl, ['https:']);
 
     const frontendUrl = source.FRONTEND_URL || 'http://localhost:3000';
     assertValidUrl('FRONTEND_URL', frontendUrl);
@@ -80,6 +85,10 @@ export const validateEnvironment = ({
         assertValidUrl('DODO_API_BASE_URL', dodoBaseUrl, ['https:']);
         if (new URL(dodoBaseUrl).hostname.startsWith('test.')) {
             throw new Error('DODO_API_BASE_URL must use live mode in production');
+        }
+
+        if (new URL(ailabApiUrl).hostname !== 'www.ailabapi.com') {
+            throw new Error('AILAB_API_URL must use the official provider host in production');
         }
     }
 
@@ -99,7 +108,7 @@ const env = Object.freeze({
     AILAB_API_KEY: readEnv('AILABTOOLS_API_KEY'),
     AILAB_API_URL: readEnv(
         'AILAB_API_URL',
-        'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro'
+        DEFAULT_AILAB_API_URL
     ),
 
     OPENAI_API_KEY: readEnv('OPENAI_API_KEY'),

@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { scanSkinFile, isLimitError, isUnauthorizedError } from "@/lib/api";
+import {
+  inspectScanDimensions,
+  validateScanFile,
+} from "@/lib/scanFileValidation";
 
 /* ─── States ─────────────────────────────────────── */
 const STATE = {
@@ -91,12 +95,12 @@ function DropZone({ state, onFile, onDragEnter, onDragLeave, onDrop, fileInputRe
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,.jpg,.jpeg"
         className="absolute inset-0 opacity-0 cursor-pointer"
         style={{ zIndex: 5 }}
         onChange={e => {
           const file = e.target.files?.[0];
-          if (file) onFile(file);
+          if (file) void onFile(file);
         }}
       />
 
@@ -163,7 +167,7 @@ function DropZone({ state, onFile, onDragEnter, onDragLeave, onDrop, fileInputRe
           border: "1px solid rgba(200,196,214,0.4)",
         }}
       >
-        JPG · PNG · WEBP — max 8 MB
+        JPG · JPEG — max 8 MB
       </div>
     </div>
   );
@@ -345,8 +349,13 @@ function ErrorBanner({ message, onDismiss }) {
 
 /* ─── Scan Button ────────────────────────────────── */
 function ScanButton({ state, onClick }) {
-  const disabled = state === STATE.EMPTY || state === STATE.HOVER;
+  const disabled =
+    state === STATE.EMPTY ||
+    state === STATE.HOVER ||
+    state === STATE.SCANNING ||
+    state === STATE.DONE;
   const isScanning = state === STATE.SCANNING;
+  const isRetry = state === STATE.ERROR;
 
   return (
     <button
@@ -409,7 +418,7 @@ function ScanButton({ state, onClick }) {
         </>
       ) : (
         <>
-          Start AI Scan
+          {isRetry ? "Try scan again" : "Start AI Scan"}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="5" y1="12" x2="19" y2="12" />
             <polyline points="12 5 19 12 12 19" />
@@ -468,7 +477,18 @@ export default function ScanUploader({ onScanComplete, onLimitReached }) {
   const [imageFile, setImageFile] = useState(null);
   const [dragDepth, setDragDepth] = useState(0);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [uploadGuidance, setUploadGuidance] = useState(null);
   const fileInputRef = useRef(null);
+  const previewUrlRef = useRef(null);
+
+  const clearPreviewUrl = useCallback(() => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearPreviewUrl, [clearPreviewUrl]);
 
   /* Track drag depth to avoid flicker when hovering child elements */
   const handleDragEnter = useCallback(e => {
@@ -486,18 +506,41 @@ export default function ScanUploader({ onScanComplete, onLimitReached }) {
     });
   }, []);
 
-  const processFile = useCallback(file => {
-    if (!file || !file.type.startsWith("image/")) return;
+  const processFile = useCallback(async file => {
+    const validationError = validateScanFile(file);
+    if (validationError) {
+      setErrorMessage(validationError);
+      setUploadGuidance(null);
+      setState(STATE.EMPTY);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setErrorMessage(null);
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = e => {
-      setImageSrc(e.target.result);
+    setUploadGuidance(null);
+
+    try {
+      const dimensions = await inspectScanDimensions(file);
+      clearPreviewUrl();
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlRef.current = previewUrl;
+      setImageFile(file);
+      setImageSrc(previewUrl);
       setState(STATE.PREVIEW);
       setDragDepth(0);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+      if (dimensions.meetsRecommendation === false) {
+        setUploadGuidance(
+          "This photo is accepted, but a face at least 400px wide will give better results.",
+        );
+      }
+    } catch (error) {
+      setImageFile(null);
+      setImageSrc(null);
+      setState(STATE.EMPTY);
+      setErrorMessage(error?.message || "This JPG could not be read.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [clearPreviewUrl]);
 
   const handleDrop = useCallback(e => {
     e.preventDefault();
@@ -507,15 +550,17 @@ export default function ScanUploader({ onScanComplete, onLimitReached }) {
   }, [processFile]);
 
   const handleRemove = useCallback(() => {
+    clearPreviewUrl();
     setImageSrc(null);
     setImageFile(null);
     setErrorMessage(null);
+    setUploadGuidance(null);
     setState(STATE.EMPTY);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, []);
+  }, [clearPreviewUrl]);
 
   const handleScan = useCallback(async () => {
-    if (state !== STATE.PREVIEW || !imageFile) return;
+    if (![STATE.PREVIEW, STATE.ERROR].includes(state) || !imageFile) return;
 
     setState(STATE.SCANNING);
     setErrorMessage(null);
@@ -599,8 +644,22 @@ export default function ScanUploader({ onScanComplete, onLimitReached }) {
         />
       )}
 
+      {uploadGuidance && (
+        <p
+          role="status"
+          className="rounded-xl px-4 py-3 text-sm"
+          style={{
+            background: "rgba(255,240,212,0.75)",
+            border: "1px solid rgba(138,92,0,0.20)",
+            color: "#7a5200",
+          }}
+        >
+          {uploadGuidance}
+        </p>
+      )}
+
       {/* CTA Button */}
-      <ScanButton state={displayState} onClick={handleScan} />
+      <ScanButton state={state} onClick={handleScan} />
 
       {/* Trust row */}
       <TrustRow />

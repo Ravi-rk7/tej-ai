@@ -1,84 +1,158 @@
-import axios from 'axios';
-import FormData from 'form-data';
-import fs from 'fs';
-import { unlink } from 'fs/promises';
 import sharp from 'sharp';
-import env from '../config/env.js';
-import logger from '../utils/logger.js';
 
-const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${env.CLOUDINARY_CLOUD_NAME}/image/upload`;
-const MIN_FACE_SIZE = 400; // Minimum 400x400px for AILabTools
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+export const MIN_IMAGE_DIMENSION = 200;
+export const MAX_PROVIDER_DIMENSION = 4096;
+export const RECOMMENDED_FACE_DIMENSION = 400;
 
-const safeUnlink = async (filePath) => {
-    try {
-        await unlink(filePath);
-    } catch {
-        // File may already be removed; ignore cleanup failures.
-    }
+// Bound decompression work independently from the compressed upload size.
+const MAX_INPUT_DIMENSION = 8192;
+const MAX_INPUT_PIXELS = 40_000_000;
+
+const imageError = (message, statusCode, publicCode) => {
+    const error = new Error(message);
+    error.publicMessage = message;
+    error.statusCode = statusCode;
+    error.publicCode = publicCode;
+    return error;
 };
 
+const hasJpegSignature = (buffer) => (
+    buffer.length >= 3
+    && buffer[0] === 0xff
+    && buffer[1] === 0xd8
+    && buffer[2] === 0xff
+);
+
+const createPipeline = (buffer) => sharp(buffer, {
+    failOn: 'error',
+    limitInputPixels: MAX_INPUT_PIXELS,
+    sequentialRead: true,
+});
+
+const encodeNormalizedJpeg = async (buffer, quality) => createPipeline(buffer)
+    .rotate()
+    .resize({
+        width: MAX_PROVIDER_DIMENSION,
+        height: MAX_PROVIDER_DIMENSION,
+        fit: 'inside',
+        withoutEnlargement: true,
+    })
+    .jpeg({
+        quality,
+        chromaSubsampling: '4:2:0',
+        progressive: false,
+    })
+    // Sharp strips EXIF, ICC, XMP, and other metadata unless withMetadata is used.
+    .toBuffer();
+
 /**
- * Upload image to Cloudinary and return URL
+ * Validate an untrusted in-memory upload and return a provider-safe JPEG.
  */
-export const uploadToCloudinary = async (filePath) => {
-    try {
-        const form = new FormData();
-        form.append('file', fs.createReadStream(filePath));
-        form.append('upload_preset', 'tej_ai_scan'); // Must be pre-configured in Cloudinary
-        form.append('folder', 'tej_ai_scans');
-        form.append('resource_type', 'auto');
-
-        const response = await axios.post(CLOUDINARY_UPLOAD_URL, form, {
-            headers: form.getHeaders(),
-            timeout: 30000,
-        });
-
-        const publicUrl = response.data.secure_url;
-        const publicId = response.data.public_id;
-
-        logger.info('Image uploaded to Cloudinary', { publicId, size: response.data.bytes });
-
-        // Clean up local file
-        await safeUnlink(filePath);
-
-        return { url: publicUrl, publicId };
-    } catch (error) {
-        logger.error('Cloudinary upload error', {
-            message: error.message,
-            status: error.response?.status,
-        });
-
-        // Clean up local file on error
-        await safeUnlink(filePath);
-
-        throw new Error(`Image upload failed: ${error.message}`);
+export const processScanImage = async (inputBuffer) => {
+    if (!Buffer.isBuffer(inputBuffer) || inputBuffer.length === 0) {
+        throw imageError('A JPG image is required', 400, 'IMAGE_REQUIRED');
     }
-};
 
-/**
- * Validate image dimensions (face must be at least 400x400px)
- * This is a simplified validation; in production, use sharp or similar
- */
-export const validateImageDimensions = async (filePath) => {
+    if (inputBuffer.length > MAX_IMAGE_BYTES) {
+        throw imageError('Image must be 8 MB or smaller', 413, 'IMAGE_TOO_LARGE');
+    }
+
+    if (!hasJpegSignature(inputBuffer)) {
+        throw imageError('Only valid JPG or JPEG images are accepted', 415, 'IMAGE_TYPE_UNSUPPORTED');
+    }
+
+    let outputBuffer;
+
     try {
-        const metadata = await sharp(filePath).metadata();
+        const metadata = await createPipeline(inputBuffer).metadata();
         const width = metadata.width || 0;
         const height = metadata.height || 0;
 
-        if (width < MIN_FACE_SIZE || height < MIN_FACE_SIZE) {
-            throw new Error(
-                `Image is too small for analysis. Minimum required dimensions are ${MIN_FACE_SIZE}x${MIN_FACE_SIZE}px.`
+        if (metadata.format !== 'jpeg' || width === 0 || height === 0) {
+            throw imageError('The uploaded JPG could not be read', 415, 'IMAGE_CONTENT_INVALID');
+        }
+
+        if (width < MIN_IMAGE_DIMENSION || height < MIN_IMAGE_DIMENSION) {
+            throw imageError(
+                `Image dimensions must be at least ${MIN_IMAGE_DIMENSION}x${MIN_IMAGE_DIMENSION}px`,
+                422,
+                'IMAGE_DIMENSIONS_TOO_SMALL'
             );
         }
 
-        return true;
+        if (width > MAX_INPUT_DIMENSION || height > MAX_INPUT_DIMENSION) {
+            throw imageError(
+                `Image dimensions must not exceed ${MAX_INPUT_DIMENSION}px before resizing`,
+                422,
+                'IMAGE_DIMENSIONS_TOO_LARGE'
+            );
+        }
+
+        outputBuffer = await encodeNormalizedJpeg(inputBuffer, 88);
+
+        // A noisy image can grow during normalization. Re-encode once at a lower
+        // quality before rejecting it at the same provider byte boundary.
+        if (outputBuffer.length > MAX_IMAGE_BYTES) {
+            clearImageBuffer(outputBuffer);
+            outputBuffer = await encodeNormalizedJpeg(inputBuffer, 76);
+        }
+
+        if (outputBuffer.length > MAX_IMAGE_BYTES) {
+            clearImageBuffer(outputBuffer);
+            outputBuffer = undefined;
+            throw imageError('Processed image exceeds the 8 MB limit', 413, 'IMAGE_TOO_LARGE');
+        }
+
+        const outputMetadata = await sharp(outputBuffer, {
+            failOn: 'error',
+            limitInputPixels: MAX_INPUT_PIXELS,
+        }).metadata();
+
+        const outputWidth = outputMetadata.width || 0;
+        const outputHeight = outputMetadata.height || 0;
+
+        if (
+            outputMetadata.format !== 'jpeg'
+            || outputWidth < MIN_IMAGE_DIMENSION
+            || outputHeight < MIN_IMAGE_DIMENSION
+            || outputWidth > MAX_PROVIDER_DIMENSION
+            || outputHeight > MAX_PROVIDER_DIMENSION
+        ) {
+            clearImageBuffer(outputBuffer);
+            outputBuffer = undefined;
+            throw imageError('Image could not be normalized safely', 422, 'IMAGE_NORMALIZATION_FAILED');
+        }
+
+        return {
+            buffer: outputBuffer,
+            width: outputWidth,
+            height: outputHeight,
+            bytes: outputBuffer.length,
+            meetsRecommendedFaceCanvas: (
+                outputWidth >= RECOMMENDED_FACE_DIMENSION
+                && outputHeight >= RECOMMENDED_FACE_DIMENSION
+            ),
+        };
     } catch (error) {
-        logger.error('Image validation error', { message: error.message });
-        throw error;
+        clearImageBuffer(outputBuffer);
+
+        if (error.publicCode) {
+            throw error;
+        }
+
+        if (/pixel limit|exceeds.*limit/i.test(error.message)) {
+            throw imageError('Image resolution is too large to process safely', 422, 'IMAGE_DIMENSIONS_TOO_LARGE');
+        }
+
+        throw imageError('The uploaded JPG is corrupted or malformed', 415, 'IMAGE_CONTENT_INVALID');
     }
 };
 
-export default {
-    uploadToCloudinary,
-    validateImageDimensions,
+export const clearImageBuffer = (buffer) => {
+    if (Buffer.isBuffer(buffer)) {
+        buffer.fill(0);
+    }
 };
+
+export default { processScanImage, clearImageBuffer };

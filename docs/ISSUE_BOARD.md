@@ -15,13 +15,14 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 
 ## In progress
 
-No Day 2 issues are in progress.
+| ID       | Severity | Owner       | Target | Issue                                                    | Current evidence                     |
+| -------- | -------- | ----------- | ------ | -------------------------------------------------------- | ------------------------------------ |
+| SCAN-001 | P0       | Engineering | Day 3  | Bounded JPG multipart pipeline with transient processing | Local rejection and cleanup tests pass |
 
 ## Ready
 
 | ID           | Severity | Owner         | Target      | Issue                                                                     | Acceptance evidence               |
 | ------------ | -------- | ------------- | ----------- | ------------------------------------------------------------------------- | --------------------------------- |
-| SCAN-001     | P0       | Engineering   | Day 3       | Bounded JPG multipart pipeline with transient processing                  | Upload security tests             |
 | PROVIDER-001 | P0       | Engineering   | Day 4       | Current AILabTools contract and failure handling                          | 15 consented staging scans        |
 | ROUTINE-001  | P0       | Engineering   | Day 5       | Correct score, concern mapping, and safe routine fallback                 | Unit tests and fixtures           |
 | RESULT-001   | P0       | Engineering   | Day 6       | Persistent owner-only results and reload flow                             | E2E result tests                  |
