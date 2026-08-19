@@ -7,6 +7,15 @@ import { z } from 'zod';
  * Must be the last middleware registered
  */
 export const errorMiddleware = (err, req, res, _next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return errorResponse(
+            res,
+            'Invalid request body',
+            400,
+            'INVALID_JSON'
+        );
+    }
+
     // Normalize known validation errors
     if (err instanceof z.ZodError) {
         const firstMessage = err.errors?.[0]?.message || 'Validation failed';

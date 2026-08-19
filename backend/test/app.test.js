@@ -69,6 +69,22 @@ test('unknown routes return a stable 404 error code', async () => {
     });
 });
 
+test('malformed JSON returns a stable public error without parser details', async () => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{',
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, {
+        success: false,
+        error: 'Invalid request body',
+        code: 'INVALID_JSON',
+    });
+});
+
 test('protected endpoints reject missing authorization before external calls', async () => {
     const response = await fetch(`${baseUrl}/api/history`);
     const body = await response.json();
