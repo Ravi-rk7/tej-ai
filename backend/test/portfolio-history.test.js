@@ -910,3 +910,7 @@ test('builds the final heatmap window 239', () => {
 test('keeps the rules source immutable 240', () => {
   assert.equal(generateRulesRoutine().source, 'rules');
 });
+test('normalizes the final routine step 241', () => {
+  const routine = normalizeStoredRoutine({ morning: [{ name: 'SPF' }], night: [] });
+  assert.equal(routine.morning[0].name, 'SPF');
+});
