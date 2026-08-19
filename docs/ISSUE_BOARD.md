@@ -15,9 +15,7 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 
 ## In progress
 
-| ID       | Severity | Owner       | Target | Issue                                                    | Current evidence                     |
-| -------- | -------- | ----------- | ------ | -------------------------------------------------------- | ------------------------------------ |
-| SCAN-001 | P0       | Engineering | Day 3  | Bounded JPG multipart pipeline with transient processing | Local rejection and cleanup tests pass |
+No Day 3 issues are in progress.
 
 ## Ready
 
@@ -49,3 +47,4 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 | SECRETS-001    | P0       | 2026-08-19 | Keep credentials ignored and add CI secret scan     | Only env examples tracked; Gitleaks CI job configured        |
 | OPS-001        | P0       | 2026-08-19 | Deploy isolated staging frontend, API, and database | URLs and smoke results in `docs/STAGING_RELEASE.md`          |
 | AUTH-001       | P0       | 2026-08-20 | Production authentication and protected routes      | Day 2 gate in `docs/STAGING_RELEASE.md`                      |
+| SCAN-001       | P0       | 2026-08-20 | Bounded JPG multipart pipeline with transient processing | Day 3 gate in `docs/STAGING_RELEASE.md`                   |
