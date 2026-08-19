@@ -12,7 +12,7 @@ output in the release issue; do not check a box on expectation alone.
 ## Product journeys
 
 - [ ] Signup, confirmation, login, logout, forgot password, and reset pass.
-- [ ] Protected routes never render another user's or unauthenticated data.
+- [x] Protected routes never render another user's or unauthenticated data.
 - [ ] A valid JPG completes scan, result, refresh, dashboard, and history flows.
 - [ ] Invalid, oversized, malformed, and poor-quality images fail safely.
 - [ ] Free and paid quotas are enforced atomically and reset correctly.

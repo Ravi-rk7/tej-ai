@@ -1,6 +1,6 @@
 # Staging release record
 
-Status: **Day 2 auth infrastructure configured; application deploy pending**
+Status: **Deployed — Day 2 staging gate passed**
 
 This record must contain no credentials, tokens, emails, or provider payloads.
 
@@ -10,9 +10,9 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 | Backend URL                | `https://tej-ai-staging.up.railway.app` |
 | Supabase project reference | `lnybwyddnbcylmdrxcxg`                  |
 | Migration versions         | `202608180001`, `202608200001`          |
-| Release commit             | `010469b`                               |
-| Rollback commit            | `710d027`                               |
-| Deployed at (UTC)          | `2026-08-19T17:57:41Z`                  |
+| Release commit             | `bd8eb74`                               |
+| Rollback commit            | `63d6795`                               |
+| Deployed at (UTC)          | `2026-08-19T20:50:42Z`                  |
 
 ## Verification
 
@@ -24,6 +24,10 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 - [x] Two staging users cannot read each other's records.
 - [x] Browser user cannot insert scans or mutate subscriptions.
 - [x] Build output and logs contain no secrets.
+- [x] Invalid credentials return a generic error with rate-limit headers.
+- [x] Malformed auth JSON returns the stable `INVALID_JSON` contract.
+- [x] Protected pages render no private content before login redirects.
+- [x] Login, authenticated redirects, settings, and logout pass in staging.
 
 ## Day 2 authentication evidence
 
@@ -38,8 +42,14 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 - A temporary two-user staging test verified owner-only database and history
   API reads, denied browser writes, active free entitlements, and backend
   service writes. All temporary users and rows were removed after the test.
-- Backend lint and 12 automated tests pass; frontend lint and production build
-  pass locally. Staging application deployment and authenticated browser
-  journey tests are pending a Day 2 release commit.
-- Local browser checks confirmed dashboard, scan, results, history, and settings
-  render no protected content before redirecting unauthenticated users to login.
+- Backend lint and 13 automated tests pass; frontend lint and production build
+  pass locally. GitHub CI passed on the deployed application commits.
+- Local and deployed browser checks confirmed dashboard, scan, results, history,
+  and settings render no protected content before redirecting unauthenticated
+  users to login.
+- A disposable confirmed staging account verified the signup entitlement trigger,
+  login, guest-only redirects, confirmed account settings, logout, and post-logout
+  route protection. The account and its cascaded entitlement were removed.
+- End-to-end mailbox delivery and clicking confirmation/reset links remain part of
+  the later release journey; no external test inbox was used for this staging gate.
+- Only staging services were changed. Production was not deployed or modified.
