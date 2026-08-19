@@ -7,6 +7,7 @@ import errorMiddleware from './middleware/errorMiddleware.js';
 import scanRoutes from './routes/scan.js';
 import historyRoutes from './routes/history.js';
 import paymentRoutes from './routes/payment.js';
+import authRoutes from './routes/auth.js';
 
 const app = express();
 const allowedOrigins = new Set(
@@ -32,6 +33,7 @@ const corsOptions = {
 };
 
 app.disable('x-powered-by');
+app.set('trust proxy', 1);
 
 app.use((req, res, next) => {
     logger.http(`${req.method} ${req.path}`, { ip: req.ip });
@@ -56,6 +58,7 @@ app.get('/api/health', (req, res) => successResponse(res, {
 app.use('/api', scanRoutes);
 app.use('/api', historyRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api', authRoutes);
 
 app.use((req, res) => res.status(404).json({
     success: false,

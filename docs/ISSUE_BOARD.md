@@ -1,6 +1,6 @@
 # TejAi MVP issue board
 
-Updated: 2026-08-19
+Updated: 2026-08-20
 
 Severity definitions:
 
@@ -15,13 +15,14 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 
 ## In progress
 
-No Day 1 issues are in progress.
+| ID       | Severity | Owner       | Target | Issue                                           | Current evidence                                  |
+| -------- | -------- | ----------- | ------ | ----------------------------------------------- | ------------------------------------------------- |
+| AUTH-001 | P0       | Engineering | Day 2  | Production authentication and protected routes | Local suite and staging RLS/entitlement test pass |
 
 ## Ready
 
 | ID           | Severity | Owner         | Target      | Issue                                                                     | Acceptance evidence               |
 | ------------ | -------- | ------------- | ----------- | ------------------------------------------------------------------------- | --------------------------------- |
-| AUTH-001     | P0       | Engineering   | Day 2       | Production authentication and protected routes                            | Auth and cross-user tests         |
 | SCAN-001     | P0       | Engineering   | Day 3       | Bounded JPG multipart pipeline with transient processing                  | Upload security tests             |
 | PROVIDER-001 | P0       | Engineering   | Day 4       | Current AILabTools contract and failure handling                          | 15 consented staging scans        |
 | ROUTINE-001  | P0       | Engineering   | Day 5       | Correct score, concern mapping, and safe routine fallback                 | Unit tests and fixtures           |

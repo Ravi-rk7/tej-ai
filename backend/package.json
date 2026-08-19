@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test --test-concurrency=1 test/app.test.js test/env.test.js",
-    "test:watch": "node --test --watch --test-concurrency=1 test/app.test.js test/env.test.js",
+    "test": "node --test --test-concurrency=1 test/app.test.js test/authRateLimit.test.js test/env.test.js",
+    "test:watch": "node --test --watch --test-concurrency=1 test/app.test.js test/authRateLimit.test.js test/env.test.js",
+    "test:rls": "node scripts/verify-rls-isolation.js",
     "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",
     "format": "prettier --write .",

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 /* ─── Nav items config ──────────────────────────── */
 const NAV_ITEMS = [
@@ -69,18 +70,17 @@ const NAV_ITEMS = [
 
 const FOOTER_ITEMS = [
   {
-    href: "/support",
-    label: "Support",
+    href: "/settings",
+    label: "Settings",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.7 1.7 0 00.34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0015 19.4a1.7 1.7 0 00-1 .6 1.7 1.7 0 00-.4 1.1V21h-4v-.09A1.7 1.7 0 008.6 19.4a1.7 1.7 0 00-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-.6-1 1.7 1.7 0 00-1.1-.4H3v-4h.09A1.7 1.7 0 004.6 8.6a1.7 1.7 0 00-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001-.6 1.7 1.7 0 00.4-1.1V3h4v.09A1.7 1.7 0 0015.4 4.6a1.7 1.7 0 001.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0019.4 9c.14.37.36.7.64.98.28.28.62.5.99.62H21v4h-.09a1.7 1.7 0 00-1.51.4z" />
       </svg>
     ),
   },
   {
-    href: "/",
+    href: null,
     label: "Logout",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -147,7 +147,7 @@ function NavLink({ href, label, icon, active, onClick }) {
 }
 
 /* ─── Sidebar inner content ─────────────────────── */
-function SidebarContent({ pathname, onNavClick }) {
+function SidebarContent({ pathname, onNavClick, onLogout }) {
   return (
     <div
       style={{
@@ -301,37 +301,72 @@ function SidebarContent({ pathname, onNavClick }) {
           padding: "0 16px",
         }}
       >
-        {FOOTER_ITEMS.map(({ href, label, icon }) => (
-          <Link
-            key={label}
-            href={href}
-            onClick={onNavClick}
-            style={{
+        {FOOTER_ITEMS.map(({ href, label, icon }) => {
+          const itemStyle = {
               display: "flex",
               alignItems: "center",
               gap: 12,
+              width: "100%",
               padding: "11px 20px",
               borderRadius: 14,
+              border: "none",
+              background: "transparent",
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontWeight: 500,
               fontSize: 13,
               color: "#787585",
               textDecoration: "none",
               transition: "all 0.2s ease",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = "#e3dffe";
-              e.currentTarget.style.color = "#5845cb";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#787585";
-            }}
-          >
-            <span style={{ flexShrink: 0 }}>{icon}</span>
-            <span>{label}</span>
-          </Link>
-        ))}
+              cursor: "pointer",
+          };
+          const onMouseEnter = (event) => {
+              const element = event.currentTarget;
+              element.style.background = "#e3dffe";
+              element.style.color = "#5845cb";
+          };
+          const onMouseLeave = (event) => {
+              const element = event.currentTarget;
+              element.style.background = "transparent";
+              element.style.color = "#787585";
+          };
+          const content = (
+            <>
+              <span style={{ flexShrink: 0 }}>{icon}</span>
+              <span>{label}</span>
+            </>
+          );
+
+          if (!href) {
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  onNavClick();
+                  onLogout();
+                }}
+                style={itemStyle}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+              >
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={label}
+              href={href}
+              onClick={onNavClick}
+              style={itemStyle}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+            >
+              {content}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -408,7 +443,7 @@ function MobileTopBar({ onOpen, pathname }) {
 }
 
 /* ─── Mobile Drawer (slide-in from left) ─────────── */
-function MobileDrawer({ open, onClose, pathname }) {
+function MobileDrawer({ open, onClose, pathname, onLogout }) {
   return (
     <>
       {/* Backdrop */}
@@ -468,7 +503,7 @@ function MobileDrawer({ open, onClose, pathname }) {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
-        <SidebarContent pathname={pathname} onNavClick={onClose} />
+        <SidebarContent pathname={pathname} onNavClick={onClose} onLogout={onLogout} />
       </div>
     </>
   );
@@ -477,7 +512,14 @@ function MobileDrawer({ open, onClose, pathname }) {
 /* ─── Main Sidebar export ───────────────────────── */
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await signOut();
+    router.replace("/login");
+  };
 
   return (
     <>
@@ -497,7 +539,7 @@ export default function Sidebar() {
         }}
         className="hidden md:block"
       >
-        <SidebarContent pathname={pathname} onNavClick={() => {}} />
+        <SidebarContent pathname={pathname} onNavClick={() => {}} onLogout={handleLogout} />
       </aside>
 
       {/* ── Mobile: sticky top bar + slide-in drawer ── */}
@@ -507,6 +549,7 @@ export default function Sidebar() {
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
           pathname={pathname}
+          onLogout={handleLogout}
         />
       </div>
     </>

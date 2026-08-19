@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
+import { useAuth } from "@/components/auth/AuthProvider";
 import PaywallModal from "@/components/paywall/PaywallModal";
 import { getHistory, isLimitError } from "@/lib/api";
-import { supabase } from "@/lib/supabaseClient";
 
 /* ─── Format ISO date to human readable ─────────── */
 function formatDate(isoString) {
@@ -138,7 +137,7 @@ function FetchError({ message, onRetry }) {
 
 /* ─── Page ───────────────────────────────────────── */
 export default function HistoryPage() {
-    const router = useRouter();
+    const { loading: sessionLoading, session } = useAuth();
     const [showPaywall, setShowPaywall] = useState(false);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -162,25 +161,32 @@ export default function HistoryPage() {
     };
 
     useEffect(() => {
+        if (sessionLoading || !session) return undefined;
+
         let active = true;
-
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!active) {
-                return;
-            }
-
-            if (!session) {
-                router.push("/login");
-                return;
-            }
-
-            fetchHistory();
-        });
+        getHistory()
+            .then((data) => {
+                if (active) setHistory(Array.isArray(data) ? data : []);
+            })
+            .catch((requestError) => {
+                if (!active) return;
+                if (isLimitError(requestError)) {
+                    setShowPaywall(true);
+                } else {
+                    setError(
+                        requestError?.message
+                        || "Failed to load history. Please try again."
+                    );
+                }
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
 
         return () => {
             active = false;
         };
-    }, [router]);
+    }, [session, sessionLoading]);
 
     const isBlurred = showPaywall;
 

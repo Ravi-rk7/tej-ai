@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
-import { supabase } from "@/lib/supabaseClient";
 
 const scoreHistory = [
     { date: "Apr 10, 2026", score: 68 },
@@ -204,7 +202,6 @@ function ScoreHistoryCards({ entries }) {
 }
 
 export default function DashboardPage() {
-    const router = useRouter();
     const [upgradeSuccess] = useState(() => {
         if (typeof window === "undefined") {
             return false;
@@ -213,14 +210,6 @@ export default function DashboardPage() {
         return new URLSearchParams(window.location.search).get("upgrade") === "success";
     });
     const hasHistory = scoreHistory.length > 0;
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) {
-                router.push("/login");
-            }
-        });
-    }, [router]);
 
     return (
         <AppLayout>

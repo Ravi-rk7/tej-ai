@@ -1,4 +1,5 @@
 import "./globals.css";
+import AuthProvider from "@/components/auth/AuthProvider";
 
 export const metadata = {
   title: "TejAi — AI Skincare Coach",
@@ -15,7 +16,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      <body className="min-h-full flex flex-col antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

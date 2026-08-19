@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabaseClient";
+
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
 
@@ -12,91 +14,33 @@ export class ApiError extends Error {
 
 export const isUnauthorizedError = (error) => error?.status === 401;
 
-const parseCookieValue = (cookieName) => {
-    if (typeof document === "undefined") {
+export const getJwtToken = async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
         return null;
     }
 
-    const token = document.cookie
-        .split(";")
-        .map((item) => item.trim())
-        .find((item) => item.startsWith(`${cookieName}=`));
+    const expiresAtMs = (data.session.expires_at || 0) * 1000;
+    if (expiresAtMs > Date.now() + 60_000) {
+        return data.session.access_token;
+    }
 
-    if (!token) {
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError || !refreshed.session) {
+        await supabase.auth.signOut({ scope: "local" });
         return null;
     }
 
-    return decodeURIComponent(token.split("=").slice(1).join("="));
-};
-
-const extractSupabaseAccessToken = (rawValue) => {
-    if (!rawValue) {
-        return null;
-    }
-
-    try {
-        const parsed = JSON.parse(rawValue);
-
-        if (Array.isArray(parsed)) {
-            return (
-                parsed?.[0]?.access_token ||
-                parsed?.[0]?.currentSession?.access_token ||
-                null
-            );
-        }
-
-        return (
-            parsed?.access_token ||
-            parsed?.currentSession?.access_token ||
-            parsed?.session?.access_token ||
-            null
-        );
-    } catch {
-        return null;
-    }
-};
-
-export const getJwtToken = () => {
-    if (typeof window === "undefined") {
-        return null;
-    }
-
-    const directToken =
-        window.localStorage.getItem("tejai_jwt") ||
-        window.localStorage.getItem("supabase_jwt") ||
-        window.localStorage.getItem("access_token");
-
-    if (directToken) {
-        return directToken;
-    }
-
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-        const key = window.localStorage.key(index);
-        if (!key) {
-            continue;
-        }
-
-        if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
-            const token = extractSupabaseAccessToken(window.localStorage.getItem(key));
-            if (token) {
-                return token;
-            }
-        }
-    }
-
-    return (
-        parseCookieValue("access_token") ||
-        parseCookieValue("sb-access-token") ||
-        null
-    );
+    return refreshed.session.access_token;
 };
 
 const request = async (path, options = {}) => {
-    const token = getJwtToken();
+    const { authenticated = true, ...fetchOptions } = options;
+    const token = authenticated ? await getJwtToken() : null;
 
     const headers = {
         "Content-Type": "application/json",
-        ...(options.headers || {}),
+        ...(fetchOptions.headers || {}),
     };
 
     if (token) {
@@ -104,13 +48,22 @@ const request = async (path, options = {}) => {
     }
 
     const response = await fetch(`${API_BASE_URL}${path}`, {
-        ...options,
+        ...fetchOptions,
         headers,
     });
 
     const body = await response
         .json()
         .catch(() => ({ success: false, error: "Invalid server response" }));
+
+    if (response.status === 401 && authenticated) {
+        await supabase.auth.signOut({ scope: "local" });
+        throw new ApiError(
+            "Your session expired. Please sign in again.",
+            401,
+            body
+        );
+    }
 
     if (!response.ok || body?.success === false) {
         throw new ApiError(
@@ -162,6 +115,34 @@ export const scanSkinFile = async (file) => {
         }),
     });
 };
+
+export const loginWithPassword = async ({ email, password }) => {
+    const data = await request("/api/auth/login", {
+        method: "POST",
+        authenticated: false,
+        body: JSON.stringify({ email, password }),
+    });
+
+    const { error } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+    });
+
+    if (error) {
+        throw new ApiError("We could not start your session. Please try again.", 401);
+    }
+
+    return data.user;
+};
+
+export const requestPasswordReset = async (email) => request(
+    "/api/auth/password-reset",
+    {
+        method: "POST",
+        authenticated: false,
+        body: JSON.stringify({ email }),
+    }
+);
 
 export const getHistory = async () =>
     request("/api/history", {

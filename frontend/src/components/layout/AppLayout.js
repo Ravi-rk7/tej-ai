@@ -1,8 +1,10 @@
 import Sidebar from "@/components/layout/Sidebar";
+import { RequireAuth } from "@/components/auth/AuthProvider";
 
 export default function AppLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: "#fcf8ff" }}>
+    <RequireAuth>
+      <div className="min-h-screen flex flex-col md:flex-row" style={{ background: "#fcf8ff" }}>
       {/* Sidebar (handles its own desktop/mobile rendering) */}
       <Sidebar />
 
@@ -19,6 +21,7 @@ export default function AppLayout({ children }) {
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </RequireAuth>
   );
 }

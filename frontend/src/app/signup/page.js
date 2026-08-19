@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { GuestOnly } from "@/components/auth/AuthProvider";
+import {
+    getPasswordRuleResults,
+    getSafeAuthError,
+    validatePassword,
+} from "@/lib/authValidation";
 import { supabase } from "@/lib/supabaseClient";
 
 function AuthInput(props) {
@@ -53,24 +59,36 @@ export default function SignupPage() {
             return;
         }
 
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            setError(passwordError);
+            return;
+        }
+
         setLoading(true);
 
         const { error: signUpError } = await supabase.auth.signUp({
-            email,
+            email: email.trim().toLowerCase(),
             password,
+            options: {
+                emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+            },
         });
 
         setLoading(false);
 
         if (signUpError) {
-            setError(signUpError.message);
+            setError(getSafeAuthError(signUpError));
             return;
         }
 
         setSuccess("Check your email to confirm your account");
     };
 
+    const passwordRuleResults = getPasswordRuleResults(password);
+
     return (
+        <GuestOnly>
         <main className="min-h-screen px-5 py-16" style={{ background: "#fcf8ff" }}>
             <section className="mx-auto mt-10 w-full max-w-md rounded-[30px] p-7 sm:p-8"
                 style={{
@@ -103,14 +121,27 @@ export default function SignupPage() {
                         onChange={(event) => setPassword(event.target.value)}
                         placeholder="Password"
                         autoComplete="new-password"
+                        minLength={12}
                         required
                     />
+                    <ul className="grid grid-cols-1 gap-1 px-1 sm:grid-cols-2" aria-label="Password requirements">
+                        {passwordRuleResults.map(({ label, passed }) => (
+                            <li
+                                key={label}
+                                className="text-xs font-medium"
+                                style={{ color: passed ? "#1a6645" : "#787585" }}
+                            >
+                                {passed ? "✓" : "○"} {label}
+                            </li>
+                        ))}
+                    </ul>
                     <AuthInput
                         type="password"
                         value={confirmPassword}
                         onChange={(event) => setConfirmPassword(event.target.value)}
                         placeholder="Confirm password"
                         autoComplete="new-password"
+                        minLength={12}
                         required
                     />
 
@@ -136,5 +167,6 @@ export default function SignupPage() {
                 </p>
             </section>
         </main>
+        </GuestOnly>
     );
 }

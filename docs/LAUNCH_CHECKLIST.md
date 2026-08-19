@@ -24,7 +24,7 @@ output in the release issue; do not check a box on expectation alone.
 - [ ] Gitleaks and dependency audits pass on the release commit.
 - [ ] No production or staging credentials are committed or shared between environments.
 - [ ] Supabase service-role key exists only in backend hosting secrets.
-- [ ] Two-user RLS and cross-user API isolation tests pass.
+- [x] Two-user RLS and cross-user API isolation tests pass in staging.
 - [ ] Upload, auth, CORS, rate-limit, replay, webhook, and quota-race matrix passes.
 - [ ] Logs contain no tokens, emails, image bytes, or raw provider payloads.
 - [ ] Images are processed transiently and retention behavior is verified.

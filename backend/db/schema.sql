@@ -68,6 +68,39 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.create_free_subscription_for_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    INSERT INTO public.subscriptions (user_id, plan, status)
+    VALUES (NEW.id, 'free', 'active')
+    ON CONFLICT (user_id) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS create_free_subscription_after_signup ON auth.users;
+CREATE TRIGGER create_free_subscription_after_signup
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.create_free_subscription_for_new_user();
+
+REVOKE EXECUTE ON FUNCTION public.create_free_subscription_for_new_user()
+    FROM PUBLIC, anon, authenticated;
+
+-- Backfill users created before the entitlement trigger existed.
+INSERT INTO public.subscriptions (user_id, plan, status)
+SELECT users.id, 'free', 'active'
+FROM auth.users AS users
+LEFT JOIN public.subscriptions AS subscriptions
+    ON subscriptions.user_id = users.id
+WHERE subscriptions.user_id IS NULL
+ON CONFLICT (user_id) DO NOTHING;
+
 DROP TRIGGER IF EXISTS set_skin_analysis_updated_at ON public.skin_analysis;
 CREATE TRIGGER set_skin_analysis_updated_at
     BEFORE UPDATE ON public.skin_analysis
@@ -119,3 +152,12 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
 
 GRANT SELECT ON TABLE public.skin_analysis TO authenticated;
 GRANT SELECT ON TABLE public.subscriptions TO authenticated;
+
+-- The API server uses the service role for trusted persistence and payment
+-- updates. RLS is still enforced for browser-facing anon/authenticated roles.
+GRANT SELECT, INSERT, UPDATE, DELETE
+    ON TABLE public.skin_analysis TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE
+    ON TABLE public.subscriptions TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE
+    ON TABLE public.payment_webhook_events TO service_role;

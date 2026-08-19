@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { GuestOnly } from "@/components/auth/AuthProvider";
+import { loginWithPassword } from "@/lib/api";
 
 function AuthInput(props) {
     return (
@@ -42,28 +43,35 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [passwordUpdated] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return new URLSearchParams(window.location.search).get("password") === "updated";
+    });
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError("");
         setLoading(true);
 
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        setLoading(false);
-
-        if (signInError) {
-            setError(signInError.message);
-            return;
+        try {
+            await loginWithPassword({ email: email.trim(), password });
+            const requestedPath = new URLSearchParams(window.location.search).get("next");
+            const destination = requestedPath?.startsWith("/")
+                && !requestedPath.startsWith("//")
+                ? requestedPath
+                : "/dashboard";
+            router.replace(destination);
+        } catch (signInError) {
+            setError(
+                signInError?.message || "We could not sign you in. Please try again."
+            );
+        } finally {
+            setLoading(false);
         }
-
-        router.push("/dashboard");
     };
 
     return (
+        <GuestOnly>
         <main className="min-h-screen px-5 py-16" style={{ background: "#fcf8ff" }}>
             <section className="mx-auto mt-10 w-full max-w-md rounded-[30px] p-7 sm:p-8"
                 style={{
@@ -90,6 +98,7 @@ export default function LoginPage() {
                         autoComplete="email"
                         required
                     />
+
                     <AuthInput
                         type="password"
                         value={password}
@@ -98,6 +107,22 @@ export default function LoginPage() {
                         autoComplete="current-password"
                         required
                     />
+
+                    <div className="text-right">
+                        <Link
+                            href="/forgot-password"
+                            className="text-sm font-bold"
+                            style={{ color: "#5845cb" }}
+                        >
+                            Forgot password?
+                        </Link>
+                    </div>
+
+                    {passwordUpdated && !error && (
+                        <p className="text-sm font-semibold" style={{ color: "#1a6645" }}>
+                            Password updated. Sign in with your new password.
+                        </p>
+                    )}
 
                     {error && (
                         <p className="text-sm font-semibold" style={{ color: "#ba1a1a" }}>
@@ -116,5 +141,6 @@ export default function LoginPage() {
                 </p>
             </section>
         </main>
+        </GuestOnly>
     );
 }
