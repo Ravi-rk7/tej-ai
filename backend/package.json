@@ -21,7 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.41.0",
-    "@upstash/ratelimit": "^1.0.0",
+    "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.26.0",
     "axios": "^1.19.0",
     "cors": "^2.8.5",
