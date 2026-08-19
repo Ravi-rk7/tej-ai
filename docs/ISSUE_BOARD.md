@@ -15,9 +15,7 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 
 ## In progress
 
-| ID      | Severity | Owner       | Target | Issue                                               | Acceptance evidence                                 |
-| ------- | -------- | ----------- | ------ | --------------------------------------------------- | --------------------------------------------------- |
-| OPS-001 | P0       | Engineering | Day 1  | Deploy isolated staging frontend, API, and database | URLs and smoke results in `docs/STAGING_RELEASE.md` |
+No Day 1 issues are in progress.
 
 ## Ready
 
@@ -42,10 +40,11 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 
 ## Done
 
-| ID             | Severity | Completed  | Issue                                             | Evidence                                                     |
-| -------------- | -------- | ---------- | ------------------------------------------------- | ------------------------------------------------------------ |
-| FOUNDATION-001 | P0       | 2026-08-19 | Standardize API port and frontend URL             | Port 3001 in config, docs, smoke test, and frontend template |
-| FOUNDATION-002 | P0       | 2026-08-19 | Version schema and remove table-name fallback     | Timestamped migration and single `skin_analysis` constant    |
-| FOUNDATION-003 | P1       | 2026-08-19 | Add backend ESLint/tests and root quality scripts | Local lint/tests/build pass                                  |
-| SUPPLY-001     | P0       | 2026-08-19 | Resolve known vulnerable production dependencies  | Backend and frontend audits report zero findings             |
-| SECRETS-001    | P0       | 2026-08-19 | Keep credentials ignored and add CI secret scan   | Only env examples tracked; Gitleaks CI job configured        |
+| ID             | Severity | Completed  | Issue                                               | Evidence                                                     |
+| -------------- | -------- | ---------- | --------------------------------------------------- | ------------------------------------------------------------ |
+| FOUNDATION-001 | P0       | 2026-08-19 | Standardize API port and frontend URL               | Port 3001 in config, docs, smoke test, and frontend template |
+| FOUNDATION-002 | P0       | 2026-08-19 | Version schema and remove table-name fallback       | Timestamped migration and single `skin_analysis` constant    |
+| FOUNDATION-003 | P1       | 2026-08-19 | Add backend ESLint/tests and root quality scripts   | Local lint/tests/build pass                                  |
+| SUPPLY-001     | P0       | 2026-08-19 | Resolve known vulnerable production dependencies    | Backend and frontend audits report zero findings             |
+| SECRETS-001    | P0       | 2026-08-19 | Keep credentials ignored and add CI secret scan     | Only env examples tracked; Gitleaks CI job configured        |
+| OPS-001        | P0       | 2026-08-19 | Deploy isolated staging frontend, API, and database | URLs and smoke results in `docs/STAGING_RELEASE.md`          |
