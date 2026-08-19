@@ -903,3 +903,7 @@ test('filters an invalid portfolio observation 238', () => {
   const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-238', createdAt: '2026-08-20T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [], observations: [null] });
   assert.deepEqual(result.observations, []);
 });
+test('builds the final heatmap window 239', () => {
+  const map = buildHeatmap({ today: '2026-08-25', trackingStartedOn: '2026-08-25', weeks: 13 });
+  assert.equal(map.days.length, 91);
+});
