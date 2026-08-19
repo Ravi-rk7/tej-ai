@@ -1,0 +1,10 @@
+{
+  "request_id": "fixture-request-service",
+  "log_id": "fixture-log-service",
+  "error_detail": {
+    "status_code": 503,
+    "code": "AI_SERVICE_ERROR",
+    "code_message": "AI service is unavailable.",
+    "message": "Temporary provider failure."
+  }
+}

@@ -9,6 +9,7 @@
     "start": "node server.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "test:watch": "node --test --watch --test-concurrency=1 test/*.test.js",
+    "test:provider": "node scripts/verify-ailab-provider.js",
     "test:rls": "node scripts/verify-rls-isolation.js",
     "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",

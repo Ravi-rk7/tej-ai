@@ -1,0 +1,91 @@
+{
+  "request_id": "fixture-request-success",
+  "log_id": "fixture-log-success",
+  "error_detail": {
+    "code": "",
+    "code_message": "",
+    "message": ""
+  },
+  "face_rectangle": {
+    "top": 92,
+    "left": 108,
+    "width": 640,
+    "height": 640
+  },
+  "result": {
+    "skin_type": {
+      "skin_type": 3,
+      "details": {
+        "0": { "value": 0, "confidence": 0.04 },
+        "1": { "value": 0, "confidence": 0.08 },
+        "2": { "value": 0, "confidence": 0.1 },
+        "3": { "value": 1, "confidence": 0.78 }
+      }
+    },
+    "score_info": {
+      "dark_circle_score": 91,
+      "skin_type_score": 48,
+      "wrinkle_score": 96,
+      "oily_intensity_score": 82,
+      "pores_score": 84,
+      "blackhead_score": 93,
+      "acne_score": 76,
+      "sensitivity_score": 88,
+      "melanin_score": 68,
+      "water_score": 86,
+      "rough_score": 89,
+      "total_score": 84,
+      "pores_type_score": {
+        "pores_forehead_score": 82,
+        "pores_leftcheek_score": 85,
+        "pores_rightcheek_score": 84,
+        "pores_jaw_score": 85
+      },
+      "dark_circle_type_score": {
+        "left_dark_circle_score": 95,
+        "right_dark_circle_score": 96
+      }
+    },
+    "image_quality": {
+      "face_ratio": 0.63,
+      "face_orientation": {
+        "yaw": 1.4,
+        "pitch": -2.1,
+        "roll": 0.3
+      },
+      "face_rect": {
+        "top": 92,
+        "left": 108,
+        "width": 640,
+        "height": 640
+      },
+      "hair_occlusion": 0.08,
+      "glasses": 0
+    },
+    "acne": {
+      "count": 5,
+      "rectangle": [],
+      "confidence": [],
+      "polygon": []
+    },
+    "melanin": {
+      "brown_area": 0.22,
+      "melanin_concentration": 32,
+      "brown_forehead": 0.12,
+      "brown_rightcheek": 0.28,
+      "brown_leftcheek": 0.25
+    },
+    "rough": {
+      "rough_severity": 11,
+      "rough_area": 0.14,
+      "rough_forehead": { "area": 0.1 },
+      "rough_rightcheek": { "area": 0.16 },
+      "rough_leftcheek": { "area": 0.15 },
+      "rough_jaw": { "area": 0.12 }
+    },
+    "sensitivity": {
+      "sensitivity_area": 0.12,
+      "sensitivity_intensity": 12
+    }
+  }
+}

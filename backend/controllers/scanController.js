@@ -10,35 +10,41 @@ import { releaseScanImage } from '../middleware/imageUploadMiddleware.js';
  * POST /api/scan
  * Analyze one validated, normalized, transient in-memory JPEG.
  */
-export const scan = asyncHandler(async (req, res) => {
+export const createScanHandler = ({
+    analyzeSkin = runSkinAnalysis,
+    calculateScore = calculateGlowScore,
+    generateRoutine = generateAIRoutine,
+    saveAnalysis = saveSkinAnalysis,
+    scanLogger = logger,
+    releaseImage = releaseScanImage,
+} = {}) => async (req, res) => {
     const userId = req.user.id;
 
     try {
-        logger.info('Scan request started', {
-            userId,
+        scanLogger.info('Scan request started', {
             width: req.scanImage.width,
             height: req.scanImage.height,
         });
 
         let skinAnalysis;
         try {
-            skinAnalysis = await runSkinAnalysis(req.scanImage.buffer);
+            skinAnalysis = await analyzeSkin(req.scanImage.buffer);
         } catch (serviceError) {
             const statusCode = serviceError.statusCode || 502;
             const message = serviceError.publicMessage || 'Skin analysis service is unavailable';
-            logger.warn('Skin analysis service failed', {
-                userId,
+            scanLogger.warn('Skin analysis service failed', {
                 statusCode,
-                error: serviceError.message,
+                category: serviceError.category || 'unknown',
+                code: serviceError.publicCode,
             });
             return errorResponse(res, message, statusCode, serviceError.publicCode);
         }
 
         const { skinType, concerns, metrics } = skinAnalysis;
-        const { score: glowScore, trend } = await calculateGlowScore(metrics, userId);
-        const routine = await generateAIRoutine(skinType, concerns);
+        const { score: glowScore, trend } = await calculateScore(metrics, userId);
+        const routine = await generateRoutine(skinType, concerns);
 
-        await saveSkinAnalysis(userId, {
+        await saveAnalysis(userId, {
             glowScore,
             skinType,
             concerns,
@@ -47,7 +53,7 @@ export const scan = asyncHandler(async (req, res) => {
             faceMaps: {},
         });
 
-        logger.info('Scan completed successfully', { userId, glowScore, trend });
+        scanLogger.info('Scan completed successfully', { glowScore, trend });
 
         return successResponse(res, {
             glowScore,
@@ -60,14 +66,15 @@ export const scan = asyncHandler(async (req, res) => {
                 : {}),
         });
     } catch (error) {
-        logger.error('Scan endpoint failed', {
-            userId,
-            message: error.message,
+        scanLogger.error('Scan endpoint failed', {
+            category: error.category || 'internal',
         });
         return errorResponse(res, 'Unable to process scan request', 500);
     } finally {
-        releaseScanImage(req);
+        releaseImage(req);
     }
-});
+};
+
+export const scan = asyncHandler(createScanHandler());
 
 export default { scan };

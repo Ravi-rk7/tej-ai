@@ -1,0 +1,10 @@
+{
+  "request_id": "fixture-request-quality",
+  "log_id": "fixture-log-quality",
+  "error_detail": {
+    "status_code": 422,
+    "code": "ERROR_BLURRY_FACE",
+    "code_message": "The face in the image is blurry.",
+    "message": "Face quality did not meet requirements."
+  }
+}
