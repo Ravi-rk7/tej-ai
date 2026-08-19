@@ -11,10 +11,11 @@ export const successResponse = (res, data, statusCode = 200) => {
 /**
  * Format error response
  */
-export const errorResponse = (res, error, statusCode = 500) => {
+export const errorResponse = (res, error, statusCode = 500, code) => {
     return res.status(statusCode).json({
         success: false,
         error,
+        ...(code ? { code } : {}),
     });
 };
 

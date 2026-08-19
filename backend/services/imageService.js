@@ -20,7 +20,7 @@ const safeUnlink = async (filePath) => {
 /**
  * Upload image to Cloudinary and return URL
  */
-export const uploadToCloudinary = async (filePath, fileName) => {
+export const uploadToCloudinary = async (filePath) => {
     try {
         const form = new FormData();
         form.append('file', fs.createReadStream(filePath));

@@ -1,6 +1,11 @@
 # TejAi Backend — Production Implementation
 
-A production-grade Node.js backend for TejAi, an AI-powered skincare SaaS.
+> **Status:** production hardening is in progress. Use the repository-root
+> `README.md`, ordered database migrations, and CI results as the current source
+> of truth. External scan and payment flows are not launch-ready until their
+> acceptance tests pass.
+
+Node.js backend for TejAi, an AI-powered skincare SaaS.
 
 ## 🚀 Quick Start
 
@@ -202,7 +207,7 @@ curl http://localhost:3001/api/health
 
 ```bash
 curl -X POST http://localhost:3001/api/scan \
-  -H "Authorization: Bearer YOUR_JWT" \
+  -H "Authorization: Bearer ${TEJAI_ACCESS_TOKEN}" \
   -F "image=@/path/to/image.jpg"
 ```
 
@@ -210,7 +215,7 @@ curl -X POST http://localhost:3001/api/scan \
 
 ```bash
 curl http://localhost:3001/api/history \
-  -H "Authorization: Bearer YOUR_JWT"
+  -H "Authorization: Bearer ${TEJAI_ACCESS_TOKEN}"
 ```
 
 ---

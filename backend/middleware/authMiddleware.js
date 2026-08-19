@@ -4,7 +4,19 @@ import env from '../config/env.js';
 import logger from '../utils/logger.js';
 import { errorResponse } from '../utils/responseFormatter.js';
 
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+let supabase;
+
+const getSupabase = () => {
+    if (!supabase) {
+        if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('Supabase server credentials are not configured');
+        }
+        supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false },
+        });
+    }
+    return supabase;
+};
 
 const AuthHeaderSchema = z
     .string()
@@ -21,7 +33,7 @@ export const authMiddleware = async (req, res, next) => {
         const token = authHeader.slice(7);
 
         // Verify token with Supabase
-        const { data, error } = await supabase.auth.getUser(token);
+        const { data, error } = await getSupabase().auth.getUser(token);
         if (error || !data.user) {
             logger.warn(`Auth failed: ${error?.message || 'Invalid token'}`);
             return errorResponse(res, 'Unauthorized', 401);

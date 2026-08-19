@@ -7,10 +7,13 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test --test-concurrency=1 test/app.test.js test/env.test.js",
+    "test:watch": "node --test --watch --test-concurrency=1 test/app.test.js test/env.test.js",
     "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm test"
   },
   "keywords": ["skincare", "ai", "saas", "nodejs", "express"],
   "author": "TejAi Team",
@@ -19,23 +22,25 @@
     "@supabase/supabase-js": "^2.41.0",
     "@upstash/ratelimit": "^1.0.0",
     "@upstash/redis": "^1.26.0",
-    "axios": "^1.6.5",
-    "cloudinary": "^1.40.0",
+    "axios": "^1.19.0",
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "form-data": "^4.0.0",
-    "multer": "^1.4.5-lts.1",
-    "sharp": "^0.33.5",
+    "express": "^5.2.1",
+    "form-data": "^4.0.6",
+    "multer": "^2.2.0",
+    "sharp": "^0.35.3",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
-    "eslint": "^8.55.0",
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^16.4.0",
     "prettier": "^3.1.1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.9.0"
   }
 }

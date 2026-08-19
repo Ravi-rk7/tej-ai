@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: new URL('../.env', import.meta.url) });
 
-const BASE = `http://localhost:${process.env.PORT || 4000}`;
+const BASE = `http://localhost:${process.env.PORT || 3001}`;
 
 async function run() {
     console.log('TejAi Backend Smoke Test\n');

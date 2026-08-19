@@ -4,18 +4,28 @@ import env from '../config/env.js';
 import logger from '../utils/logger.js';
 import { errorResponse } from '../utils/responseFormatter.js';
 
-// Initialize Upstash Redis client
-const redis = new Redis({
-    url: env.UPSTASH_REDIS_REST_URL,
-    token: env.UPSTASH_REDIS_REST_TOKEN,
-});
+let ratelimit;
 
-// Create rate limiter: 10 requests per minute per user
-const ratelimit = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(10, '1 m'),
-    analytics: true,
-});
+const getRateLimiter = () => {
+    if (!ratelimit) {
+        if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
+            throw new Error('Upstash Redis credentials are not configured');
+        }
+
+        const redis = new Redis({
+            url: env.UPSTASH_REDIS_REST_URL,
+            token: env.UPSTASH_REDIS_REST_TOKEN,
+        });
+
+        ratelimit = new Ratelimit({
+            redis,
+            limiter: Ratelimit.slidingWindow(10, '1 m'),
+            analytics: true,
+        });
+    }
+
+    return ratelimit;
+};
 
 /**
  * Rate limit middleware - sliding window 10 requests/minute per user
@@ -27,7 +37,7 @@ export const rateLimitMiddleware = async (req, res, next) => {
         }
 
         const key = `ratelimit:${req.user.id}`;
-        const { success, remaining, reset } = await ratelimit.limit(key);
+        const { success, remaining, reset } = await getRateLimiter().limit(key);
         const nowMs = Date.now();
         const retryAfterSeconds = Math.max(0, Math.ceil((reset - nowMs) / 1000));
 

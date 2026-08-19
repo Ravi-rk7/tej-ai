@@ -1,75 +1,120 @@
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-const REQUIRED_ENV = [
+export const REQUIRED_RUNTIME_ENV = Object.freeze([
+    'FRONTEND_URL',
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
-    'CLOUDINARY_CLOUD_NAME',
-    'CLOUDINARY_API_KEY',
-    'CLOUDINARY_API_SECRET',
     'AILABTOOLS_API_KEY',
     'OPENAI_API_KEY',
     'UPSTASH_REDIS_REST_URL',
     'UPSTASH_REDIS_REST_TOKEN',
     'DODO_API_KEY',
     'DODO_WEBHOOK_SECRET',
-];
+    'DODO_PRODUCT_ID_STARTER',
+    'DODO_PRODUCT_ID_GROWTH',
+    'DODO_PRODUCT_ID_PRO',
+]);
 
-const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
-if (missing.length > 0) {
-    console.error('Missing required environment variables:');
-    missing.forEach((key) => console.error(`   - ${key}`));
-    console.error('   Copy backend/.env.example -> backend/.env and fill in values.');
-    process.exit(1);
-}
-
-const getEnv = (key, defaultValue = null) => {
+const readEnv = (key, defaultValue = '') => {
     const value = process.env[key];
-    if (!value && !defaultValue) {
-        throw new Error(`Missing required environment variable: ${key}`);
+    return typeof value === 'string' && value.trim() ? value.trim() : defaultValue;
+};
+
+const parsePort = (value) => {
+    const port = Number.parseInt(value, 10);
+    return Number.isInteger(port) && port > 0 && port <= 65535 ? port : 3001;
+};
+
+const assertValidUrl = (name, value, protocols = ['http:', 'https:']) => {
+    try {
+        const parsed = new URL(value);
+        if (!protocols.includes(parsed.protocol)) {
+            throw new Error(`unsupported protocol ${parsed.protocol}`);
+        }
+    } catch {
+        throw new Error(`${name} must be a valid ${protocols.join(' or ')} URL`);
     }
-    return value || defaultValue;
 };
 
-export default {
-    // Node
-    NODE_ENV: getEnv('NODE_ENV', 'development'),
-    PORT: parseInt(getEnv('PORT', '3001'), 10),
-    API_BASE_URL: getEnv('API_BASE_URL', 'http://localhost:3001'),
-    FRONTEND_URL: getEnv('FRONTEND_URL', 'http://localhost:3000'),
+/**
+ * Validate runtime configuration without terminating the process during imports.
+ * Keeping validation explicit makes the app testable while production still fails
+ * closed before the HTTP listener starts.
+ */
+export const validateEnvironment = ({
+    source = process.env,
+    required = REQUIRED_RUNTIME_ENV,
+} = {}) => {
+    const missing = required.filter((key) => {
+        const value = source[key];
+        return typeof value !== 'string' || !value.trim();
+    });
 
-    // Supabase
-    SUPABASE_URL: getEnv('SUPABASE_URL'),
-    SUPABASE_ANON_KEY: getEnv('SUPABASE_ANON_KEY', ''),
-    SUPABASE_SERVICE_ROLE_KEY: getEnv('SUPABASE_SERVICE_ROLE_KEY'),
+    if (missing.length > 0) {
+        const error = new Error(
+            `Missing required environment variables: ${missing.join(', ')}`
+        );
+        error.code = 'ENV_VALIDATION_ERROR';
+        error.missing = missing;
+        throw error;
+    }
 
-    // Cloudinary
-    CLOUDINARY_CLOUD_NAME: getEnv('CLOUDINARY_CLOUD_NAME'),
-    CLOUDINARY_API_KEY: getEnv('CLOUDINARY_API_KEY'),
-    CLOUDINARY_API_SECRET: getEnv('CLOUDINARY_API_SECRET'),
+    assertValidUrl('SUPABASE_URL', source.SUPABASE_URL);
+    assertValidUrl('UPSTASH_REDIS_REST_URL', source.UPSTASH_REDIS_REST_URL);
 
-    // AILab Tools
-    AILAB_API_KEY: getEnv('AILABTOOLS_API_KEY'),
-    AILAB_API_URL: getEnv('AILAB_API_URL', 'https://api.ailabtools.com/v1'),
+    const frontendUrl = source.FRONTEND_URL || 'http://localhost:3000';
+    assertValidUrl('FRONTEND_URL', frontendUrl);
 
-    // OpenAI
-    OPENAI_API_KEY: getEnv('OPENAI_API_KEY'),
+    if (source.NODE_ENV === 'production') {
+        const parsedFrontendUrl = new URL(frontendUrl);
+        if (
+            parsedFrontendUrl.protocol !== 'https:'
+            || ['localhost', '127.0.0.1', '::1'].includes(parsedFrontendUrl.hostname)
+        ) {
+            throw new Error('FRONTEND_URL must be a public HTTPS URL in production');
+        }
 
-    // Upstash Redis
-    UPSTASH_REDIS_REST_URL: getEnv('UPSTASH_REDIS_REST_URL'),
-    UPSTASH_REDIS_REST_TOKEN: getEnv('UPSTASH_REDIS_REST_TOKEN'),
+        const dodoBaseUrl = source.DODO_API_BASE_URL || 'https://test.dodopayments.com';
+        assertValidUrl('DODO_API_BASE_URL', dodoBaseUrl, ['https:']);
+        if (new URL(dodoBaseUrl).hostname.startsWith('test.')) {
+            throw new Error('DODO_API_BASE_URL must use live mode in production');
+        }
+    }
 
-    // Dodo Payments
-    DODO_API_KEY: getEnv('DODO_API_KEY'),
-    DODO_WEBHOOK_SECRET: getEnv('DODO_WEBHOOK_SECRET'),
-    DODO_PRODUCT_ID_STARTER: getEnv('DODO_PRODUCT_ID_STARTER', ''),
-    DODO_PRODUCT_ID_GROWTH: getEnv('DODO_PRODUCT_ID_GROWTH', ''),
-    DODO_PRODUCT_ID_PRO: getEnv('DODO_PRODUCT_ID_PRO', ''),
-    DODO_API_BASE_URL: getEnv('DODO_API_BASE_URL', 'https://api.dodopayments.com'),
-
-    // Supabase Storage
-    SUPABASE_STORAGE_BUCKET: getEnv('SUPABASE_STORAGE_BUCKET', 'scan-references'),
-
-    // Logging
-    LOG_LEVEL: getEnv('LOG_LEVEL', 'info'),
+    return true;
 };
+
+const env = Object.freeze({
+    NODE_ENV: readEnv('NODE_ENV', 'development'),
+    PORT: parsePort(readEnv('PORT', '3001')),
+    API_BASE_URL: readEnv('API_BASE_URL', 'http://localhost:3001'),
+    FRONTEND_URL: readEnv('FRONTEND_URL', 'http://localhost:3000'),
+
+    SUPABASE_URL: readEnv('SUPABASE_URL'),
+    SUPABASE_ANON_KEY: readEnv('SUPABASE_ANON_KEY'),
+    SUPABASE_SERVICE_ROLE_KEY: readEnv('SUPABASE_SERVICE_ROLE_KEY'),
+
+    AILAB_API_KEY: readEnv('AILABTOOLS_API_KEY'),
+    AILAB_API_URL: readEnv(
+        'AILAB_API_URL',
+        'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro'
+    ),
+
+    OPENAI_API_KEY: readEnv('OPENAI_API_KEY'),
+
+    UPSTASH_REDIS_REST_URL: readEnv('UPSTASH_REDIS_REST_URL'),
+    UPSTASH_REDIS_REST_TOKEN: readEnv('UPSTASH_REDIS_REST_TOKEN'),
+
+    DODO_API_KEY: readEnv('DODO_API_KEY'),
+    DODO_WEBHOOK_SECRET: readEnv('DODO_WEBHOOK_SECRET'),
+    DODO_PRODUCT_ID_STARTER: readEnv('DODO_PRODUCT_ID_STARTER'),
+    DODO_PRODUCT_ID_GROWTH: readEnv('DODO_PRODUCT_ID_GROWTH'),
+    DODO_PRODUCT_ID_PRO: readEnv('DODO_PRODUCT_ID_PRO'),
+    DODO_API_BASE_URL: readEnv('DODO_API_BASE_URL', 'https://test.dodopayments.com'),
+
+    LOG_LEVEL: readEnv('LOG_LEVEL', 'info'),
+});
+
+export default env;

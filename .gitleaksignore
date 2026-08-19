@@ -1,0 +1,8 @@
+# Verified documentation placeholders in the repository's initial commit.
+# Each entry is tied to that exact historical finding; future matches still fail.
+710d02702edf7d4aafef90c240f6e0e8e080acae:backend/DEPLOYMENT.md:curl-auth-header:308
+710d02702edf7d4aafef90c240f6e0e8e080acae:backend/DEPLOYMENT.md:curl-auth-header:337
+710d02702edf7d4aafef90c240f6e0e8e080acae:backend/DEPLOYMENT.md:curl-auth-header:357
+710d02702edf7d4aafef90c240f6e0e8e080acae:backend/QUICKSTART.md:curl-auth-header:111
+710d02702edf7d4aafef90c240f6e0e8e080acae:backend/README.md:curl-auth-header:198
+710d02702edf7d4aafef90c240f6e0e8e080acae:backend/README.md:curl-auth-header:212

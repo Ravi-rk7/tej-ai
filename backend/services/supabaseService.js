@@ -1,15 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import env from '../config/env.js';
 
-if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required on the server');
-}
+let supabase;
 
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+const getSupabase = () => {
+    if (!supabase) {
+        if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('Supabase server credentials are not configured');
+        }
+        supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false },
+        });
+    }
+    return supabase;
+};
 
-const SCAN_REFERENCE_BUCKET = env.SUPABASE_STORAGE_BUCKET;
-const PRIMARY_SCAN_TABLE = 'SkinAnalysis';
-const FALLBACK_SCAN_TABLE = 'skin_analysis';
+const SCAN_TABLE = 'skin_analysis';
 
 const buildDbError = (publicMessage, statusCode = 500, details) => {
     const error = new Error(publicMessage);
@@ -21,20 +27,9 @@ const buildDbError = (publicMessage, statusCode = 500, details) => {
     return error;
 };
 
-const isRelationMissingError = (error) =>
-    error?.code === '42P01' || /relation .* does not exist/i.test(error?.message || '');
-
-const runWithScanTableFallback = async (executor) => {
-    const primaryResult = await executor(PRIMARY_SCAN_TABLE);
-    if (!primaryResult.error || !isRelationMissingError(primaryResult.error)) {
-        return primaryResult;
-    }
-    return executor(FALLBACK_SCAN_TABLE);
-};
-
 /**
  * 1. saveScan(data)
- * Writes to SkinAnalysis table with server-side service role key.
+ * Writes to skin_analysis with the server-side service role key.
  */
 export const saveScan = async (data) => {
     try {
@@ -46,13 +41,11 @@ export const saveScan = async (data) => {
             routine: data.routine ?? {},
         };
 
-        const { data: savedRow, error } = await runWithScanTableFallback((tableName) =>
-            supabase
-                .from(tableName)
+        const { data: savedRow, error } = await getSupabase()
+                .from(SCAN_TABLE)
                 .insert(payload)
                 .select('id, user_id, image_url, glow_score, concerns, routine, created_at')
-                .single()
-        );
+                .single();
 
         if (error) {
             throw buildDbError('Failed to save scan', 503, error.message);
@@ -73,13 +66,11 @@ export const saveScan = async (data) => {
  */
 export const getUserScans = async (user_id) => {
     try {
-        const { data, error } = await runWithScanTableFallback((tableName) =>
-            supabase
-                .from(tableName)
+        const { data, error } = await getSupabase()
+                .from(SCAN_TABLE)
                 .select('id, user_id, image_url, glow_score, concerns, routine, created_at')
                 .eq('user_id', user_id)
-                .order('created_at', { ascending: false })
-        );
+                .order('created_at', { ascending: false });
 
         if (error) {
             throw buildDbError('Failed to fetch scans', 503, error.message);
@@ -100,15 +91,13 @@ export const getUserScans = async (user_id) => {
  */
 export const getLastScan = async (user_id) => {
     try {
-        const { data, error } = await runWithScanTableFallback((tableName) =>
-            supabase
-                .from(tableName)
+        const { data, error } = await getSupabase()
+                .from(SCAN_TABLE)
                 .select('id, user_id, image_url, glow_score, concerns, routine, created_at')
                 .eq('user_id', user_id)
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .maybeSingle()
-        );
+                .maybeSingle();
 
         if (error) {
             throw buildDbError('Failed to fetch latest scan', 503, error.message);
@@ -172,14 +161,12 @@ export const getLatestScan = async (userId) => {
  */
 export const getPreviousScan = async (userId) => {
     try {
-        const { data, error } = await runWithScanTableFallback((tableName) =>
-            supabase
-                .from(tableName)
+        const { data, error } = await getSupabase()
+                .from(SCAN_TABLE)
                 .select('glow_score, created_at')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
-                .limit(2)
-        );
+                .limit(2);
 
         if (error) {
             throw buildDbError('Failed to fetch previous scan', 503, error.message);
@@ -198,7 +185,7 @@ export const getPreviousScan = async (userId) => {
  * Get user's subscription info
  */
 export const getUserSubscription = async (userId) => {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
@@ -209,32 +196,10 @@ export const getUserSubscription = async (userId) => {
 };
 
 /**
- * Persist Cloudinary URL as a small JSON blob in Supabase Storage for durable record-keeping.
- */
-export const saveImageReferenceToStorage = async (userId, scanId, imageUrl) => {
-    const objectPath = `${userId}/${scanId}.json`;
-    const payload = JSON.stringify({
-        scanId,
-        imageUrl,
-        savedAt: new Date().toISOString(),
-    });
-
-    const { error } = await supabase.storage
-        .from(SCAN_REFERENCE_BUCKET)
-        .upload(objectPath, payload, {
-            contentType: 'application/json',
-            upsert: true,
-        });
-
-    if (error) throw error;
-    return objectPath;
-};
-
-/**
  * Upsert subscription row based on Dodo webhook events.
  */
 export const upsertSubscription = async (userId, subscriptionData) => {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
         .from('subscriptions')
         .upsert(
             {
@@ -261,6 +226,5 @@ export default {
     getLatestScan,
     getPreviousScan,
     getUserSubscription,
-    saveImageReferenceToStorage,
     upsertSubscription,
 };

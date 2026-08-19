@@ -109,7 +109,7 @@ const token = data.session.access_token;
 
 ```bash
 curl -X POST http://localhost:3001/api/scan \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer ${TEJAI_ACCESS_TOKEN}" \
   -F "image=@path/to/image.jpg"
 ```
 

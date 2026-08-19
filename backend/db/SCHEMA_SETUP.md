@@ -1,21 +1,27 @@
-# TejAi - Database Setup
+# TejAi database setup
 
-## How to apply the schema
+The database is managed through ordered SQL migrations in `db/migrations/`.
+`schema.sql` is a readable snapshot for a brand-new project; migration files are
+the source of truth for deployed environments.
 
-1. Open your Supabase project at supabase.com
-2. Go to SQL Editor in the left sidebar
-3. Click "New query"
-4. Copy the entire contents of `schema.sql`
-5. Paste into the editor and click "Run"
-6. Verify in Table Editor that `skin_analysis` and `subscriptions` tables appear
+## Staging setup
 
-## Verify RLS is enabled
+1. Create a dedicated Supabase staging project.
+2. Open **SQL Editor** in that project.
+3. Run `migrations/202608180001_initial_production_schema.sql` once.
+4. Confirm that `skin_analysis`, `subscriptions`, and
+   `payment_webhook_events` exist.
+5. Confirm RLS is enabled on all three tables.
+6. Confirm authenticated users have SELECT-only access to their own scans and
+   subscription. They must not be able to insert or update entitlements.
 
-In Table Editor, select `skin_analysis`, then click the "Policies" tab.
-You should see the scan policies listed. Repeat for `subscriptions`.
+## Rules
 
-## After running schema
+- Never edit an already-deployed migration. Add a new timestamped migration.
+- Apply and verify every migration in staging before production.
+- Keep `SUPABASE_SERVICE_ROLE_KEY` on the backend only.
+- Do not paste production credentials into the SQL editor or migration files.
+- Take a database backup before applying production migrations.
 
-The backend uses the `SERVICE_ROLE_KEY` to bypass RLS when writing scan results
-and updating subscriptions server-side. Make sure `SUPABASE_SERVICE_ROLE_KEY`
-is set in `backend/.env`. Never expose this key in the frontend.
+The backend service role performs trusted writes and bypasses RLS. Browser
+clients are intentionally read-only for scans and subscription entitlements.

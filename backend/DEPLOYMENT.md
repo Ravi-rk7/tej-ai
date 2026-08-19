@@ -1,6 +1,10 @@
 # Deployment & Setup Guide for TejAi Backend
 
-Complete step-by-step guide to set up and deploy the TejAi backend.
+> **Legacy notes:** use the repository-root `STAGING_DEPLOYMENT.md` for the
+> active deployment process. Provider instructions below may not match current
+> API contracts.
+
+Historical step-by-step setup notes for the TejAi backend.
 
 ---
 
@@ -148,7 +152,7 @@ This preset is referenced in `services/imageService.js`.
 
 ```bash
 curl -X POST https://api.ailabtools.com/v1/skin-analysis \
-  -H "Authorization: Bearer YOUR_KEY" \
+  -H "Authorization: Bearer ${TEJAI_PROVIDER_KEY}" \
   -F "image=@test_image.jpg"
 ```
 
@@ -306,7 +310,7 @@ First, get a JWT token from Supabase Auth (or use existing user token).
 
 ```bash
 curl -X POST http://localhost:3001/api/scan \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer ${TEJAI_ACCESS_TOKEN}" \
   -F "image=@/path/to/image.jpg"
 ```
 
@@ -335,7 +339,7 @@ Expected response:
 
 ```bash
 curl http://localhost:3001/api/history \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  -H "Authorization: Bearer ${TEJAI_ACCESS_TOKEN}"
 ```
 
 Expected response:
@@ -355,7 +359,7 @@ Expected response:
 
 ```bash
 curl -X POST http://localhost:3001/api/create-subscription \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer ${TEJAI_ACCESS_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"plan": "starter"}'
 ```

@@ -3,7 +3,19 @@ import env from '../config/env.js';
 import logger from '../utils/logger.js';
 import { errorResponse } from '../utils/responseFormatter.js';
 
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+let supabase;
+
+const getSupabase = () => {
+    if (!supabase) {
+        if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error('Supabase server credentials are not configured');
+        }
+        supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false },
+        });
+    }
+    return supabase;
+};
 
 const SCAN_LIMITS = {
     free: 1,
@@ -12,15 +24,11 @@ const SCAN_LIMITS = {
     pro: 50,
 };
 
-const PRIMARY_SCAN_TABLE = 'SkinAnalysis';
-const FALLBACK_SCAN_TABLE = 'skin_analysis';
+const SCAN_TABLE = 'skin_analysis';
 
-const isRelationMissingError = (error) =>
-    error?.code === '42P01' || /relation .* does not exist/i.test(error?.message || '');
-
-const countScansThisMonth = async (tableName, userId, monthStartIso) => {
-    return supabase
-        .from(tableName)
+const countScansThisMonth = async (userId, monthStartIso) => {
+    return getSupabase()
+        .from(SCAN_TABLE)
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .gte('created_at', monthStartIso);
@@ -36,7 +44,7 @@ export const scanLimitMiddleware = async (req, res, next) => {
         }
 
         // Get user's subscription
-        const { data: subscription, error: subError } = await supabase
+        const { data: subscription, error: subError } = await getSupabase()
             .from('subscriptions')
             .select('plan, current_period_end')
             .eq('user_id', req.user.id)
@@ -55,21 +63,10 @@ export const scanLimitMiddleware = async (req, res, next) => {
         const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
         const monthStartIso = monthStart.toISOString();
 
-        let { count, error: countError } = await countScansThisMonth(
-            PRIMARY_SCAN_TABLE,
+        const { count, error: countError } = await countScansThisMonth(
             req.user.id,
             monthStartIso
         );
-
-        if (countError && isRelationMissingError(countError)) {
-            const fallbackResult = await countScansThisMonth(
-                FALLBACK_SCAN_TABLE,
-                req.user.id,
-                monthStartIso
-            );
-            count = fallbackResult.count;
-            countError = fallbackResult.error;
-        }
 
         if (countError) {
             throw countError;
@@ -79,7 +76,7 @@ export const scanLimitMiddleware = async (req, res, next) => {
 
         if (scansThisMonth >= limit) {
             logger.warn(`Scan limit reached for user ${req.user.id} (${scansThisMonth}/${limit})`);
-            return errorResponse(res, 'Scan limit reached', 403);
+            return errorResponse(res, 'Scan limit reached', 403, 'SCAN_LIMIT_REACHED');
         }
 
         // Attach info to request for logging
@@ -87,7 +84,7 @@ export const scanLimitMiddleware = async (req, res, next) => {
         next();
     } catch (err) {
         logger.error('Scan limit middleware error', err);
-        return errorResponse(res, 'Unable to verify scan limit', 503);
+        return errorResponse(res, 'Unable to verify scan limit', 503, 'SCAN_LIMIT_UNAVAILABLE');
     }
 };
 
