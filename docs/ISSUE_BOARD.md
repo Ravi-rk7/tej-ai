@@ -17,7 +17,7 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 
 | ID           | Severity | Owner       | Target | Issue                                            | Current evidence                                      |
 | ------------ | -------- | ----------- | ------ | ------------------------------------------------ | ----------------------------------------------------- |
-| PROVIDER-001 | P0       | Engineering | Day 4  | Current AILabTools contract and failure handling | Automated contract gate passed; 15 consented scans pending |
+| PROVIDER-001 | P0       | Engineering | Day 4  | Current AILabTools contract and failure handling | Contract and live quality path passed; 15 consented scans pending |
 
 ## Ready
 

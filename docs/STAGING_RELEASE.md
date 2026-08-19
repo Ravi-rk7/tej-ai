@@ -1,6 +1,6 @@
 # Staging release record
 
-Status: **Deployed — Day 3 staging gate passed**
+Status: **Deployed — Day 4 implementation live; consented-image gate pending**
 
 This record must contain no credentials, tokens, emails, or provider payloads.
 
@@ -10,9 +10,9 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 | Backend URL                | `https://tej-ai-staging.up.railway.app` |
 | Supabase project reference | `lnybwyddnbcylmdrxcxg`                  |
 | Migration versions         | `202608180001`, `202608200001`          |
-| Release commit             | `d762d0c`                               |
-| Rollback commit            | `c8f9a16`                               |
-| Deployed at (UTC)          | `2026-08-19T21:19:09Z`                  |
+| Release commit             | `b487f2a`                               |
+| Rollback commit            | `818c056`                               |
+| Deployed at (UTC)          | `2026-08-19T21:52:48Z`                  |
 
 ## Verification
 
@@ -33,6 +33,10 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 - [x] Normalized images have bounded resolution, corrected orientation, and no metadata.
 - [x] Source and normalized buffers are zeroed after request processing.
 - [x] Rejection logs contain no base64 or image payloads.
+- [x] Current AILabTools v1.7.1 success and error envelopes have explicit schemas.
+- [x] A live staging no-face request returns meaningful HTTP 422 guidance.
+- [x] Provider failure exits before scan persistence.
+- [ ] Run the 15-image representative consented staging set.
 
 ## Day 2 authentication evidence
 
@@ -95,3 +99,39 @@ This record must contain no credentials, tokens, emails, or provider payloads.
   gate; Day 3 intentionally made no analysis call with a synthetic or
   unconsented image.
 - Only staging services were changed. Production was not deployed or modified.
+
+## Day 4 provider integration evidence
+
+- The adapter follows the current multipart request, public response envelope,
+  numeric skin-type mapping, `score_info`, image-quality, acne, pigmentation,
+  roughness, and sensitivity field definitions documented by AILabTools v1.7.1.
+- Provider health scores are preserved in a named `scoreInfo` domain object. The
+  legacy application metrics remain explicitly converted to issue severity for
+  compatibility until the Day 5 score module consumes `scoreInfo` directly.
+- Network, timeout, and 5xx operations receive one bounded retry. Five
+  consecutive unavailable operations open a 30-second circuit, followed by a
+  single half-open recovery probe. Quality and invalid-image errors do not trip
+  the circuit.
+- Provider logs record only operation, outcome, attempt, latency, category, and
+  provider code. Tests assert that image bytes, API keys, provider request IDs,
+  and user identifiers are absent.
+- Synthetic documented fixtures cover success, image-quality failure, service
+  failure, and malformed success responses. The local gate passes backend lint
+  and 35 tests, frontend lint and 4 tests, the production frontend build, and
+  zero-vulnerability production dependency audits.
+- GitHub CI run 28 passed the secret scan plus backend and frontend quality
+  gates for `b487f2a`. Railway reports the matching deployment successful, and
+  the deployed health endpoint returns HTTP 200.
+- The previously configured AILabTools key was revoked. A separate active
+  `TejAi Staging` key was created and applied only to Railway staging; no
+  production variable or deployment was changed.
+- An authenticated synthetic 600x600 non-face JPEG reached the live provider
+  path and returned HTTP 422 `SCAN_IMAGE_QUALITY` with clear no-face retake
+  guidance. The temporary account had zero scan rows before and after the
+  failure, then was deleted with its cascaded data.
+- `npm run test:provider -- <consented-jpeg-directory>` now provides the
+  privacy-safe acceptance runner. No consented portrait set exists in the
+  workspace, so the required 15 representative scans remain the only open Day
+  4 gate and PROVIDER-001 remains in progress.
+- Only staging services and a staging-specific provider key were changed.
+  Production was not deployed or modified.
