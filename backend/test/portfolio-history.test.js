@@ -917,3 +917,6 @@ test('normalizes the final routine step 241', () => {
 test('rejects a null routine 242', () => {
   assert.equal(normalizeStoredRoutine(null), null);
 });
+test('maps final image quality guidance 243', () => {
+  assert.equal(buildQualityWarnings({ imageQuality: { yaw: 31 } })[0].code, 'FACE_YAW_ABOVE_RECOMMENDATION');
+});
