@@ -914,3 +914,6 @@ test('normalizes the final routine step 241', () => {
   const routine = normalizeStoredRoutine({ morning: [{ name: 'SPF' }], night: [] });
   assert.equal(routine.morning[0].name, 'SPF');
 });
+test('rejects a null routine 242', () => {
+  assert.equal(normalizeStoredRoutine(null), null);
+});
