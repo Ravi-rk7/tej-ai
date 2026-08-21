@@ -10,9 +10,16 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 | Backend URL                | `https://tej-ai-staging.up.railway.app` |
 | Supabase project reference | `lnybwyddnbcylmdrxcxg`                  |
 | Migration versions         | `202608180001`, `202608200001`          |
-| Release commit             | `b487f2a`                               |
-| Rollback commit            | `818c056`                               |
-| Deployed at (UTC)          | `2026-08-19T21:52:48Z`                  |
+| Release commit             | `0c064db`                               |
+| Rollback commit            | `b487f2a`                               |
+| Deployed at (UTC)          | `2026-08-21T19:59:15Z`                  |
+
+## Current Day 5 deployment observation
+
+The Day 5 release commit `0c064db` is present on the documented staging
+frontend and API endpoints. The API health endpoint returned HTTP 200 at
+`2026-08-21T19:59:15Z`, and the homepage served the updated cosmetic-wellness
+copy. The consented portrait scan and persisted-row verification remain open.
 
 ## Verification
 
@@ -37,6 +44,8 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 - [x] A live staging no-face request returns meaningful HTTP 422 guidance.
 - [x] Provider failure exits before scan persistence.
 - [ ] Run the 15-image representative consented staging set.
+- [ ] Run one explicitly consented Day 5 portrait and verify the persisted
+  Glow Score, concern details, routine, and sanitized fields.
 
 ## Day 2 authentication evidence
 
