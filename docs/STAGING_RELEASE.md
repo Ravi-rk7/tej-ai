@@ -100,14 +100,48 @@ This record must contain no credentials, tokens, emails, or provider payloads.
   unconsented image.
 - Only staging services were changed. Production was not deployed or modified.
 
+## Day 5 Glow Score and routine implementation evidence
+
+- Day 5 code now consumes AILabTools `score_info.total_score` directly. The
+  documented success fixture produces Glow Score `84`; the previous inverse
+  weighted calculation that produced `0` has been removed.
+- `backend/services/skinInsightsService.js` is the single source of truth for
+  the ten health-score mappings and the `0-49` severe, `50-69` moderate,
+  `70-89` mild, and `90-100` none bands.
+- The scan response now carries `scanId`, `createdAt`, `skinType`, legacy
+  concern labels, structured `concernDetails`, sanitized metrics, and a
+  canonical morning/night routine with safety notes.
+- Persistence now writes skin type, Glow Score, health metrics, concern labels,
+  routine, provider name/version, and database-managed timestamps. Image fields
+  remain null/false and `raw_api_response` is intentionally null.
+- OpenAI requests use pinned GPT-4o mini Structured Outputs, a strict enum
+  routine catalog, one attempt, a 15-second timeout, and a 500-token cap. The
+  request contains only derived skin type and concern key/severity data.
+- Missing credentials, quota errors, timeouts, malformed output, refusals, and
+  unsafe catalog combinations all return the same deterministic safe fallback.
+  Every routine includes patch testing, SPF, pregnancy/allergy/medication
+  caution, a non-diagnostic disclaimer, and severe-concern escalation.
+- Results now render morning/night steps, concern severity, skin type, and safety
+  notes while accepting legacy stored result shapes. Unsupported clinical and
+  dermatologist-replacement claims were removed from the landing and scan copy.
+- Local Day 5 gate: backend 48 tests and frontend 8 tests pass; backend and
+  frontend lint, production build, and production dependency audits pass.
+- OpenAI validation remains zero-spend: structured success is mocked in tests
+  and staging uses the deterministic fallback because no API credit is being
+  added. One explicitly consented staging portrait is still required before
+  this Day 5 release record can be marked complete.
+- Day 4's separate 15-image representative consented set remains pending;
+  `PROVIDER-001` is not marked done by this implementation.
+- Production was not deployed or modified.
+
 ## Day 4 provider integration evidence
 
 - The adapter follows the current multipart request, public response envelope,
   numeric skin-type mapping, `score_info`, image-quality, acne, pigmentation,
   roughness, and sensitivity field definitions documented by AILabTools v1.7.1.
-- Provider health scores are preserved in a named `scoreInfo` domain object. The
-  legacy application metrics remain explicitly converted to issue severity for
-  compatibility until the Day 5 score module consumes `scoreInfo` directly.
+- Provider health scores are preserved in a named `scoreInfo` domain object.
+  Day 5 now consumes that object directly for Glow Score and concern severity;
+  no inverse legacy metric calculation remains in the scan path.
 - Network, timeout, and 5xx operations receive one bounded retry. Five
   consecutive unavailable operations open a 30-second circuit, followed by a
   single half-open recovery probe. Quality and invalid-image errors do not trip

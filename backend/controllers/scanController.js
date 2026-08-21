@@ -3,6 +3,7 @@ import { asyncHandler, errorResponse, successResponse } from '../utils/responseF
 import { runSkinAnalysis } from '../services/skinAnalysisService.js';
 import { generateAIRoutine } from '../services/aiRoutineService.js';
 import { calculateGlowScore } from '../services/glowScoreService.js';
+import { deriveSkinInsights } from '../services/skinInsightsService.js';
 import { saveSkinAnalysis } from '../services/supabaseService.js';
 import { releaseScanImage } from '../middleware/imageUploadMiddleware.js';
 
@@ -40,31 +41,47 @@ export const createScanHandler = ({
             return errorResponse(res, message, statusCode, serviceError.publicCode);
         }
 
-        const { skinType, concerns, metrics } = skinAnalysis;
-        const { score: glowScore, trend } = await calculateScore(metrics, userId);
-        const routine = await generateRoutine(skinType, concerns);
-
-        await saveAnalysis(userId, {
-            glowScore,
+        const { skinType, scoreInfo } = skinAnalysis;
+        const insights = deriveSkinInsights(scoreInfo);
+        const { trend } = await calculateScore(scoreInfo, userId);
+        const routine = await generateRoutine({
             skinType,
-            concerns,
-            routine,
-            rawApiResponse: { metrics },
-            faceMaps: {},
+            concerns: insights.concernDetails,
         });
 
-        scanLogger.info('Scan completed successfully', { glowScore, trend });
-
-        return successResponse(res, {
-            glowScore,
-            concerns,
+        const savedScan = await saveAnalysis(userId, {
+            glowScore: insights.glowScore,
+            skinType,
+            concerns: insights.concerns,
+            concernDetails: insights.concernDetails,
+            metrics: insights.metrics,
+            provider: skinAnalysis.provider,
+            providerVersion: skinAnalysis.provider?.version,
             routine,
-            ...(!req.scanImage.meetsRecommendedFaceCanvas
-                ? {
-                    imageGuidance: 'For best results, use a photo where the face is at least 400px wide.',
-                }
-                : {}),
         });
+
+        const result = {
+            scanId: savedScan?.id,
+            createdAt: savedScan?.created_at,
+            glowScore: insights.glowScore,
+            skinType,
+            concerns: insights.concerns,
+            concernDetails: insights.concernDetails,
+            metrics: insights.metrics,
+            routine,
+        };
+
+        if (!req.scanImage.meetsRecommendedFaceCanvas) {
+            result.imageGuidance = 'For best results, use a photo where the face is at least 400px wide.';
+        }
+
+        scanLogger.info('Scan completed successfully', {
+            glowScore: insights.glowScore,
+            trend,
+            routineSource: routine.source,
+        });
+
+        return successResponse(res, result);
     } catch (error) {
         scanLogger.error('Scan endpoint failed', {
             category: error.category || 'internal',

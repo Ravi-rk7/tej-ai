@@ -52,9 +52,11 @@ test('normalizes the documented v1.7.1 success contract', async () => {
     const result = normalizeProviderResponse(fixture);
 
     assert.equal(result.skinType, 'Combination');
-    assert.deepEqual(result.concerns, ['Acne', 'Pigmentation', 'Texture']);
-    assert.deepEqual(result.metrics, { acne: 24, pigmentation: 32, texture: 11 });
+    assert.equal(result.concerns, undefined);
+    assert.equal(result.metrics, undefined);
     assert.equal(result.scoreInfo.totalScore, 84);
+    assert.equal(result.provider.name, 'ailabtools');
+    assert.equal(result.provider.version, 'skin-analysis-pro-v1.7.1');
     assert.equal(result.scoreInfo.acneScore, 76);
     assert.equal(result.providerConcerns.acneCount, 5);
     assert.equal(result.providerConcerns.pigmentationArea, 0.22);

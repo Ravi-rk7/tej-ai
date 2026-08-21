@@ -1,32 +1,29 @@
 import { getLatestScan } from './supabaseService.js';
 
-const clampScore = (value) => Math.max(0, Math.min(100, value));
-
-const toNumber = (value, fallback = 0) => {
+const toScore = (value) => {
     const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
+        throw new TypeError('A validated provider totalScore is required');
+    }
+    return parsed;
 };
 
 /**
- * score = 100 - (acne * 20) - (pigmentation * 15) - (texture * 10)
- * Clamp result to [0, 100]
+ * Glow Score is the provider's validated total_score. Provider health scores
+ * already have the correct direction, so no local weighting or inversion is
+ * applied.
  * Trend compares score against previous scan when user id is available.
  */
-export const calculateGlowScore = async (metrics = {}, userId) => {
-    const acne = toNumber(metrics.acne);
-    const pigmentation = toNumber(metrics.pigmentation);
-    const texture = toNumber(metrics.texture);
+export const createGlowScoreCalculator = ({ latestScanLoader = getLatestScan } = {}) => async (scoreInfo = {}, userId) => {
+    const score = toScore(scoreInfo.totalScore ?? scoreInfo.total_score);
 
-    const rawScore = 100 - (acne * 20) - (pigmentation * 15) - (texture * 10);
-    const score = Math.round(clampScore(rawScore));
-
-    const resolvedUserId = userId || metrics.userId || metrics.user_id;
+    const resolvedUserId = userId;
     if (!resolvedUserId) {
         return { score, trend: 'stable' };
     }
 
     try {
-        const previousScan = await getLatestScan(resolvedUserId);
+        const previousScan = await latestScanLoader(resolvedUserId);
         if (!previousScan || typeof previousScan.glow_score !== 'number') {
             return { score, trend: 'stable' };
         }
@@ -45,6 +42,8 @@ export const calculateGlowScore = async (metrics = {}, userId) => {
     }
 };
 
+export const calculateGlowScore = createGlowScoreCalculator();
+
 export const computeGlowScore = calculateGlowScore;
 
-export default { calculateGlowScore, computeGlowScore };
+export default { calculateGlowScore, computeGlowScore, createGlowScoreCalculator };

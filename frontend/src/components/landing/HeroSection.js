@@ -58,7 +58,7 @@ export default function HeroSection() {
               }}
             >
               <span className="w-2 h-2 rounded-full bg-[#5845cb] animate-pulse" />
-              AI Skincare • Clinical-grade analysis
+              AI Skincare • Cosmetic wellness analysis
             </div>
 
             {/* Headline */}
@@ -80,7 +80,7 @@ export default function HeroSection() {
             >
               Scan your face, detect skin issues, and get a routine that{" "}
               <span className="font-semibold" style={{ color: "#1a1930" }}>actually works</span>.
-              Powered by clinical-grade AI.
+              Powered by AI-assisted cosmetic insights.
             </p>
 
             {/* CTA buttons */}

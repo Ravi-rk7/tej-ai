@@ -7,7 +7,7 @@ const FEATURES = [
     icon: "🔬",
     badge: "Precision",
     title: "Detect Skin Issues",
-    desc: "Our AI scans 42 facial markers — identifying acne, dryness, pigmentation, pores, and more with clinical-grade accuracy.",
+    desc: "Our AI reviews cosmetic skin signals such as acne, dryness, pigmentation, pores, and more to guide your routine.",
     gradient: "from-[#e4dfff] to-[#efebff]",
     accent: "#5845cb",
     delay: "0ms",

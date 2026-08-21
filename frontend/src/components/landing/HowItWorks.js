@@ -16,7 +16,7 @@ const STEPS = [
     number: "02",
     icon: "🧬",
     title: "AI Analyzes Your Skin",
-    desc: "We analyze 42 skin markers including hydration, texture, tone uniformity, pore size, and acne severity in real time.",
+    desc: "We review several cosmetic skin signals including hydration, texture, tone, pore appearance, and acne-related markers.",
     color: "#674ab9",
     bg: "#e8ddff",
     delay: "150ms",
@@ -87,7 +87,7 @@ export default function HowItWorks() {
             className="text-lg"
             style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}
           >
-            Simple, fast, and accurate. No complicated steps, no dermatologist appointment needed.
+            Simple, fast, and designed to support your cosmetic skincare decisions.
           </p>
         </div>
 

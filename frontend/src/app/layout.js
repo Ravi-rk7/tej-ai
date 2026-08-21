@@ -4,7 +4,7 @@ import AuthProvider from "@/components/auth/AuthProvider";
 export const metadata = {
   title: "TejAi — AI Skincare Coach",
   description:
-    "Scan your face, detect skin concerns, and get a personalized skincare routine in 60 seconds. Clinical-grade AI analysis in the palm of your hand.",
+    "Scan your face, explore cosmetic skin concerns, and get a personalized wellness routine in 60 seconds.",
   keywords: "AI skincare, skin analysis, glow score, skincare routine, face scan",
   openGraph: {
     title: "TejAi — AI Skincare Coach",

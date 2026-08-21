@@ -196,8 +196,7 @@ export default function ScanPage() {
               className="text-xs"
               style={{ fontFamily: "'Inter', sans-serif", color: "#787585" }}
             >
-              Your photo is processed securely and never shared with third
-              parties.
+              Your photo is sent securely to our analysis provider and is not stored by TejAi.
             </p>
           </div>
         </div>

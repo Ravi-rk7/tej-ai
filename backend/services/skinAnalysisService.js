@@ -11,6 +11,8 @@ const MAX_PROVIDER_BODY_BYTES = MAX_IMAGE_BYTES + (256 * 1024);
 const CIRCUIT_FAILURE_THRESHOLD = 5;
 const CIRCUIT_COOLDOWN_MS = 30_000;
 const PROVIDER_OPERATION = 'skin-analysis-pro';
+export const PROVIDER_NAME = 'ailabtools';
+export const PROVIDER_VERSION = 'skin-analysis-pro-v1.7.1';
 
 const ScoreSchema = z.number().int().min(0).max(100);
 const RatioSchema = z.number().min(0).max(1);
@@ -335,21 +337,14 @@ export const normalizeProviderResponse = (apiData) => {
     const parsed = parseProviderResponse(apiData);
     const { result } = parsed;
     const scoreInfo = scoreInfoToDomain(result.score_info);
-    const concerns = [];
-
-    if (scoreInfo.acneScore < 90) concerns.push('Acne');
-    if (scoreInfo.melaninScore < 90) concerns.push('Pigmentation');
-    if (scoreInfo.roughScore < 90) concerns.push('Texture');
 
     return {
         skinType: SKIN_TYPES[result.skin_type.skin_type],
-        concerns,
-        metrics: {
-            acne: 100 - scoreInfo.acneScore,
-            pigmentation: 100 - scoreInfo.melaninScore,
-            texture: 100 - scoreInfo.roughScore,
-        },
         scoreInfo,
+        provider: {
+            name: PROVIDER_NAME,
+            version: PROVIDER_VERSION,
+        },
         providerConcerns: {
             acneCount: result.acne?.count,
             pigmentationArea: result.melanin?.brown_area,

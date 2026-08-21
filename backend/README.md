@@ -75,7 +75,7 @@ backend/
 **`POST /api/scan`** (authenticated)
 
 - Upload image and get skin analysis
-- Returns: Glow Score, concerns, AI routine, trend
+- Returns: Glow Score, skin type, concern details, safety-checked AI routine, and optional image guidance
 - Required: Bearer token + multipart image
 
 ### History
@@ -121,15 +121,20 @@ backend/
 
 ### `skinAnalysisService.js`
 
-- Integrates with AILabTools Skin Analysis API
-- Extracts and normalizes skin metrics
-- Detects concerns from API response
+- Integrates with AILabTools Skin Analysis Pro v1.7.1
+- Validates and normalizes the provider response without applying product thresholds
+
+### `skinInsightsService.js`
+
+- Uses the provider `total_score` directly as Glow Score
+- Centralizes the ten concern mappings and severity thresholds
+- Produces sanitized metrics and structured concern details
 
 ### `aiRoutineService.js`
 
-- Calls OpenAI GPT-4o-mini for routine generation
-- Generates beginner-friendly 3-step routines
-- Handles fallback if generation fails
+- Calls pinned GPT-4o mini with strict JSON Schema Structured Outputs
+- Sends only derived skin type and concern key/severity data
+- Converts allowlisted catalog tokens into a safe routine with deterministic safety notes and fallback behavior
 
 ### `glowScoreService.js`
 

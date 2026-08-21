@@ -16,6 +16,8 @@ const getSupabase = () => {
 };
 
 const SCAN_TABLE = 'skin_analysis';
+const DEFAULT_PROVIDER = 'ailabtools';
+const DEFAULT_PROVIDER_VERSION = 'skin-analysis-pro-v1.7.1';
 
 const buildDbError = (publicMessage, statusCode = 500, details) => {
     const error = new Error(publicMessage);
@@ -27,25 +29,31 @@ const buildDbError = (publicMessage, statusCode = 500, details) => {
     return error;
 };
 
+export const buildScanPayload = (data) => ({
+    user_id: data.user_id,
+    image_url: null,
+    image_retained: false,
+    glow_score: data.glow_score,
+    skin_type: data.skin_type ?? null,
+    concerns: data.concerns ?? [],
+    routine: data.routine ?? {},
+    metrics: data.metrics ?? {},
+    raw_api_response: null,
+    provider: data.provider ?? DEFAULT_PROVIDER,
+    provider_version: data.provider_version ?? DEFAULT_PROVIDER_VERSION,
+});
+
 /**
- * 1. saveScan(data)
- * Writes to skin_analysis with the server-side service role key.
+ * Writes one sanitized scan to skin_analysis with the server-side service role key.
  */
 export const saveScan = async (data) => {
     try {
-        const payload = {
-            user_id: data.user_id,
-            image_url: null,
-            image_retained: false,
-            glow_score: data.glow_score,
-            concerns: data.concerns ?? [],
-            routine: data.routine ?? {},
-        };
+        const payload = buildScanPayload(data);
 
         const { data: savedRow, error } = await getSupabase()
                 .from(SCAN_TABLE)
                 .insert(payload)
-                .select('id, user_id, image_url, glow_score, concerns, routine, created_at')
+                .select('id, user_id, image_url, image_retained, glow_score, skin_type, concerns, routine, metrics, provider, provider_version, created_at, updated_at')
                 .single();
 
         if (error) {
@@ -69,7 +77,7 @@ export const getUserScans = async (user_id) => {
     try {
         const { data, error } = await getSupabase()
                 .from(SCAN_TABLE)
-                .select('id, user_id, image_url, glow_score, concerns, routine, created_at')
+                .select('id, user_id, image_url, image_retained, glow_score, skin_type, concerns, routine, metrics, provider, provider_version, created_at, updated_at')
                 .eq('user_id', user_id)
                 .order('created_at', { ascending: false });
 
@@ -94,7 +102,7 @@ export const getLastScan = async (user_id) => {
     try {
         const { data, error } = await getSupabase()
                 .from(SCAN_TABLE)
-                .select('id, user_id, image_url, glow_score, concerns, routine, created_at')
+                .select('id, user_id, image_url, image_retained, glow_score, skin_type, concerns, routine, metrics, provider, provider_version, created_at, updated_at')
                 .eq('user_id', user_id)
                 .order('created_at', { ascending: false })
                 .limit(1)
@@ -121,22 +129,20 @@ export const saveSkinAnalysis = async (userId, {
     skinType,
     concerns,
     routine,
-    rawApiResponse,
-    faceMaps,
+    metrics,
+    provider,
+    providerVersion,
 }) => {
-    const saved = await saveScan({
+    return saveScan({
         user_id: userId,
         glow_score: glowScore,
+        skin_type: skinType,
         concerns,
         routine,
+        metrics,
+        provider: provider?.name || provider,
+        provider_version: provider?.version || providerVersion,
     });
-
-    return {
-        ...saved,
-        skin_type: skinType,
-        raw_api_response: rawApiResponse,
-        face_maps: faceMaps,
-    };
 };
 
 /**
@@ -216,6 +222,7 @@ export const upsertSubscription = async (userId, subscriptionData) => {
 
 export default {
     saveScan,
+    buildScanPayload,
     getUserScans,
     getLastScan,
     saveSkinAnalysis,

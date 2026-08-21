@@ -36,9 +36,9 @@ A successful current response must have HTTP 200 and match the checked schema:
   sensitivity fields when returned
 
 Provider scores are health scores: a higher score is healthier. The adapter
-preserves the complete named scores in `scoreInfo`. It also keeps the existing
-application `metrics` shape as issue severity (`100 - provider score`) until
-the Day 5 score and concern module consumes `scoreInfo` directly.
+preserves the complete named scores in `scoreInfo`; Day 5 derives Glow Score,
+concern labels, and severity in `backend/services/skinInsightsService.js`.
+Thresholds are not duplicated in the provider adapter.
 
 Synthetic fixtures derived from the documented field definitions are kept in
 `backend/test/fixtures/ailabtools`. They contain no real provider IDs, images,
