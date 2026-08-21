@@ -920,3 +920,6 @@ test('rejects a null routine 242', () => {
 test('maps final image quality guidance 243', () => {
   assert.equal(buildQualityWarnings({ imageQuality: { yaw: 31 } })[0].code, 'FACE_YAW_ABOVE_RECOMMENDATION');
 });
+test('keeps final clean image guidance empty 244', () => {
+  assert.deepEqual(buildQualityWarnings({}), []);
+});
