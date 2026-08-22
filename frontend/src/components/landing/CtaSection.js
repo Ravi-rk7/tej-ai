@@ -50,7 +50,7 @@ export default function CtaSection() {
           className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#1a1930" }}
         >
-          Start Improving Your{" "}
+          Start Your Skin Journey{" "}
           <span className="gradient-text">Skin Today</span>
         </h2>
 

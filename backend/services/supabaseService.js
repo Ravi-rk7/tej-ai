@@ -18,6 +18,10 @@ const getSupabase = () => {
 const SCAN_TABLE = 'skin_analysis';
 const DEFAULT_PROVIDER = 'ailabtools';
 const DEFAULT_PROVIDER_VERSION = 'skin-analysis-pro-v1.7.1';
+const SCAN_SELECT = 'id, user_id, image_url, image_retained, glow_score, skin_type, concerns, routine, metrics, provider, provider_version, created_at, updated_at';
+const RESULT_SELECT = 'id, glow_score, skin_type, concerns, routine, metrics, created_at';
+const DASHBOARD_SCAN_SELECT = 'id, created_at, glow_score, skin_type, concerns';
+const HISTORY_SCAN_SELECT = DASHBOARD_SCAN_SELECT;
 
 const buildDbError = (publicMessage, statusCode = 500, details) => {
     const error = new Error(publicMessage);
@@ -53,7 +57,7 @@ export const saveScan = async (data) => {
         const { data: savedRow, error } = await getSupabase()
                 .from(SCAN_TABLE)
                 .insert(payload)
-                .select('id, user_id, image_url, image_retained, glow_score, skin_type, concerns, routine, metrics, provider, provider_version, created_at, updated_at')
+                .select(SCAN_SELECT)
                 .single();
 
         if (error) {
@@ -77,7 +81,7 @@ export const getUserScans = async (user_id) => {
     try {
         const { data, error } = await getSupabase()
                 .from(SCAN_TABLE)
-                .select('id, user_id, image_url, image_retained, glow_score, skin_type, concerns, routine, metrics, provider, provider_version, created_at, updated_at')
+                .select(SCAN_SELECT)
                 .eq('user_id', user_id)
                 .order('created_at', { ascending: false });
 
@@ -102,7 +106,7 @@ export const getLastScan = async (user_id) => {
     try {
         const { data, error } = await getSupabase()
                 .from(SCAN_TABLE)
-                .select('id, user_id, image_url, image_retained, glow_score, skin_type, concerns, routine, metrics, provider, provider_version, created_at, updated_at')
+                .select(SCAN_SELECT)
                 .eq('user_id', user_id)
                 .order('created_at', { ascending: false })
                 .limit(1)
@@ -145,6 +149,80 @@ export const saveSkinAnalysis = async (userId, {
     });
 };
 
+export const getDashboardSubscription = async (userId) => {
+    try {
+        const { data, error } = await getSupabase()
+            .from('subscriptions')
+            .select('plan, status, current_period_end')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error) throw buildDbError('Failed to fetch dashboard subscription', 503, error.message);
+        return data || null;
+    } catch (error) {
+        if (error.publicMessage) throw error;
+        throw buildDbError('Failed to fetch dashboard subscription', 503, error.message);
+    }
+};
+
+export const countUserScansSince = async (userId, monthStartIso) => {
+    try {
+        const { count, error } = await getSupabase()
+            .from(SCAN_TABLE)
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .gte('created_at', monthStartIso);
+
+        if (error) throw buildDbError('Failed to count scans', 503, error.message);
+        return count || 0;
+    } catch (error) {
+        if (error.publicMessage) throw error;
+        throw buildDbError('Failed to count scans', 503, error.message);
+    }
+};
+
+export const getDashboardScans = async (userId, limit = 12) => {
+    try {
+        const { data, error } = await getSupabase()
+            .from(SCAN_TABLE)
+            .select(DASHBOARD_SCAN_SELECT)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(limit);
+
+        if (error) throw buildDbError('Failed to fetch dashboard scans', 503, error.message);
+        return data || [];
+    } catch (error) {
+        if (error.publicMessage) throw error;
+        throw buildDbError('Failed to fetch dashboard scans', 503, error.message);
+    }
+};
+
+export const getUserHistoryPage = async (userId, { limit = 12, cursor } = {}) => {
+    try {
+        let query = getSupabase()
+            .from(SCAN_TABLE)
+            .select(HISTORY_SCAN_SELECT)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false });
+
+        if (cursor) {
+            query = query.or(
+                `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.scanId})`
+            );
+        }
+
+        const { data, error } = await query.limit(limit + 1);
+        if (error) throw buildDbError('Failed to fetch history', 503, error.message);
+        return data || [];
+    } catch (error) {
+        if (error.publicMessage) throw error;
+        throw buildDbError('Failed to fetch history', 503, error.message);
+    }
+};
+
 /**
  * Get user's scan history
  */
@@ -157,6 +235,30 @@ export const getUserScanHistory = async (userId) => {
  */
 export const getLatestScan = async (userId) => {
     return getLastScan(userId);
+};
+
+/**
+ * Fetch one result only when it belongs to the authenticated user.
+ * The service-role client bypasses RLS, so both predicates are required.
+ */
+export const getUserScanById = async (userId, scanId) => {
+    try {
+        const { data, error } = await getSupabase()
+            .from(SCAN_TABLE)
+            .select(RESULT_SELECT)
+            .eq('id', scanId)
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error) {
+            throw buildDbError('Failed to fetch scan result', 503, error.message);
+        }
+
+        return data || null;
+    } catch (error) {
+        if (error.publicMessage) throw error;
+        throw buildDbError('Failed to fetch scan result', 503, error.message);
+    }
 };
 
 /**
@@ -228,6 +330,11 @@ export default {
     saveSkinAnalysis,
     getUserScanHistory,
     getLatestScan,
+    getUserScanById,
+    getDashboardSubscription,
+    countUserScansSince,
+    getDashboardScans,
+    getUserHistoryPage,
     getPreviousScan,
     getUserSubscription,
     upsertSubscription,

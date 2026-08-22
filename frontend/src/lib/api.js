@@ -93,6 +93,20 @@ export const scanSkinFile = async (file) => {
     });
 };
 
+export const getScanResult = async (scanId, options = {}) =>
+    request(`/api/results/${encodeURIComponent(scanId)}`, {
+        ...options,
+        method: "GET",
+        cache: "no-store",
+    });
+
+export const getDashboard = async (options = {}) =>
+    request("/api/dashboard", {
+        ...options,
+        method: "GET",
+        cache: "no-store",
+    });
+
 export const loginWithPassword = async ({ email, password }) => {
     const data = await request("/api/auth/login", {
         method: "POST",
@@ -121,10 +135,15 @@ export const requestPasswordReset = async (email) => request(
     }
 );
 
-export const getHistory = async () =>
-    request("/api/history", {
+export const getHistory = async ({ limit = 12, cursor, signal } = {}) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set("cursor", cursor);
+    return request(`/api/history?${params.toString()}`, {
         method: "GET",
+        cache: "no-store",
+        signal,
     });
+};
 
 export const createSubscription = async (plan) =>
     request("/api/create-subscription", {

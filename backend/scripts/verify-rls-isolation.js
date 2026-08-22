@@ -151,10 +151,21 @@ try {
     const apiBody = await apiResponse.json();
     assert(apiResponse.status === 200, "History API rejected a valid user");
     assert(apiBody.success === true, "History API returned an error envelope");
-    assert(apiBody.data.length === 1, "History API crossed user boundaries");
+    assert(apiBody.data.items.length === 1, "History API crossed user boundaries");
     assert(
-      apiBody.data[0].glowScore === current.expectedScore,
+      apiBody.data.items[0].glowScore === current.expectedScore,
       "History API returned another user's scan",
+    );
+
+    const dashboardResponse = await fetch(new URL("/api/dashboard", apiBaseUrl), {
+      headers: { Authorization: `Bearer ${current.token}` },
+    });
+    const dashboardBody = await dashboardResponse.json();
+    assert(dashboardResponse.status === 200, "Dashboard API rejected a valid user");
+    assert(dashboardBody.success === true, "Dashboard API returned an error envelope");
+    assert(
+      dashboardBody.data.latestScan?.glowScore === current.expectedScore,
+      "Dashboard API returned another user's latest scan",
     );
   }
 

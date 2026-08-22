@@ -65,6 +65,18 @@ const normalizeConcern = (concern) => {
     };
 };
 
+const normalizeWarning = (warning) => {
+    if (typeof warning === "string" && warning.trim()) {
+        return { code: warning.trim(), message: warning.trim() };
+    }
+    if (!warning || typeof warning !== "object") return null;
+    if (typeof warning.message !== "string" || !warning.message.trim()) return null;
+    return {
+        code: typeof warning.code === "string" && warning.code.trim() ? warning.code.trim() : "RESULT_WARNING",
+        message: warning.message.trim(),
+    };
+};
+
 export const normalizeScanResult = (result) => {
     if (!result || typeof result !== "object") return null;
 
@@ -75,6 +87,12 @@ export const normalizeScanResult = (result) => {
     const concerns = concernDetails.length > 0
         ? concernDetails
         : (Array.isArray(result.concerns) ? result.concerns.map(normalizeConcern).filter(Boolean) : []);
+    const warnings = [
+        ...(Array.isArray(result.warnings) ? result.warnings : []),
+        ...(typeof result.imageGuidance === "string" ? [{ code: "FACE_SIZE_BELOW_RECOMMENDATION", message: result.imageGuidance }] : []),
+    ].map(normalizeWarning).filter(Boolean).filter((warning, index, list) => (
+        list.findIndex((candidate) => candidate.code === warning.code) === index
+    ));
 
     return {
         valid: isScore(glowScore),
@@ -86,8 +104,8 @@ export const normalizeScanResult = (result) => {
         metrics: result.metrics && typeof result.metrics === "object" ? result.metrics : null,
         routine: normalizeRoutine(result.routine),
         imageGuidance: typeof result.imageGuidance === "string" ? result.imageGuidance : null,
+        warnings,
     };
 };
 
-export { DEFAULT_SAFETY, isScore, normalizeRoutine, normalizeStep };
-
+export { DEFAULT_SAFETY, isScore, normalizeRoutine, normalizeStep, normalizeWarning };

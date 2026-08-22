@@ -1,6 +1,6 @@
 # TejAi MVP issue board
 
-Updated: 2026-08-20
+Updated: 2026-08-22
 
 Severity definitions:
 
@@ -18,14 +18,14 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 | ID           | Severity | Owner       | Target | Issue                                            | Current evidence                                      |
 | ------------ | -------- | ----------- | ------ | ------------------------------------------------ | ----------------------------------------------------- |
 | PROVIDER-001 | P0       | Engineering | Day 4  | Current AILabTools contract and failure handling | Contract and live quality path passed; 15 consented scans pending |
+| RESULT-001   | P0       | Engineering | Day 6  | Persistent owner-only results and reload flow     | Local implementation; staging two-account journey pending |
+| DATA-001     | P1       | Engineering | Day 7  | Real dashboard and paginated history              | Local APIs/UI/tests complete; staging ownership and latency evidence pending |
 
 ## Ready
 
 | ID           | Severity | Owner         | Target      | Issue                                                                     | Acceptance evidence               |
 | ------------ | -------- | ------------- | ----------- | ------------------------------------------------------------------------- | --------------------------------- |
 | ROUTINE-001  | P0       | Engineering   | Day 5       | Correct score, concern mapping, and safe routine fallback                 | Local implementation + 48 backend/8 frontend tests; one consented staging portrait pending |
-| RESULT-001   | P0       | Engineering   | Day 6       | Persistent owner-only results and reload flow                             | E2E result tests                  |
-| DATA-001     | P1       | Engineering   | Day 7       | Real dashboard and paginated history                                      | API timing and UI tests           |
 | BILLING-001  | P0       | Engineering   | Days 8-9    | Dodo checkout, signed idempotent webhooks, entitlements, and atomic quota | Test-mode lifecycle tests         |
 | PRIVACY-001  | P0       | Product/Legal | Day 10      | Consent, accurate policies/copy, scan deletion, and account deletion      | Legal approval and deletion tests |
 | SECURITY-001 | P0       | Engineering   | Day 11      | Complete hardening matrix and resolve exploitable findings                | Security test report              |

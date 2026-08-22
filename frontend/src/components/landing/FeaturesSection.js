@@ -25,7 +25,7 @@ const FEATURES = [
     icon: "📈",
     badge: "Progress",
     title: "Track Glow Score",
-    desc: "Monitor your skin health over time with our Glow Score™ — a 0–100 metric that shows you exactly where you're improving.",
+    desc: "Review each cosmetic wellness scan with our Glow Score™ — a 0–100 snapshot of that result.",
     gradient: "from-[#e8ddff] to-[#f6f2ff]",
     accent: "#674ab9",
     delay: "240ms",

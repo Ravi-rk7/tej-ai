@@ -213,8 +213,8 @@ export default function HeroSection() {
                 <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#5845cb", fontFamily: "'Inter', sans-serif" }}>
                   Glow Score
                 </p>
-                <p className="text-sm font-semibold flex items-center gap-1" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                  <span className="text-emerald-500">↑</span> Improving
+                <p className="text-sm font-semibold" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  Cosmetic snapshot
                 </p>
               </div>
             </div>

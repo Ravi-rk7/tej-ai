@@ -5,6 +5,8 @@ import env from './config/env.js';
 import { successResponse } from './utils/responseFormatter.js';
 import errorMiddleware from './middleware/errorMiddleware.js';
 import scanRoutes from './routes/scan.js';
+import resultRoutes from './routes/results.js';
+import dashboardRoutes from './routes/dashboard.js';
 import historyRoutes from './routes/history.js';
 import paymentRoutes from './routes/payment.js';
 import authRoutes from './routes/auth.js';
@@ -56,6 +58,8 @@ app.get('/api/health', (req, res) => successResponse(res, {
 }));
 
 app.use('/api', scanRoutes);
+app.use('/api', resultRoutes);
+app.use('/api', dashboardRoutes);
 app.use('/api', historyRoutes);
 app.use('/api', paymentRoutes);
 app.use('/api', authRoutes);

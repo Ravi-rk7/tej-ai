@@ -178,3 +178,50 @@ copy. The consented portrait scan and persisted-row verification remain open.
   4 gate and PROVIDER-001 remains in progress.
 - Only staging services and a staging-specific provider key were changed.
   Production was not deployed or modified.
+
+## Day 6 persistent results implementation evidence
+
+- `GET /api/results/:scanId` now returns an owner-scoped, sanitized result with
+  `Cache-Control: private, no-store`; valid missing and foreign IDs share the
+  same `RESULT_NOT_FOUND` response.
+- POST and GET use the same backend result serializer. The serializer supports
+  current rows plus legacy string concerns and routine shapes without exposing
+  user IDs, image fields, raw provider responses, or provider request IDs.
+- Scan success now redirects to `/results?id=<scanId>` and the Results page
+  fetches the saved row. It no longer reads the generic session-storage result
+  key, preventing a stale result from crossing an account switch.
+- Loading, empty, malformed, unavailable, retryable, fallback-routine, and
+  image-quality warning states are covered by local frontend helpers and the
+  production build.
+- Local Day 6 gate: backend 56 tests and frontend 10 tests pass; backend and
+  frontend lint, production build, and production dependency audits pass.
+- This implementation is not yet deployed to staging. The two-account
+  owner/reload journey and one explicitly consented portrait remain required
+  before `RESULT-001` or the Day 5 consented-image observation is marked done.
+- Day 4's separate 15-image provider gate remains open. Production was not
+  deployed or modified.
+
+## Day 7 dashboard and history implementation evidence
+
+- `GET /api/dashboard` now returns the authenticated user's latest saved scan,
+  chronological score trend, shared plan entitlement, UTC-month scan usage,
+  remaining allowance, and next reset without raw provider or image fields.
+- `GET /api/history?limit=12&cursor=...` now uses bounded cursor pagination and
+  stable `(created_at DESC, id DESC)` ordering. Every query explicitly filters
+  the authenticated owner; the frontend uses each `scanId` for result links and
+  React keys.
+- A shared entitlement service is used by dashboard summaries and scan-limit
+  enforcement. Free/starter/growth/pro limits are 1/15/30/50 scans per UTC
+  month, with inactive or unknown plans safely resolving to the free allowance.
+- The Day 7 index migration is
+  `backend/db/migrations/202608220001_day_7_dashboard_history.sql`; no existing
+  columns or stored raw payloads are required.
+- Dashboard and history have explicit loading, empty, retryable-error, and load-
+  more states. History no longer uses the paywall modal or an unbounded array,
+  and the dashboard no longer contains mock score/streak data.
+- Local Day 7 gate: backend 67 tests and frontend 14 tests pass; root
+  `npm run check` and `npm run audit` pass; the production frontend build passes.
+- Day 7 is implemented locally only. `DATA-001` remains open pending staging
+  migration/application rollout, p95 timing evidence, two-account ownership
+  verification, and refresh/load-more browser checks. Production was not
+  deployed or modified.

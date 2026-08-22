@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS public.payment_webhook_events (
 
 CREATE INDEX IF NOT EXISTS idx_skin_analysis_user_created
     ON public.skin_analysis (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_skin_analysis_user_created_id
+    ON public.skin_analysis (user_id, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status_period_end
     ON public.subscriptions (status, current_period_end);
 CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_created

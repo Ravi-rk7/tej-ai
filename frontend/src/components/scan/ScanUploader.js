@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { scanSkinFile, isLimitError, isUnauthorizedError } from "@/lib/api";
+import { isValidScanId, resultPathFor } from "@/lib/resultState";
 import {
   inspectScanDimensions,
   validateScanFile,
@@ -568,9 +569,8 @@ export default function ScanUploader({ onScanComplete, onLimitReached }) {
     try {
       const data = await scanSkinFile(imageFile);
 
-      // Persist results so the Results page can read them without URL params
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("tejai_scan_result", JSON.stringify(data));
+      if (!isValidScanId(data?.scanId)) {
+        throw new Error("The scan completed without a valid result ID. Please try again.");
       }
 
       setState(STATE.DONE);
@@ -579,7 +579,7 @@ export default function ScanUploader({ onScanComplete, onLimitReached }) {
         onScanComplete(data);
       }
 
-      router.push("/results");
+      router.push(resultPathFor(data.scanId));
     } catch (err) {
       // 403 with "scan limit reached" → trigger paywall
       if (isLimitError(err)) {

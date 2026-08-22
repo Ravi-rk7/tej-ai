@@ -82,8 +82,20 @@ backend/
 
 **`GET /api/history`** (authenticated)
 
-- Fetch user's scan history
-- Returns: Recent scans + trend data for charts
+- Fetch the authenticated user's scan history with bounded cursor pagination.
+- Query: `limit` (1–25, default 12) and opaque `cursor` from `pageInfo.nextCursor`.
+- Returns `{ schemaVersion, items, pageInfo }`; each item contains only `scanId`,
+  `createdAt`, `glowScore`, `skinType`, and display-safe concern labels.
+
+### Dashboard
+
+**`GET /api/dashboard`** (authenticated)
+
+- Returns the latest saved scan, real score trend points, current plan, UTC-month
+  usage, remaining scans, and the next quota reset.
+- Responses are private and sent with `Cache-Control: private, no-store`.
+- Both dashboard and history queries filter by the authenticated `user_id`; raw
+  provider payloads and image fields are never returned.
 
 ### Payments
 

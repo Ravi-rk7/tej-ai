@@ -93,3 +93,21 @@ test('protected endpoints reject missing authorization before external calls', a
     assert.equal(body.success, false);
     assert.equal(body.error, 'Unauthorized');
 });
+
+test('dashboard endpoint rejects missing authorization before data queries', async () => {
+    const response = await fetch(`${baseUrl}/api/dashboard`);
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.equal(body.success, false);
+    assert.equal(body.error, 'Unauthorized');
+});
+
+test('result endpoint rejects missing authorization before result lookup', async () => {
+    const response = await fetch(`${baseUrl}/api/results/11111111-1111-4111-8111-111111111111`);
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.equal(body.success, false);
+    assert.equal(body.error, 'Unauthorized');
+});

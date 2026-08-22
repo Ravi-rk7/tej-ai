@@ -30,7 +30,7 @@ const PLANS = [
       "15 scans per month",
       "Full skin concern analysis",
       "AI-personalized 3-step routine",
-      "Glow Score with trend tracking",
+      "Glow Score and saved scan results",
       "Routine layering guide",
     ],
     excluded: [],

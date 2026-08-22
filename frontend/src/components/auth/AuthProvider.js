@@ -90,8 +90,11 @@ export function RequireAuth({ children }) {
 
     useEffect(() => {
         if (!loading && !session) {
-            const destination = pathname && pathname !== "/login"
-                ? `/login?next=${encodeURIComponent(pathname)}`
+            const currentPath = typeof window !== "undefined"
+                ? `${window.location.pathname}${window.location.search}`
+                : pathname;
+            const destination = currentPath && pathname !== "/login"
+                ? `/login?next=${encodeURIComponent(currentPath)}`
                 : "/login";
             router.replace(destination);
         }

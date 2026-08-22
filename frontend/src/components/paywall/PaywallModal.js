@@ -107,7 +107,7 @@ export default function PaywallModal({
                     className="text-center text-3xl sm:text-[40px] font-black leading-tight"
                     style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
-                    Start Improving Your Skin Today
+                    Start Your Skin Journey Today
                 </h2>
 
                 <ul className="mt-6 rounded-2xl p-4 sm:p-5 space-y-3" style={{ background: "rgba(228,223,255,0.45)" }}>

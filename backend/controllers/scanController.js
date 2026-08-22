@@ -5,6 +5,7 @@ import { generateAIRoutine } from '../services/aiRoutineService.js';
 import { calculateGlowScore } from '../services/glowScoreService.js';
 import { deriveSkinInsights } from '../services/skinInsightsService.js';
 import { saveSkinAnalysis } from '../services/supabaseService.js';
+import { buildQualityWarnings, serializeScanResult } from '../services/scanResultService.js';
 import { releaseScanImage } from '../middleware/imageUploadMiddleware.js';
 
 /**
@@ -54,26 +55,32 @@ export const createScanHandler = ({
             skinType,
             concerns: insights.concerns,
             concernDetails: insights.concernDetails,
-            metrics: insights.metrics,
+            metrics: {
+                ...insights.metrics,
+                qualityWarnings: buildQualityWarnings({
+                    scanImage: req.scanImage,
+                    imageQuality: skinAnalysis.imageQuality,
+                }),
+            },
             provider: skinAnalysis.provider,
             providerVersion: skinAnalysis.provider?.version,
             routine,
         });
 
-        const result = {
-            scanId: savedScan?.id,
-            createdAt: savedScan?.created_at,
-            glowScore: insights.glowScore,
-            skinType,
-            concerns: insights.concerns,
-            concernDetails: insights.concernDetails,
-            metrics: insights.metrics,
-            routine,
-        };
-
-        if (!req.scanImage.meetsRecommendedFaceCanvas) {
-            result.imageGuidance = 'For best results, use a photo where the face is at least 400px wide.';
-        }
+        const result = serializeScanResult({
+            ...savedScan,
+            glow_score: savedScan?.glow_score ?? insights.glowScore,
+            skin_type: savedScan?.skin_type ?? skinType,
+            concerns: savedScan?.concerns ?? insights.concerns,
+            metrics: savedScan?.metrics ?? {
+                ...insights.metrics,
+                qualityWarnings: buildQualityWarnings({
+                    scanImage: req.scanImage,
+                    imageQuality: skinAnalysis.imageQuality,
+                }),
+            },
+            routine: savedScan?.routine ?? routine,
+        });
 
         scanLogger.info('Scan completed successfully', {
             glowScore: insights.glowScore,
