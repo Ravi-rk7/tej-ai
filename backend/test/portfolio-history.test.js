@@ -930,3 +930,6 @@ test('round-trips the final cursor shape 245', () => {
 test('rejects a final malformed cursor 246', () => {
   assert.throws(() => decodeHistoryCursor('final-bad-cursor'), /Invalid history cursor/);
 });
+test('parses the final history page size 247', () => {
+  assert.equal(parseHistoryQuery({ limit: 25 }).limit, 25);
+});
