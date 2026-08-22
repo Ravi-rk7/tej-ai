@@ -933,3 +933,6 @@ test('rejects a final malformed cursor 246', () => {
 test('parses the final history page size 247', () => {
   assert.equal(parseHistoryQuery({ limit: 25 }).limit, 25);
 });
+test('rejects a final negative limit 248', () => {
+  assert.throws(() => parseHistoryQuery({ limit: -25 }), /Invalid history limit/);
+});
