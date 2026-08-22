@@ -927,3 +927,6 @@ test('round-trips the final cursor shape 245', () => {
   const value = { createdAt: '2026-08-25T12:00:00.000Z', scanId: '00000000-0000-0000-0000-000000000012' };
   assert.deepEqual(decodeHistoryCursor(encodeHistoryCursor(value)), value);
 });
+test('rejects a final malformed cursor 246', () => {
+  assert.throws(() => decodeHistoryCursor('final-bad-cursor'), /Invalid history cursor/);
+});
