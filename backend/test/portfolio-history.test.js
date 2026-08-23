@@ -940,3 +940,7 @@ test('accepts a final bounded metric 249', () => {
   const metric = { key: 'glow', label: 'Glow', value: 75, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
   assert.equal(validMetric(metric), 'glow-v1');
 });
+test('rejects a final metric overflow 250', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 101, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), false);
+});
