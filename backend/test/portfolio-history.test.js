@@ -944,3 +944,7 @@ test('rejects a final metric overflow 250', () => {
   const metric = { key: 'glow', label: 'Glow', value: 101, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
   assert.equal(validMetric(metric), false);
 });
+test('normalizes the final portfolio source 251', () => {
+  const result = normalizePortfolioResult({ schemaVersion: 2, scanId: 'sample-251', createdAt: '2026-08-25T12:00:00.000Z', source: 'sample', provider: { name: 'facepp', mappingVersion: 'categories-v1' }, metrics: [] });
+  assert.equal(result.source, 'sample');
+});
