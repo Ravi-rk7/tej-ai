@@ -57,6 +57,23 @@ test('CORS authorizes the configured frontend origin', async () => {
     );
 });
 
+test('CORS permits the billing idempotency header for the configured frontend', async () => {
+    const response = await fetch(`${baseUrl}/api/billing/checkout`, {
+        method: 'OPTIONS',
+        headers: {
+            Origin: 'http://localhost:3000',
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'authorization,content-type,idempotency-key',
+        },
+    });
+
+    assert.equal(response.status, 204);
+    assert.match(
+        response.headers.get('access-control-allow-headers'),
+        /Idempotency-Key/i
+    );
+});
+
 test('unknown routes return a stable 404 error code', async () => {
     const response = await fetch(`${baseUrl}/api/does-not-exist`);
     const body = await response.json();
@@ -110,4 +127,61 @@ test('result endpoint rejects missing authorization before result lookup', async
     assert.equal(response.status, 401);
     assert.equal(body.success, false);
     assert.equal(body.error, 'Unauthorized');
+});
+
+test('billing checkout and subscription endpoints authenticate before billing work', async () => {
+    const checkoutResponse = await fetch(`${baseUrl}/api/billing/checkout`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': '11111111-1111-4111-8111-111111111111',
+        },
+        body: JSON.stringify({ plan: 'starter' }),
+    });
+    const checkoutBody = await checkoutResponse.json();
+    assert.equal(checkoutResponse.status, 401);
+    assert.equal(checkoutBody.error, 'Unauthorized');
+
+    const statusResponse = await fetch(`${baseUrl}/api/billing/subscription`);
+    const statusBody = await statusResponse.json();
+    assert.equal(statusResponse.status, 401);
+    assert.equal(statusBody.error, 'Unauthorized');
+});
+
+test('billing return and cancel relays discard provider-controlled query values', async () => {
+    const returnResponse = await fetch(
+        `${baseUrl}/api/billing/return?status=success&plan=pro&email=private%40example.com`,
+        { redirect: 'manual' }
+    );
+    assert.equal(returnResponse.status, 303);
+    assert.equal(
+        returnResponse.headers.get('location'),
+        'http://localhost:3000/settings?checkout=returned'
+    );
+
+    const cancelResponse = await fetch(
+        `${baseUrl}/api/billing/cancel?status=success&subscription_id=provider-secret`,
+        { redirect: 'manual' }
+    );
+    assert.equal(cancelResponse.status, 303);
+    assert.equal(
+        cancelResponse.headers.get('location'),
+        'http://localhost:3000/settings?checkout=cancelled'
+    );
+});
+
+test('legacy checkout and pre-Day-9 webhook endpoints remain fail-closed', async () => {
+    const checkoutResponse = await fetch(`${baseUrl}/api/create-subscription`, {
+        method: 'POST',
+    });
+    const checkoutBody = await checkoutResponse.json();
+    assert.equal(checkoutResponse.status, 503);
+    assert.equal(checkoutBody.code, 'BILLING_ENDPOINT_DISABLED');
+
+    const webhookResponse = await fetch(`${baseUrl}/api/webhook`, {
+        method: 'POST',
+    });
+    const webhookBody = await webhookResponse.json();
+    assert.equal(webhookResponse.status, 503);
+    assert.equal(webhookBody.code, 'WEBHOOK_NOT_READY');
 });

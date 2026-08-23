@@ -10,6 +10,7 @@
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "test:watch": "node --test --watch --test-concurrency=1 test/*.test.js",
     "test:provider": "node scripts/verify-ailab-provider.js",
+    "test:billing-products": "node scripts/verify-dodo-products.js",
     "test:rls": "node scripts/verify-rls-isolation.js",
     "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",
@@ -42,6 +43,6 @@
     "prettier": "^3.1.1"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": "22.x"
   }
 }

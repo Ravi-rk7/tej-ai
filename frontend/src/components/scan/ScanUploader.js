@@ -433,8 +433,8 @@ function ScanButton({ state, onClick }) {
 /* ─── Trust row ──────────────────────────────────── */
 function TrustRow() {
   const items = [
-    { icon: "⚡", text: "Takes ~30 seconds" },
-    { icon: "🔒", text: "Your photo is private" },
+    { icon: "⚡", text: "Processing time varies" },
+    { icon: "🔒", text: "Not stored by TejAi" },
     { icon: "✅", text: "Sign in to save results" },
   ];
   return (

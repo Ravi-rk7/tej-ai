@@ -21,7 +21,10 @@ export const scanLimitMiddleware = async (req, res, next) => {
         const scansThisMonth = await countUserScansSince(req.user.id, monthStartIso);
 
         if (scansThisMonth >= limit) {
-            logger.warn(`Scan limit reached for user ${req.user.id} (${scansThisMonth}/${limit})`);
+            logger.warn('Monthly scan limit reached', {
+                scansThisMonth,
+                limit,
+            });
             return errorResponse(res, 'Scan limit reached', 403, 'SCAN_LIMIT_REACHED');
         }
 

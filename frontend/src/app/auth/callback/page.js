@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { getSafeInternalPath } from "@/lib/authRedirect";
 
 export default function AuthCallbackPage() {
     const router = useRouter();
@@ -16,11 +17,7 @@ export default function AuthCallbackPage() {
         if (!session) return;
 
         const requestedPath = new URLSearchParams(window.location.search).get("next");
-        const destination = requestedPath?.startsWith("/")
-            && !requestedPath.startsWith("//")
-            ? requestedPath
-            : "/dashboard";
-        router.replace(destination);
+        router.replace(getSafeInternalPath(requestedPath));
     }, [loading, router, session]);
 
     return (

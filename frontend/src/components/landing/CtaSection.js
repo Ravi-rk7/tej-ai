@@ -58,7 +58,7 @@ export default function CtaSection() {
           className="text-lg max-w-xl"
           style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}
         >
-          Join thousands of users who discovered their personalized skincare routine in under a minute. No signup. No credit card.
+          Create a free account to save your cosmetic skin insights and personalized wellness routine. The free plan does not require a payment card.
         </p>
 
         {/* CTA Button — with recurring glow pulse */}
@@ -78,8 +78,8 @@ export default function CtaSection() {
         >
           {[
             { icon: "🔒", text: "Private & Secure" },
-            { icon: "⚡", text: "Results in 30s" },
-            { icon: "✅", text: "No Signup Needed" },
+            { icon: "⚡", text: "Clear Results" },
+            { icon: "✅", text: "Free Account Plan" },
           ].map(({ icon, text }) => (
             <span key={text} className="flex items-center gap-2">
               <span>{icon}</span>

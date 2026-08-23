@@ -37,9 +37,12 @@ cp .env.example .env
 
 3. **Set up database**
 
-- Log into Supabase dashboard
-- Run the SQL from `db/schema.sql` in the SQL editor
-- Enable RLS policies as specified
+- Log into the Supabase dashboard.
+- For an existing environment, apply every file in `db/migrations/` in
+  timestamp order. Do not replace migration history with the schema snapshot.
+- Use `db/schema.sql` only as a readable snapshot for a brand-new empty project.
+- Verify the service-role-only billing access described in
+  `db/SCHEMA_SETUP.md`.
 
 4. **Start server**
 
@@ -99,15 +102,31 @@ backend/
 
 ### Payments
 
-**`POST /api/create-subscription`** (authenticated)
+**`POST /api/billing/checkout`** (authenticated)
 
-- Create Dodo Payments checkout session
-- Body: `{ plan: "starter" | "growth" | "pro" }`
+- Creates a Dodo Checkout Session from a server-owned product mapping.
+- Requires a UUID `Idempotency-Key` header and the strict body
+  `{ plan: "starter" | "growth" | "pro" }`.
+- Returns only `checkoutUrl`, `checkoutSessionId`, and `reused` with private,
+  no-store caching.
+- Checkout is disabled unless `BILLING_CHECKOUT_ENABLED=true` and uses a
+  fail-closed payment-specific rate limit.
 
-**`POST /api/webhook`** (signature verified)
+**`GET /api/billing/subscription`** (authenticated)
 
-- Handle Dodo webhook events
-- No authentication required (signature verified)
+- Returns only the authenticated owner's plan, status, scan limit, period end,
+  cancellation flag, and update time.
+- A missing entitlement safely resolves to the Free plan.
+
+**`GET /api/billing/return` / `GET /api/billing/cancel`**
+
+- Public, non-mutating `303` relays to fixed Settings URLs.
+- Provider query parameters are discarded and never treated as payment proof.
+
+**`POST /api/create-subscription` / `POST /api/webhook`**
+
+- Legacy paths are fail-closed. Signed Standard Webhooks and entitlement
+  mutation are assigned to Day 9.
 
 ### Health
 
@@ -162,9 +181,10 @@ backend/
 
 ### `paymentService.js`
 
-- Dodo Payments integration
-- Plan management and pricing
-- Webhook signature verification
+- Creates idempotent Dodo Checkout Sessions from server-owned products.
+- Pins test/live API and checkout origins and validates provider responses.
+- Does not process payment confirmation or mutate entitlements; signed Standard
+  Webhooks remain Day 9 work.
 
 ### `supabaseService.js`
 
@@ -202,8 +222,11 @@ backend/
 
 ### Row-Level Security
 
-- Users can only read/write their own rows
-- Enforced at database level
+- Authenticated browser users can read only their own scan rows and cannot
+  write them directly.
+- Subscription and checkout-attempt tables are service-role-only; the browser
+  reads display-safe status through the authenticated billing API.
+- Enforcement combines PostgreSQL RLS with explicit table/function grants.
 
 ---
 
@@ -288,7 +311,17 @@ OPENAI_API_KEY           OpenAI API authentication
 UPSTASH_REDIS_REST_URL   Redis serverless REST URL
 UPSTASH_REDIS_REST_TOKEN Redis authentication token
 DODO_API_KEY             Dodo Payments API key
-DODO_WEBHOOK_SECRET      For webhook signature verification
+DODO_WEBHOOK_SECRET      Reserved for the signed Day 9 webhook handler; Day 8 route is disabled
+DODO_ENVIRONMENT         test_mode outside production; live_mode in production
+DODO_PRODUCT_ID_STARTER  Server-owned Starter recurring product ID
+DODO_PRODUCT_ID_GROWTH   Server-owned Growth recurring product ID
+DODO_PRODUCT_ID_PRO      Server-owned Pro recurring product ID
+DODO_API_BASE_URL        Exact canonical API origin for the selected Dodo mode
+DODO_CHECKOUT_RETURN_URL Fixed backend /api/billing/return relay URL
+DODO_CHECKOUT_CANCEL_URL Fixed backend /api/billing/cancel relay URL
+BILLING_CHECKOUT_ENABLED Checkout kill switch (defaults to false)
+APP_ENV                  development/test/staging/production deployment boundary
+API_BASE_URL             Canonical public backend origin
 FRONTEND_URL             CORS origin (e.g., http://localhost:3000)
 PORT                     Server port (default: 3001)
 NODE_ENV                 Environment (development/production)
@@ -337,7 +370,7 @@ npm run format    # Auto-format code
 ### Deploy to cloud
 
 - Platforms: Vercel, Railway, Render, Heroku, AWS, etc.
-- Ensure Node.js 18+ available
+- Ensure Node.js 22 is selected
 - Install dependencies: `npm install --production`
 - Run: `npm start`
 

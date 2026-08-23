@@ -4,7 +4,7 @@ import ScanFlow from "@/components/scan/ScanFlow";
 export const metadata = {
   title: "Scan My Skin — TejAi",
   description:
-    "Upload a front-facing photo and get your AI skin analysis, Glow Score, and personalized routine in under 30 seconds.",
+    "Upload a front-facing photo to explore cosmetic skin insights, a Glow Score, and a personalized wellness routine.",
 };
 
 /* ─── Step indicator bar ─────────────────────────── */

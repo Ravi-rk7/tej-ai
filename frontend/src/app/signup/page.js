@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { GuestOnly } from "@/components/auth/AuthProvider";
 import {
     getPasswordRuleResults,
@@ -9,6 +10,7 @@ import {
     validatePassword,
 } from "@/lib/authValidation";
 import { supabase } from "@/lib/supabaseClient";
+import { buildAuthPath, getNextFromSearch } from "@/lib/authRedirect";
 
 function AuthInput(props) {
     return (
@@ -41,7 +43,9 @@ function AuthButton({ loading, children }) {
     );
 }
 
-export default function SignupPage() {
+function SignupContent() {
+    const searchParams = useSearchParams();
+    const nextPath = getNextFromSearch(searchParams);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -67,11 +71,14 @@ export default function SignupPage() {
 
         setLoading(true);
 
+        const callbackUrl = new URL("/auth/callback", window.location.origin);
+        callbackUrl.searchParams.set("next", nextPath);
+
         const { error: signUpError } = await supabase.auth.signUp({
             email: email.trim().toLowerCase(),
             password,
             options: {
-                emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+                emailRedirectTo: callbackUrl.toString(),
             },
         });
 
@@ -88,7 +95,7 @@ export default function SignupPage() {
     const passwordRuleResults = getPasswordRuleResults(password);
 
     return (
-        <GuestOnly>
+        <GuestOnly redirectTo={nextPath}>
         <main className="min-h-screen px-5 py-16" style={{ background: "#fcf8ff" }}>
             <section className="mx-auto mt-10 w-full max-w-md rounded-[30px] p-7 sm:p-8"
                 style={{
@@ -161,12 +168,20 @@ export default function SignupPage() {
 
                 <p className="mt-6 text-center text-sm" style={{ color: "#474554" }}>
                     Already have an account?{" "}
-                    <Link href="/login" className="font-bold" style={{ color: "#5845cb" }}>
+                    <Link href={buildAuthPath("/login", nextPath)} className="font-bold" style={{ color: "#5845cb" }}>
                         Sign in
                     </Link>
                 </p>
             </section>
         </main>
         </GuestOnly>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<main className="min-h-screen" style={{ background: "#fcf8ff" }} />}>
+            <SignupContent />
+        </Suspense>
     );
 }

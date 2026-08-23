@@ -114,17 +114,15 @@ bytes directly to AILabTools, and clears both source and normalized buffers.
 3. Generate or copy your API key
 4. Add to `.env`:
    ```
-   AILAB_API_KEY=your_key
-   AILAB_API_URL=https://api.ailabtools.com/v1
+   AILABTOOLS_API_KEY=your_key
+   AILAB_API_URL=https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro
    ```
 
 #### Test Connection
 
-```bash
-curl -X POST https://api.ailabtools.com/v1/skin-analysis \
-  -H "Authorization: Bearer ${TEJAI_PROVIDER_KEY}" \
-  -F "image=@test_image.jpg"
-```
+Use `npm run test:provider -- <consented-jpeg-directory>` only with explicitly
+consented staging portraits. That runner enforces the current provider contract
+and reports usage without printing credentials or image data.
 
 ---
 
@@ -188,16 +186,30 @@ curl -X POST https://api.ailabtools.com/v1/skin-analysis \
 #### Get Credentials
 
 1. Go to API Settings
-2. Generate API keys:
-   - `Public Key`
-   - `Secret Key`
-3. Generate Webhook Secret
-4. Add to `.env`:
+2. Generate the environment-specific API key.
+3. Reserve a staging-only webhook secret in the secret manager because runtime
+   validation requires it. The quarantined Day 8 route does not consume it;
+   do not register a Dodo webhook target until the signed Day 9 handler passes.
+4. Add the values to `.env`:
    ```
-   DODO_API_KEY=xxx
-   DODO_SECRET_KEY=xxx
+   APP_ENV=staging
+   DODO_ENVIRONMENT=test_mode
+   BILLING_CHECKOUT_ENABLED=false
+   DODO_API_BASE_URL=https://test.dodopayments.com
+   DODO_API_KEY=<test-mode-key>
    DODO_WEBHOOK_SECRET=xxx
+   DODO_PRODUCT_ID_STARTER=<test-starter-product>
+   DODO_PRODUCT_ID_GROWTH=<test-growth-product>
+   DODO_PRODUCT_ID_PRO=<test-pro-product>
+   DODO_CHECKOUT_RETURN_URL=https://api-staging.example.com/api/billing/return
+   DODO_CHECKOUT_CANCEL_URL=https://api-staging.example.com/api/billing/cancel
    ```
+
+Staging must use `test_mode`; production must use `live_mode`. The server pins
+the matching official Dodo API origin and rejects mixed modes, duplicate product
+IDs, non-canonical application origins, and callback URL overrides. Leave the
+checkout kill switch off until the migration, product verification, and staging
+gates pass.
 
 #### Create Payment Plans
 
@@ -218,36 +230,40 @@ In `services/paymentService.js`, plans are defined:
 2. Left sidebar → "SQL Editor"
 3. Click "New Query"
 
-### Step 2: Run Schema
+### Step 2: Apply Ordered Migrations
 
-1. Copy entire content of `backend/db/schema.sql`
-2. Paste into SQL editor
-3. Click "Run" (or Cmd+Enter)
-4. Wait for success message
+Apply every file in `backend/db/migrations/` in timestamp order, through
+`202608220002_day_8_checkout_sessions.sql`. Migration files are the source of
+truth for deployed environments. Use `backend/db/schema.sql` only as a readable
+snapshot for a brand-new empty project. See `backend/db/SCHEMA_SETUP.md` for the
+exact order and access checks.
 
 ### What Gets Created?
 
-| Table           | Purpose                                              |
-| --------------- | ---------------------------------------------------- |
-| `skin_analysis` | Stores scan results, Glow Scores, concerns, routines |
-| `subscriptions` | User subscription status and plan                    |
+| Table                       | Purpose                                              |
+| --------------------------- | ---------------------------------------------------- |
+| `skin_analysis`             | Owner-readable scan results                          |
+| `subscriptions`             | Service-role-only entitlement state                  |
+| `billing_checkout_attempts` | Private checkout idempotency and provider session state |
+| `payment_webhook_events`    | Reserved replay records for the signed Day 9 lifecycle |
 
 ### Step 3: Verify Tables
 
 1. Go to Table Editor
 2. Should see:
-   - `skin_analysis` (empty)
-   - `subscriptions` (empty)
+   - `skin_analysis`
+   - `subscriptions`
+   - `billing_checkout_attempts`
+   - `payment_webhook_events`
 3. Click each table to verify columns exist
 
 ### Step 4: Verify RLS Policies
 
-1. Go to SQL Editor → "Home"
-2. Run:
-   ```sql
-   SELECT * FROM auth.rules LIMIT 10;
-   ```
-3. Should see RLS policies are enabled
+1. Confirm RLS is enabled on all four public tables.
+2. Run the staging isolation script described in `backend/db/SCHEMA_SETUP.md`.
+3. Confirm browser users can read only their own scans and cannot directly read
+   or mutate subscriptions, checkout attempts, or the private checkout-claim
+   function.
 
 ---
 
@@ -324,12 +340,13 @@ Expected response:
 }
 ```
 
-### 4. Create Subscription (Requires Auth)
+### 4. Create Checkout Session (Requires Auth)
 
 ```bash
-curl -X POST http://localhost:3001/api/create-subscription \
+curl -X POST http://localhost:3001/api/billing/checkout \
   -H "Authorization: Bearer ${TEJAI_ACCESS_TOKEN}" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 11111111-1111-4111-8111-111111111111" \
   -d '{"plan": "starter"}'
 ```
 
@@ -339,10 +356,17 @@ Expected response:
 {
   "success": true,
   "data": {
-    "checkoutUrl": "https://checkout.dodo.com/session/..."
+    "checkoutUrl": "https://test.checkout.dodopayments.com/session/...",
+    "checkoutSessionId": "cks_...",
+    "reused": false
   }
 }
 ```
+
+Read the server-owned status with `GET /api/billing/subscription`. Return and
+cancel redirects are not payment confirmation; Day 9 Standard Webhooks are the
+only path that may update subscription entitlements. The legacy
+`/api/create-subscription` and `/api/webhook` routes intentionally return `503`.
 
 ---
 
@@ -429,6 +453,10 @@ Then follow interactive prompts.
 ## 🔒 Security Checklist
 
 - [ ] All `.env` values filled (no default values in production)
+- [ ] `APP_ENV=production`, `DODO_ENVIRONMENT=live_mode`, and the exact live API origin agree
+- [ ] Three Dodo product IDs are present, distinct, recurring, and verified in the selected environment
+- [ ] Checkout return/cancel URLs are the fixed backend relay URLs
+- [ ] `BILLING_CHECKOUT_ENABLED` remains false until the staging gates pass
 - [ ] `NODE_ENV=production` on production server
 - [ ] CORS `FRONTEND_URL` points to your domain (not localhost)
 - [ ] Supabase RLS policies enabled
@@ -535,7 +563,7 @@ npm install
 
 1. **Test all endpoints** (see Testing Endpoints section)
 2. **Connect frontend** to backend API
-3. **Configure webhooks** for Dodo Payments
+3. **Implement and verify signed Day 9 webhooks before registering a Dodo target**
 4. **Set up monitoring** (error tracking, uptime monitoring)
 5. **Load testing** to ensure performance at scale
 6. **Deploy to production** when ready

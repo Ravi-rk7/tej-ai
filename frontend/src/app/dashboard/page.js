@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { getDashboard } from "@/lib/api";
 import { normalizeDashboard } from "@/lib/dashboardData";
 import { resultPathFor } from "@/lib/resultState";
+import { getSubscriptionStatusLabel } from "@/lib/billingData";
 
 const cardStyle = {
     background: "#fff",
@@ -53,7 +55,7 @@ function DashboardContent({ data, onScan, onLatest }) {
             <article className="xl:col-span-3 rounded-[28px] p-7" style={cardStyle}><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "#787585" }}>Score trend</p><h2 className="mt-2 text-2xl font-black" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{trendLabel}</h2></div><span className="rounded-full px-3 py-1.5 text-xs font-bold capitalize" style={{ background: "#e4dfff", color: "#5845cb" }}>{data.subscription.plan}</span></div><div className="mt-6"><TrendChart points={data.trend.points} /></div></article>
         </section>
         <section className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-5">
-            <article className="rounded-3xl p-6" style={cardStyle}><p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: "#787585" }}>Plan</p><p className="mt-3 text-3xl font-black capitalize" style={{ color: "#5845cb", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{data.subscription.plan}</p><p className="mt-2 text-sm capitalize" style={{ color: "#474554" }}>Status: {data.subscription.status}</p></article>
+            <article className="rounded-3xl p-6" style={cardStyle}><p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: "#787585" }}>Plan</p><p className="mt-3 text-3xl font-black capitalize" style={{ color: "#5845cb", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{data.subscription.plan}</p><p className="mt-2 text-sm" style={{ color: "#474554" }}>Status: {getSubscriptionStatusLabel(data.subscription.status)}</p><Link href="/settings" className="mt-4 inline-flex rounded-full px-4 py-2 text-sm font-bold" style={{ background: "#efebff", color: "#5845cb" }}>Manage or upgrade</Link></article>
             <article className="rounded-3xl p-6" style={cardStyle}><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: "#787585" }}>Monthly usage</p><span className="text-sm font-bold" style={{ color: "#5845cb" }}>{data.usage.used}/{data.usage.limit}</span></div><div className="mt-5 h-3 overflow-hidden rounded-full" style={{ background: "#e4dfff" }}><div className="h-full rounded-full" style={{ width: `${usagePercent}%`, background: "linear-gradient(90deg, #5845cb, #a88bff)" }} /></div><p className="mt-3 text-sm" style={{ color: "#474554" }}>{data.usage.remaining} scan{data.usage.remaining === 1 ? "" : "s"} remaining</p></article>
             <article className="rounded-3xl p-6" style={cardStyle}><p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: "#787585" }}>Next reset</p><p className="mt-3 text-xl font-black" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{formatDate(data.usage.resetAt)}</p><p className="mt-2 text-sm" style={{ color: "#474554" }}>Usage follows the UTC calendar month.</p></article>
         </section>

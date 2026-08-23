@@ -46,7 +46,7 @@ export const rateLimitMiddleware = async (req, res, next) => {
         res.set('X-RateLimit-Reset', String(Math.ceil(reset / 1000)));
 
         if (!success) {
-            logger.warn(`Rate limit exceeded for user ${req.user.id}`);
+            logger.warn('Authenticated rate limit exceeded');
             res.set('Retry-After', String(retryAfterSeconds));
             return errorResponse(res, 'Rate limit exceeded. Please try again later.', 429, 'RATE_LIMIT_EXCEEDED');
         }

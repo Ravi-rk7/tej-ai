@@ -23,16 +23,18 @@ cp .env.example .env
 - [Supabase](https://supabase.com) → Create project → Copy API keys
 - [OpenAI](https://platform.openai.com) → API keys → Create key
 - [Upstash](https://console.upstash.com) → Create Redis → Copy REST URL/Token
-- [AILabTools](https://ailab.example.com) → API key
-- [Dodo Payments](https://dodo.com) → API keys
+- [AILabTools](https://www.ailabtools.com) → API key
+- [Dodo Payments](https://dodopayments.com) → Test-mode API keys and products
 
-### 3️⃣ Import Database Schema
+### 3️⃣ Apply Database Migrations
 
 - Go to [Supabase Dashboard](https://app.supabase.com)
 - Select your project → SQL Editor
-- Create new query
-- Copy-paste contents of `backend/db/schema.sql`
-- Click Run ▶️
+- Apply every file in `backend/db/migrations/` in timestamp order, through
+  `202608220002_day_8_checkout_sessions.sql`.
+- Follow `backend/db/SCHEMA_SETUP.md` for the required RLS verification.
+- Use `backend/db/schema.sql` only as a snapshot for a brand-new empty project,
+  never in place of ordered migrations for an existing environment.
 
 ### 4️⃣ Start Development Server
 
@@ -51,7 +53,13 @@ curl http://localhost:3001/api/health
 Response should be:
 
 ```json
-{ "success": true, "message": "API is healthy" }
+{
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "timestamp": "2026-08-23T00:00:00.000Z"
+  }
+}
 ```
 
 ---
@@ -63,8 +71,10 @@ backend/
 ├── 📡 API Endpoints
 │   ├── POST /api/scan           → Analyze skin image
 │   ├── GET /api/history         → Fetch scan history
-│   ├── POST /api/create-subscription → Payment session
-│   ├── POST /api/webhook        → Payment webhook
+│   ├── POST /api/billing/checkout → Idempotent Checkout Session
+│   ├── GET /api/billing/subscription → Owner billing status
+│   ├── GET /api/billing/return|cancel → Fixed 303 relays
+│   ├── POST /api/webhook        → Quarantined until Day 9
 │   └── GET /api/health          → Health check
 │
 ├── 🧠 Services (6 integrations)
@@ -83,8 +93,10 @@ backend/
 │   └── Input validation (Zod)
 │
 └── 📊 Database
-    ├── skin_analysis table (scan results)
-    └── subscriptions table (user plans)
+    ├── skin_analysis table (owner-readable scan results)
+    ├── subscriptions table (service-role-only entitlements)
+    ├── billing_checkout_attempts table (private idempotency state)
+    └── payment_webhook_events table (reserved for signed lifecycle events)
 ```
 
 ---
@@ -136,7 +148,7 @@ Expected response:
 | [README.md](./README.md)         | API reference & overview      |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Full setup guide (400+ lines) |
 | [.env.example](./.env.example)   | Config template with comments |
-| [db/schema.sql](./db/schema.sql) | Database schema               |
+| [db/SCHEMA_SETUP.md](./db/SCHEMA_SETUP.md) | Ordered migration and RLS setup |
 
 ---
 
@@ -194,7 +206,14 @@ Once backend is running, connect frontend:
 2. Wire components to endpoints:
    - ScanUploader → `POST /api/scan`
    - Dashboard → `GET /api/history`
-   - Paywall → `POST /api/create-subscription`
+   - Paywall → `POST /api/billing/checkout` with a UUID
+     `Idempotency-Key` header and strict `{ "plan": "starter" }` body
+   - Settings → `GET /api/billing/subscription`
+
+Keep `BILLING_CHECKOUT_ENABLED=false` until the billing migration, Dodo
+test-mode products, and staging checks pass. Browser return/cancel parameters are
+never payment proof; `/api/webhook` remains fail-closed until Day 9 Standard
+Webhooks are implemented.
 
 See [PROJECT_STATUS.md](../PROJECT_STATUS.md) for detailed integration steps.
 

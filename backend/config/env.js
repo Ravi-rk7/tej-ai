@@ -5,7 +5,24 @@ dotenv.config();
 export const DEFAULT_AILAB_API_URL =
     'https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro';
 
+export const APP_ENVIRONMENTS = Object.freeze([
+    'development',
+    'test',
+    'staging',
+    'production',
+]);
+
+export const DODO_ENVIRONMENTS = Object.freeze(['test_mode', 'live_mode']);
+
+export const DODO_API_BASE_URLS = Object.freeze({
+    test_mode: 'https://test.dodopayments.com',
+    live_mode: 'https://live.dodopayments.com',
+});
+
 export const REQUIRED_RUNTIME_ENV = Object.freeze([
+    'APP_ENV',
+    'DODO_ENVIRONMENT',
+    'API_BASE_URL',
     'FRONTEND_URL',
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
@@ -30,6 +47,13 @@ const parsePort = (value) => {
     return Number.isInteger(port) && port > 0 && port <= 65535 ? port : 3001;
 };
 
+const parseBoolean = (value, defaultValue = false) => {
+    if (typeof value !== 'string' || !value.trim()) return defaultValue;
+    if (value.trim().toLowerCase() === 'true') return true;
+    if (value.trim().toLowerCase() === 'false') return false;
+    return defaultValue;
+};
+
 const assertValidUrl = (name, value, protocols = ['http:', 'https:']) => {
     try {
         const parsed = new URL(value);
@@ -38,6 +62,71 @@ const assertValidUrl = (name, value, protocols = ['http:', 'https:']) => {
         }
     } catch {
         throw new Error(`${name} must be a valid ${protocols.join(' or ')} URL`);
+    }
+};
+
+const isLocalHostname = (hostname) =>
+    ['localhost', '127.0.0.1', '::1'].includes(hostname);
+
+const normalizeOrigin = (name, value, { publicHttps = false } = {}) => {
+    assertValidUrl(name, value);
+    const parsed = new URL(value);
+    const comparable = value.endsWith('/') ? value.slice(0, -1) : value;
+
+    if (
+        parsed.username
+        || parsed.password
+        || parsed.search
+        || parsed.hash
+        || parsed.pathname !== '/'
+        || comparable !== parsed.origin
+    ) {
+        throw new Error(`${name} must be a canonical origin without a path, query, hash, or credentials`);
+    }
+
+    if (
+        publicHttps
+        && (parsed.protocol !== 'https:' || isLocalHostname(parsed.hostname))
+    ) {
+        throw new Error(`${name} must be a public HTTPS origin`);
+    }
+
+    return parsed.origin;
+};
+
+export const getFrontendOrigins = (value, options = {}) => {
+    const origins = String(value || '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+        .map((origin, index) => normalizeOrigin(
+            `FRONTEND_URL${index ? `[${index}]` : ''}`,
+            origin,
+            options
+        ));
+
+    if (origins.length === 0) {
+        throw new Error('FRONTEND_URL must contain at least one canonical origin');
+    }
+
+    if (new Set(origins).size !== origins.length) {
+        throw new Error('FRONTEND_URL must not contain duplicate origins');
+    }
+
+    return origins;
+};
+
+export const buildBillingUrls = ({ apiOrigin, frontendOrigin }) => ({
+    checkoutReturnUrl: `${apiOrigin}/api/billing/return`,
+    checkoutCancelUrl: `${apiOrigin}/api/billing/cancel`,
+    returnRedirectUrl: `${frontendOrigin}/settings?checkout=returned`,
+    cancelRedirectUrl: `${frontendOrigin}/settings?checkout=cancelled`,
+});
+
+const assertExactUrl = (name, value, expected) => {
+    assertValidUrl(name, value);
+    if (new URL(value).toString() !== new URL(expected).toString()) {
+        throw new Error(`${name} must equal ${expected}`);
     }
 };
 
@@ -69,33 +158,99 @@ export const validateEnvironment = ({
     const ailabApiUrl = source.AILAB_API_URL || DEFAULT_AILAB_API_URL;
     assertValidUrl('AILAB_API_URL', ailabApiUrl, ['https:']);
 
-    const frontendUrl = source.FRONTEND_URL || 'http://localhost:3000';
-    assertValidUrl('FRONTEND_URL', frontendUrl);
+    const appEnvironment = String(source.APP_ENV || '').trim().toLowerCase();
+    if (!APP_ENVIRONMENTS.includes(appEnvironment)) {
+        throw new Error(`APP_ENV must be one of: ${APP_ENVIRONMENTS.join(', ')}`);
+    }
 
-    if (source.NODE_ENV === 'production') {
-        const parsedFrontendUrl = new URL(frontendUrl);
-        if (
-            parsedFrontendUrl.protocol !== 'https:'
-            || ['localhost', '127.0.0.1', '::1'].includes(parsedFrontendUrl.hostname)
-        ) {
-            throw new Error('FRONTEND_URL must be a public HTTPS URL in production');
-        }
+    const dodoEnvironment = String(source.DODO_ENVIRONMENT || '').trim().toLowerCase();
+    if (!DODO_ENVIRONMENTS.includes(dodoEnvironment)) {
+        throw new Error(`DODO_ENVIRONMENT must be one of: ${DODO_ENVIRONMENTS.join(', ')}`);
+    }
 
-        const dodoBaseUrl = source.DODO_API_BASE_URL || 'https://test.dodopayments.com';
-        assertValidUrl('DODO_API_BASE_URL', dodoBaseUrl, ['https:']);
-        if (new URL(dodoBaseUrl).hostname.startsWith('test.')) {
-            throw new Error('DODO_API_BASE_URL must use live mode in production');
-        }
+    const expectedDodoEnvironment = appEnvironment === 'production'
+        ? 'live_mode'
+        : 'test_mode';
+    if (dodoEnvironment !== expectedDodoEnvironment) {
+        throw new Error(
+            `DODO_ENVIRONMENT must be ${expectedDodoEnvironment} when APP_ENV is ${appEnvironment}`
+        );
+    }
 
-        if (new URL(ailabApiUrl).hostname !== 'www.ailabapi.com') {
-            throw new Error('AILAB_API_URL must use the official provider host in production');
-        }
+    const requirePublicHttps = appEnvironment === 'staging' || appEnvironment === 'production';
+    const apiOrigin = normalizeOrigin('API_BASE_URL', source.API_BASE_URL, {
+        publicHttps: requirePublicHttps,
+    });
+    const frontendOrigins = getFrontendOrigins(source.FRONTEND_URL, {
+        publicHttps: requirePublicHttps,
+    });
+
+    const expectedDodoBaseUrl = DODO_API_BASE_URLS[dodoEnvironment];
+    const configuredDodoBaseUrl = source.DODO_API_BASE_URL || expectedDodoBaseUrl;
+    assertExactUrl('DODO_API_BASE_URL', configuredDodoBaseUrl, expectedDodoBaseUrl);
+
+    const productIds = [
+        source.DODO_PRODUCT_ID_STARTER,
+        source.DODO_PRODUCT_ID_GROWTH,
+        source.DODO_PRODUCT_ID_PRO,
+    ].map((value) => value.trim());
+    if (new Set(productIds).size !== productIds.length) {
+        throw new Error('Dodo product IDs must be distinct for Starter, Growth, and Pro');
+    }
+
+    const checkoutEnabled = source.BILLING_CHECKOUT_ENABLED;
+    if (
+        checkoutEnabled !== undefined
+        && !['true', 'false'].includes(String(checkoutEnabled).trim().toLowerCase())
+    ) {
+        throw new Error('BILLING_CHECKOUT_ENABLED must be true or false');
+    }
+
+    const billingUrls = buildBillingUrls({
+        apiOrigin,
+        frontendOrigin: frontendOrigins[0],
+    });
+    assertExactUrl(
+        'DODO_CHECKOUT_RETURN_URL',
+        source.DODO_CHECKOUT_RETURN_URL || billingUrls.checkoutReturnUrl,
+        billingUrls.checkoutReturnUrl
+    );
+    assertExactUrl(
+        'DODO_CHECKOUT_CANCEL_URL',
+        source.DODO_CHECKOUT_CANCEL_URL || billingUrls.checkoutCancelUrl,
+        billingUrls.checkoutCancelUrl
+    );
+
+    if (
+        (appEnvironment === 'staging' || appEnvironment === 'production')
+        && new URL(ailabApiUrl).hostname !== 'www.ailabapi.com'
+    ) {
+        throw new Error('AILAB_API_URL must use the official provider host outside local development');
     }
 
     return true;
 };
 
+const configuredAppEnvironment = readEnv(
+    'APP_ENV',
+    readEnv('NODE_ENV', 'development')
+).toLowerCase();
+const configuredDodoEnvironment = readEnv(
+    'DODO_ENVIRONMENT',
+    configuredAppEnvironment === 'production' ? 'live_mode' : 'test_mode'
+).toLowerCase();
+const configuredApiOrigin = readEnv('API_BASE_URL', 'http://localhost:3001').replace(/\/$/, '');
+const configuredFrontendOrigins = readEnv('FRONTEND_URL', 'http://localhost:3000')
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+const configuredBillingUrls = buildBillingUrls({
+    apiOrigin: configuredApiOrigin,
+    frontendOrigin: configuredFrontendOrigins[0] || 'http://localhost:3000',
+});
+
 const env = Object.freeze({
+    APP_ENV: configuredAppEnvironment,
     NODE_ENV: readEnv('NODE_ENV', 'development'),
     PORT: parsePort(readEnv('PORT', '3001')),
     API_BASE_URL: readEnv('API_BASE_URL', 'http://localhost:3001'),
@@ -121,7 +276,24 @@ const env = Object.freeze({
     DODO_PRODUCT_ID_STARTER: readEnv('DODO_PRODUCT_ID_STARTER'),
     DODO_PRODUCT_ID_GROWTH: readEnv('DODO_PRODUCT_ID_GROWTH'),
     DODO_PRODUCT_ID_PRO: readEnv('DODO_PRODUCT_ID_PRO'),
-    DODO_API_BASE_URL: readEnv('DODO_API_BASE_URL', 'https://test.dodopayments.com'),
+    DODO_ENVIRONMENT: configuredDodoEnvironment,
+    DODO_API_BASE_URL: readEnv(
+        'DODO_API_BASE_URL',
+        DODO_API_BASE_URLS[configuredDodoEnvironment] || DODO_API_BASE_URLS.test_mode
+    ).replace(/\/$/, ''),
+    DODO_CHECKOUT_RETURN_URL: readEnv(
+        'DODO_CHECKOUT_RETURN_URL',
+        configuredBillingUrls.checkoutReturnUrl
+    ),
+    DODO_CHECKOUT_CANCEL_URL: readEnv(
+        'DODO_CHECKOUT_CANCEL_URL',
+        configuredBillingUrls.checkoutCancelUrl
+    ),
+    BILLING_RETURN_REDIRECT_URL: configuredBillingUrls.returnRedirectUrl,
+    BILLING_CANCEL_REDIRECT_URL: configuredBillingUrls.cancelRedirectUrl,
+    BILLING_CHECKOUT_ENABLED: parseBoolean(
+        readEnv('BILLING_CHECKOUT_ENABLED', 'false')
+    ),
 
     LOG_LEVEL: readEnv('LOG_LEVEL', 'info'),
 });

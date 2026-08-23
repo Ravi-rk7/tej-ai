@@ -165,6 +165,29 @@ export const getDashboardSubscription = async (userId) => {
     }
 };
 
+/**
+ * Fetch billing status for one authenticated owner without exposing provider IDs.
+ * The service-role client bypasses RLS, so the owner predicate is mandatory.
+ */
+export const getBillingSubscription = async (userId) => {
+    try {
+        const { data, error } = await getSupabase()
+            .from('subscriptions')
+            .select('plan, status, current_period_end, cancel_at_period_end, updated_at')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error) {
+            throw buildDbError('Failed to fetch billing subscription', 503, error.message);
+        }
+
+        return data || null;
+    } catch (error) {
+        if (error.publicMessage) throw error;
+        throw buildDbError('Failed to fetch billing subscription', 503, error.message);
+    }
+};
+
 export const countUserScansSince = async (userId, monthStartIso) => {
     try {
         const { count, error } = await getSupabase()
@@ -290,14 +313,7 @@ export const getPreviousScan = async (userId) => {
  * Get user's subscription info
  */
 export const getUserSubscription = async (userId) => {
-    const { data, error } = await getSupabase()
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-    if (error && error.code !== 'PGRST116') throw error;
-    return data || null;
+    return getBillingSubscription(userId);
 };
 
 /**
@@ -332,6 +348,7 @@ export default {
     getLatestScan,
     getUserScanById,
     getDashboardSubscription,
+    getBillingSubscription,
     countUserScansSince,
     getDashboardScans,
     getUserHistoryPage,

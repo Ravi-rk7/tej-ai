@@ -84,16 +84,86 @@ try {
   ]);
 
   for (const user of [userA, userB]) {
-    const { data: entitlements, error: entitlementError } = await user.client
+    const { data: entitlement, error: entitlementError } = await admin
       .from("subscriptions")
-      .select("user_id,plan,status");
+      .select("user_id,plan,status")
+      .eq("user_id", user.id)
+      .single();
     assert(!entitlementError, "Could not verify signup entitlement");
     assert(
-      entitlements.length === 1 &&
-        entitlements[0].user_id === user.id &&
-        entitlements[0].plan === "free" &&
-        entitlements[0].status === "active",
+      entitlement.user_id === user.id &&
+        entitlement.plan === "free" &&
+        entitlement.status === "active",
       "Signup entitlement is not an active free plan",
+    );
+
+    const { data: serviceCheckoutClaim, error: serviceCheckoutClaimError } =
+      await admin.rpc("claim_billing_checkout_attempt", {
+        p_user_id: user.id,
+        p_plan: "starter",
+        p_idempotency_key_hash: "c".repeat(64),
+        p_expires_at: new Date(Date.now() + 300_000).toISOString(),
+      });
+    assert(
+      !serviceCheckoutClaimError &&
+        Array.isArray(serviceCheckoutClaim) &&
+        serviceCheckoutClaim[0]?.claimed === true,
+      "Service role could not claim a private checkout attempt",
+    );
+
+    const { error: directSubscriptionReadError } = await user.client
+      .from("subscriptions")
+      .select("user_id,plan,status");
+    assert(
+      directSubscriptionReadError,
+      "Browser client unexpectedly read the private subscription table",
+    );
+
+    const { error: directCheckoutReadError } = await user.client
+      .from("billing_checkout_attempts")
+      .select("id,state");
+    assert(
+      directCheckoutReadError,
+      "Browser client unexpectedly read the private checkout-attempt table",
+    );
+
+    const { error: directCheckoutWriteError } = await user.client
+      .from("billing_checkout_attempts")
+      .insert({
+        user_id: user.id,
+        plan: "starter",
+        idempotency_key_hash: "a".repeat(64),
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+      });
+    assert(
+      directCheckoutWriteError,
+      "Browser client unexpectedly wrote to the private checkout-attempt table",
+    );
+
+    const { error: directCheckoutClaimError } = await user.client.rpc(
+      "claim_billing_checkout_attempt",
+      {
+        p_user_id: user.id,
+        p_plan: "starter",
+        p_idempotency_key_hash: "b".repeat(64),
+        p_expires_at: new Date(Date.now() + 60_000).toISOString(),
+      },
+    );
+    assert(
+      directCheckoutClaimError,
+      "Browser client unexpectedly executed the private checkout claim RPC",
+    );
+
+    const statusResponse = await fetch(
+      new URL("/api/billing/subscription", apiBaseUrl),
+      { headers: { Authorization: `Bearer ${user.token}` } },
+    );
+    const statusBody = await statusResponse.json();
+    assert(statusResponse.status === 200, "Billing status API rejected a valid user");
+    assert(statusBody.success === true, "Billing status API returned an error envelope");
+    assert(
+      statusBody.data.plan === "free" && statusBody.data.status === "active",
+      "Billing status API did not return the active free entitlement",
     );
   }
 
@@ -170,7 +240,7 @@ try {
   }
 
   console.log(
-    "RLS isolation, read-only access, and signup entitlements verified.",
+    "RLS isolation, private billing tables, status API, and signup entitlements verified.",
   );
 } finally {
   if (createdScanIds.length > 0) {

@@ -8,12 +8,22 @@ the source of truth for deployed environments.
 
 1. Create a dedicated Supabase staging project.
 2. Open **SQL Editor** in that project.
-3. Run `migrations/202608180001_initial_production_schema.sql` once.
-4. Confirm that `skin_analysis`, `subscriptions`, and
-   `payment_webhook_events` exist.
-5. Confirm RLS is enabled on all three tables.
-6. Confirm authenticated users have SELECT-only access to their own scans and
-   subscription. They must not be able to insert or update entitlements.
+3. Apply every migration below in timestamp order:
+   1. `migrations/202608180001_initial_production_schema.sql`
+   2. `migrations/202608200001_day_2_auth_entitlements.sql`
+   3. `migrations/202608220001_day_7_dashboard_history.sql`
+   4. `migrations/202608220002_day_8_checkout_sessions.sql`
+4. Confirm that `skin_analysis`, `subscriptions`,
+   `payment_webhook_events`, and `billing_checkout_attempts` exist.
+5. Confirm RLS is enabled on all four tables.
+6. Confirm authenticated browser users can select only their own
+   `skin_analysis` rows and cannot insert, update, or delete scan rows.
+7. Confirm browser roles cannot directly read or mutate `subscriptions` or
+   `billing_checkout_attempts`, and cannot execute
+   `claim_billing_checkout_attempt`. Subscription display data must be read
+   through the authenticated `/api/billing/subscription` endpoint.
+8. Run the staging RLS isolation check documented in the root deployment
+   runbook before enabling checkout.
 
 ## Rules
 
@@ -24,4 +34,5 @@ the source of truth for deployed environments.
 - Take a database backup before applying production migrations.
 
 The backend service role performs trusted writes and bypasses RLS. Browser
-clients are intentionally read-only for scans and subscription entitlements.
+clients are read-only for their own scans. Subscription entitlements, checkout
+attempts, provider identifiers, and checkout URLs are service-role-only.

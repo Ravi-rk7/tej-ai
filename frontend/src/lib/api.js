@@ -145,11 +145,22 @@ export const getHistory = async ({ limit = 12, cursor, signal } = {}) => {
     });
 };
 
-export const createSubscription = async (plan) =>
-    request("/api/create-subscription", {
+export const createCheckoutSession = async (plan, { idempotencyKey, signal } = {}) =>
+    request("/api/billing/checkout", {
         method: "POST",
+        headers: {
+            "Idempotency-Key": idempotencyKey,
+        },
         body: JSON.stringify({ plan }),
+        signal,
+    });
+
+export const getSubscription = async ({ signal } = {}) =>
+    request("/api/billing/subscription", {
+        method: "GET",
+        cache: "no-store",
+        signal,
     });
 
 export const isLimitError = (error) =>
-    error?.status === 403 && /scan limit reached/i.test(String(error?.message || ""));
+    error?.status === 403 && error?.body?.code === "SCAN_LIMIT_REACHED";

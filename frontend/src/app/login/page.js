@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GuestOnly } from "@/components/auth/AuthProvider";
 import { loginWithPassword } from "@/lib/api";
+import { buildAuthPath, getNextFromSearch } from "@/lib/authRedirect";
 
 function AuthInput(props) {
     return (
@@ -37,16 +38,15 @@ function AuthButton({ loading, children }) {
     );
 }
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const nextPath = getNextFromSearch(searchParams);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [passwordUpdated] = useState(() => {
-        if (typeof window === "undefined") return false;
-        return new URLSearchParams(window.location.search).get("password") === "updated";
-    });
+    const passwordUpdated = searchParams.get("password") === "updated";
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -55,12 +55,7 @@ export default function LoginPage() {
 
         try {
             await loginWithPassword({ email: email.trim(), password });
-            const requestedPath = new URLSearchParams(window.location.search).get("next");
-            const destination = requestedPath?.startsWith("/")
-                && !requestedPath.startsWith("//")
-                ? requestedPath
-                : "/dashboard";
-            router.replace(destination);
+            router.replace(nextPath);
         } catch (signInError) {
             setError(
                 signInError?.message || "We could not sign you in. Please try again."
@@ -71,7 +66,7 @@ export default function LoginPage() {
     };
 
     return (
-        <GuestOnly>
+        <GuestOnly redirectTo={nextPath}>
         <main className="min-h-screen px-5 py-16" style={{ background: "#fcf8ff" }}>
             <section className="mx-auto mt-10 w-full max-w-md rounded-[30px] p-7 sm:p-8"
                 style={{
@@ -135,12 +130,20 @@ export default function LoginPage() {
 
                 <p className="mt-6 text-center text-sm" style={{ color: "#474554" }}>
                     Don&apos;t have an account?{" "}
-                    <Link href="/signup" className="font-bold" style={{ color: "#5845cb" }}>
+                    <Link href={buildAuthPath("/signup", nextPath)} className="font-bold" style={{ color: "#5845cb" }}>
                         Sign up
                     </Link>
                 </p>
             </section>
         </main>
         </GuestOnly>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<main className="min-h-screen" style={{ background: "#fcf8ff" }} />}>
+            <LoginContent />
+        </Suspense>
     );
 }

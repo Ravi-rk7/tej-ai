@@ -35,7 +35,9 @@ export const normalizeDashboard = (data) => {
         },
         subscription: {
             plan: ['free', 'starter', 'growth', 'pro'].includes(subscription.plan) ? subscription.plan : 'free',
-            status: typeof subscription.status === "string" ? subscription.status : 'active',
+            status: ['active', 'pending', 'past_due', 'on_hold', 'cancelled', 'expired', 'failed'].includes(subscription.status)
+                ? subscription.status
+                : 'unknown',
         },
     };
 };

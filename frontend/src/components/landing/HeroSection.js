@@ -70,7 +70,7 @@ export default function HeroSection() {
               <br className="hidden md:block" />
               With Your Skin —
               <br />
-              <span className="gradient-text">In 60 Seconds</span>
+              <span className="gradient-text">With One Clear Photo</span>
             </h1>
 
             {/* Subtext */}
@@ -112,7 +112,7 @@ export default function HeroSection() {
               style={{ color: "#787585", fontFamily: "'Inter', sans-serif" }}
             >
               <span className="text-base">🔒</span>
-              Takes 30 seconds • No signup required • Your photo is private
+              Account required • Images are not stored by TejAi • Cosmetic wellness only
             </p>
 
             {/* Social proof */}

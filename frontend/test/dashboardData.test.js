@@ -20,4 +20,5 @@ test('uses safe defaults for malformed optional dashboard sections', () => {
     assert.deepEqual(result.latestScan.concerns, ['Acne']);
     assert.equal(result.trend.direction, 'insufficient_data');
     assert.equal(result.subscription.plan, 'free');
+    assert.equal(result.subscription.status, 'unknown');
 });

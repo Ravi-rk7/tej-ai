@@ -10,6 +10,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { getSafeInternalPath } from "@/lib/authRedirect";
 
 const AuthContext = createContext(null);
 
@@ -107,15 +108,15 @@ export function RequireAuth({ children }) {
     return children;
 }
 
-export function GuestOnly({ children }) {
+export function GuestOnly({ children, redirectTo = "/dashboard" }) {
     const { loading, session } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
         if (!loading && session) {
-            router.replace("/dashboard");
+            router.replace(getSafeInternalPath(redirectTo));
         }
-    }, [loading, router, session]);
+    }, [loading, redirectTo, router, session]);
 
     if (loading || session) {
         return <AuthLoading />;

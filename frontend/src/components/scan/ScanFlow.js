@@ -20,7 +20,6 @@ export default function ScanFlow() {
             <PaywallModal
                 open={showPaywall}
                 onClose={() => setShowPaywall(false)}
-                onUnlock={() => setShowPaywall(false)}
             />
         </>
     );
