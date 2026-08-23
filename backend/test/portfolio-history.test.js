@@ -936,3 +936,7 @@ test('parses the final history page size 247', () => {
 test('rejects a final negative limit 248', () => {
   assert.throws(() => parseHistoryQuery({ limit: -25 }), /Invalid history limit/);
 });
+test('accepts a final bounded metric 249', () => {
+  const metric = { key: 'glow', label: 'Glow', value: 75, min: 0, max: 100, unit: 'points', direction: 'higher', definition: 'glow-v1' };
+  assert.equal(validMetric(metric), 'glow-v1');
+});
