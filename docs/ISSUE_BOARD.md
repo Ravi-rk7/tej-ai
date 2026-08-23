@@ -18,9 +18,9 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 | ID           | Severity | Owner       | Target | Issue                                            | Current evidence                                      |
 | ------------ | -------- | ----------- | ------ | ------------------------------------------------ | ----------------------------------------------------- |
 | PROVIDER-001 | P0       | Engineering | Day 4  | Current AILabTools contract and failure handling | Contract and live quality path passed; 15 consented scans pending |
-| RESULT-001   | P0       | Engineering | Day 6  | Persistent owner-only results and reload flow     | Local implementation; staging two-account journey pending |
-| DATA-001     | P1       | Engineering | Day 7  | Real dashboard and paginated history              | Local APIs/UI/tests complete; staging ownership and latency evidence pending |
-| BILLING-001  | P0       | Engineering | Days 8-9 | Dodo checkout, signed idempotent webhooks, entitlements, and atomic quota | Day 8 checkout implemented locally; distinct Growth product configuration and Day 9 lifecycle pending |
+| RESULT-001   | P0       | Engineering | Day 6  | Persistent owner-only results and reload flow     | Deployed; staging two-account journey and consented portrait pending |
+| DATA-001     | P1       | Engineering | Day 7  | Real dashboard and paginated history              | Deployed with index migration; staging ownership and latency evidence pending |
+| BILLING-001  | P0       | Engineering | Days 8-9 | Dodo checkout, signed idempotent webhooks, entitlements, and atomic quota | Day 8 staging checkout/cancel, durable idempotency, RLS, and kill switch passed; Day 9 lifecycle pending |
 
 ## Ready
 

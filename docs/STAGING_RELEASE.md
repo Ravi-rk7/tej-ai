@@ -1,6 +1,6 @@
 # Staging release record
 
-Status: **Deployed — Day 4 implementation live; consented-image gate pending**
+Status: **Deployed — Day 8 checkout verified on staging and disabled by default; consented-image gates pending**
 
 This record must contain no credentials, tokens, emails, or provider payloads.
 
@@ -9,17 +9,19 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 | Frontend URL               | `https://tej-ai-staging.vercel.app`     |
 | Backend URL                | `https://tej-ai-staging.up.railway.app` |
 | Supabase project reference | `lnybwyddnbcylmdrxcxg`                  |
-| Migration versions         | `202608180001`, `202608200001`          |
-| Release commit             | `0c064db`                               |
-| Rollback commit            | `b487f2a`                               |
-| Deployed at (UTC)          | `2026-08-21T19:59:15Z`                  |
+| Migration versions         | `202608180001`, `202608200001`, `202608220001`, `202608220002` |
+| Release commit             | `d818a9e`                               |
+| Rollback commit            | `b9fba93` (Day 8 code only; no database rollback required) |
+| Deployed at (UTC)          | `2026-08-23T13:55:45Z`                  |
 
-## Current Day 5 deployment observation
+## Current Day 8 deployment observation
 
-The Day 5 release commit `0c064db` is present on the documented staging
-frontend and API endpoints. The API health endpoint returned HTTP 200 at
-`2026-08-21T19:59:15Z`, and the homepage served the updated cosmetic-wellness
-copy. The consented portrait scan and persisted-row verification remain open.
+The Day 8 application release commit `d818a9e` is present on the documented
+staging frontend and API endpoints. The test-mode Starter checkout opened once,
+was cancelled without entering payment details, and left the account on the
+Free plan. `BILLING_CHECKOUT_ENABLED=false` was restored and verified after the
+test. The Day 4 representative set and Day 5 consented portrait gates remain
+open.
 
 ## Verification
 
@@ -43,6 +45,11 @@ copy. The consented portrait scan and persisted-row verification remain open.
 - [x] Current AILabTools v1.7.1 success and error envelopes have explicit schemas.
 - [x] A live staging no-face request returns meaningful HTTP 422 guidance.
 - [x] Provider failure exits before scan persistence.
+- [x] Day 7 dashboard/history index migration is applied on staging.
+- [x] Day 8 checkout-attempt migration and service-role-only grants are applied.
+- [x] One Dodo test-mode checkout opens and cancels without changing entitlement.
+- [x] Checkout is disabled by default after verification.
+- [x] Legacy checkout and the pre-Day-9 webhook remain quarantined.
 - [ ] Run the 15-image representative consented staging set.
 - [ ] Run one explicitly consented Day 5 portrait and verify the persisted
   Glow Score, concern details, routine, and sanitized fields.
@@ -195,9 +202,9 @@ copy. The consented portrait scan and persisted-row verification remain open.
   production build.
 - Local Day 6 gate: backend 56 tests and frontend 10 tests pass; backend and
   frontend lint, production build, and production dependency audits pass.
-- This implementation is not yet deployed to staging. The two-account
-  owner/reload journey and one explicitly consented portrait remain required
-  before `RESULT-001` or the Day 5 consented-image observation is marked done.
+- This implementation is deployed to staging. The two-account owner/reload
+  journey and one explicitly consented portrait remain required before
+  `RESULT-001` or the Day 5 consented-image observation is marked done.
 - Day 4's separate 15-image provider gate remains open. Production was not
   deployed or modified.
 
@@ -221,7 +228,44 @@ copy. The consented portrait scan and persisted-row verification remain open.
   and the dashboard no longer contains mock score/streak data.
 - Local Day 7 gate: backend 67 tests and frontend 14 tests pass; root
   `npm run check` and `npm run audit` pass; the production frontend build passes.
-- Day 7 is implemented locally only. `DATA-001` remains open pending staging
-  migration/application rollout, p95 timing evidence, two-account ownership
+- Day 7 is deployed and migration `202608220001` is applied on staging.
+  `DATA-001` remains open pending p95 timing evidence, two-account ownership
   verification, and refresh/load-more browser checks. Production was not
   deployed or modified.
+
+## Day 8 safe checkout implementation evidence
+
+- Commit `d818a9e` deploys the authenticated checkout endpoint, owner-scoped
+  subscription status, fixed non-mutating return/cancel relays, durable hashed
+  idempotency attempts, and the server-owned Starter/Growth/Pro product map.
+- Dodo remained in test mode. The three configured products were verified as
+  monthly USD products at $6.99, $12.99, and $19.99. No live-mode checkout,
+  payment method, trial, prepaid credit, or auto-recharge was used.
+- One disposable confirmed user opened exactly one Starter checkout. Before
+  cleanup, the database showed one `ready` attempt, one provider session, the
+  expected test-checkout host, and an unchanged `free` / `active` entitlement.
+- The Dodo cancellation dialog was confirmed before any customer name, billing
+  address, or payment information was entered. The app displayed a neutral
+  cancellation notice and no plan-success state.
+- `BILLING_CHECKOUT_ENABLED` was restored to `false` and Railway reported the
+  safety redeployment successful. A fresh authenticated attempt then returned
+  the disabled-checkout message without opening Dodo, while the plan remained
+  Free.
+- Migration `202608220002` is applied. Browser roles cannot read checkout
+  attempts or subscriptions and cannot execute the atomic claim function;
+  those privileges are restricted to the service role.
+- The disposable user was deleted after evidence capture. Cascades were
+  verified at zero auth, subscription, and checkout-attempt rows.
+- Railway's checkout log contained only the selected plan and `test_mode`; it
+  contained no email, user ID, idempotency value, provider session, or checkout
+  URL.
+- Root `npm run check` passed with 105 backend and 26 frontend tests, lint, and
+  the production frontend build. Both production dependency audits reported
+  zero vulnerabilities, and GitHub Actions run
+  [`32643261403`](https://github.com/Ravi-rk7/tej-ai/actions/runs/32643261403)
+  passed on the exact application commit.
+- The final staging smoke suite passed health, protected-route auth ordering,
+  billing auth, legacy-route quarantine, webhook quarantine, and both fixed
+  callback relays. Railway runs Node 22.23.2.
+- Day 9 signed webhook lifecycle handling and atomic paid-entitlement updates
+  remain intentionally unavailable. Production was not deployed or modified.
