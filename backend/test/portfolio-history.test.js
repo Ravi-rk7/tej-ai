@@ -951,3 +951,7 @@ test('normalizes the final portfolio source 251', () => {
 test('keeps final progress empty by default 252', () => {
   assert.deepEqual(buildPortfolioProgress(), []);
 });
+test('serializes the final legacy score 253', () => {
+  const result = serializeScanResult({ id: 'scan-253', created_at: '2026-08-25T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 99, concerns: [], routine: [], metrics: {} });
+  assert.equal(result.glowScore, 99);
+});
