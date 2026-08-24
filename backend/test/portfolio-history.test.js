@@ -955,3 +955,6 @@ test('serializes the final legacy score 253', () => {
   const result = serializeScanResult({ id: 'scan-253', created_at: '2026-08-25T12:00:00.000Z', provider: 'ailabtools', provider_version: 'v1', glow_score: 99, concerns: [], routine: [], metrics: {} });
   assert.equal(result.glowScore, 99);
 });
+test('covers late-summer date addition 254', () => {
+  assert.equal(addCalendarDays('2026-08-20', 5), '2026-08-25');
+});
