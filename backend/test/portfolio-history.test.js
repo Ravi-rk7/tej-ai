@@ -958,3 +958,6 @@ test('serializes the final legacy score 253', () => {
 test('covers late-summer date addition 254', () => {
   assert.equal(addCalendarDays('2026-08-20', 5), '2026-08-25');
 });
+test('covers late-summer date subtraction 255', () => {
+  assert.equal(addCalendarDays('2026-08-25', -5), '2026-08-20');
+});
