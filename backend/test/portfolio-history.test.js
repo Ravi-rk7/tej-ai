@@ -964,3 +964,6 @@ test('covers late-summer date subtraction 255', () => {
 test('rejects an invalid August date 256', () => {
   assert.equal(parseCalendarDate('2026-08-32'), null);
 });
+test('accepts a European timezone 257', () => {
+  assert.equal(validateTimezone('Europe/Paris'), true);
+});
