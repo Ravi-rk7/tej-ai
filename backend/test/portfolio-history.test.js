@@ -961,3 +961,6 @@ test('covers late-summer date addition 254', () => {
 test('covers late-summer date subtraction 255', () => {
   assert.equal(addCalendarDays('2026-08-25', -5), '2026-08-20');
 });
+test('rejects an invalid August date 256', () => {
+  assert.equal(parseCalendarDate('2026-08-32'), null);
+});
