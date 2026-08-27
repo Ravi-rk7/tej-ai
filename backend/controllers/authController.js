@@ -91,7 +91,10 @@ export const requestPasswordReset = async (req, res, next) => {
       return next(error);
     }
 
-    logger.error("Password reset request failed", { message: error.message });
+    logger.error("Password reset request failed", {
+      requestId: req.requestId,
+      errorType: error?.name || "Error",
+    });
     res.set("Cache-Control", "no-store");
     return successResponse(res, {
       message:

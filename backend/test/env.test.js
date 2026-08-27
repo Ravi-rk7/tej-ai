@@ -18,6 +18,7 @@ const validEnvironment = () => ({
     UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
     DODO_API_BASE_URL: 'https://test.dodopayments.com',
     DELETION_AUDIT_HMAC_SECRET: 'test-deletion-audit-secret-1234567890',
+    SECURITY_HMAC_SECRET: 'test-security-hmac-secret-123456789012',
 });
 
 test('validateEnvironment accepts complete test-mode development configuration', () => {
@@ -177,6 +178,25 @@ test('validateEnvironment requires enforced production consent and a deletion au
     production.PRIVACY_CONSENT_ENFORCEMENT = 'true';
     production.DELETION_AUDIT_HMAC_SECRET = 'short';
     assert.throws(() => validateEnvironment({ source: production }), /at least 32 characters/);
+});
+
+test('validateEnvironment requires an independent security HMAC secret in public environments', () => {
+    const staging = {
+        ...validEnvironment(),
+        APP_ENV: 'staging',
+        API_BASE_URL: 'https://api-staging.tejai.example',
+        FRONTEND_URL: 'https://staging.tejai.example',
+        SECURITY_HMAC_SECRET: 'short',
+    };
+    assert.throws(
+        () => validateEnvironment({ source: staging }),
+        /SECURITY_HMAC_SECRET must contain at least 32 characters/
+    );
+    staging.SECURITY_HMAC_SECRET = staging.DELETION_AUDIT_HMAC_SECRET;
+    assert.throws(
+        () => validateEnvironment({ source: staging }),
+        /must be independent from DELETION_AUDIT_HMAC_SECRET/
+    );
 });
 
 test('validateEnvironment rejects malformed privacy versions and retention values', () => {

@@ -298,3 +298,24 @@ open.
   name, support/privacy contacts, operating country, governing law, effective
   date, and legal approval. Migration `202608280002`, the Day 10 app, and legal
   pages have not been deployed. Production was not deployed or modified.
+
+## Day 11 security implementation evidence
+
+- Migration `202608280003` removes the final browser scan-read policy, revokes
+  browser table/RPC privileges, revokes public schema creation, and forces RLS
+  on private application tables. The staging RLS verifier now expects all
+  application table reads to use the authenticated backend API.
+- The API has server-generated request IDs, structured redacted logs, Helmet,
+  no-store caching, exact non-credentialed CORS, body/query shape checks, and
+  endpoint-specific pseudonymous rate limits. Cost-bearing and destructive
+  operations fail closed when limiter storage is unavailable.
+- The frontend defines an origin-bound CSP, blocks framing and unnecessary
+  browser capabilities, and emits Google font assets locally through
+  `next/font` rather than making a runtime third-party font request.
+- The CSRF assessment and the explicit static-CSP `unsafe-inline` compatibility
+  limitation are recorded in `SECURITY_HARDENING.md`.
+- Local `npm run check` passes backend/frontend lint, 139 backend tests, 31
+  frontend tests, and the static production build. `npm run audit` reports zero
+  production dependency vulnerabilities in both applications. The release
+  commit and CI secret-scan evidence remain pending. Staging and production
+  have not been modified by Day 11 work.

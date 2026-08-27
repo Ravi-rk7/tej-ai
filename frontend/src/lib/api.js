@@ -42,7 +42,7 @@ const request = async (path, options = {}) => {
         && fetchOptions.body instanceof FormData;
     const headers = { ...(fetchOptions.headers || {}) };
 
-    if (!isMultipart && !headers["Content-Type"]) {
+    if (!isMultipart && fetchOptions.body !== undefined && !headers["Content-Type"]) {
         headers["Content-Type"] = "application/json";
     }
 

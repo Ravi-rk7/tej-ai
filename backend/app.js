@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import logger from './utils/logger.js';
 import env from './config/env.js';
 import { successResponse } from './utils/responseFormatter.js';
 import errorMiddleware from './middleware/errorMiddleware.js';
@@ -12,6 +11,11 @@ import paymentRoutes from './routes/payment.js';
 import webhookRoutes from './routes/webhook.js';
 import authRoutes from './routes/auth.js';
 import privacyRoutes from './routes/privacy.js';
+import requestContextMiddleware from './middleware/requestContextMiddleware.js';
+import securityHeadersMiddleware, {
+    apiSecurityPolicyMiddleware,
+} from './middleware/securityHeadersMiddleware.js';
+import requestShapeMiddleware from './middleware/requestShapeMiddleware.js';
 
 const app = express();
 const allowedOrigins = new Set(
@@ -31,20 +35,28 @@ const corsOptions = {
         error.statusCode = 403;
         callback(error);
     },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: false,
+    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
+    exposedHeaders: [
+        'X-Request-ID',
+        'X-RateLimit-Limit',
+        'X-RateLimit-Remaining',
+        'X-RateLimit-Reset',
+        'Retry-After',
+    ],
+    optionsSuccessStatus: 204,
+    maxAge: 600,
 };
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-app.use((req, res, next) => {
-    logger.http(`${req.method} ${req.path}`, { ip: req.ip });
-    next();
-});
-
+app.use(requestContextMiddleware);
+app.use(securityHeadersMiddleware);
+app.use('/api', apiSecurityPolicyMiddleware);
 app.use(cors(corsOptions));
+app.use(requestShapeMiddleware);
 
 // Dodo signs the exact request bytes. This route must run before the JSON
 // parser so no middleware can reserialize the body before verification.

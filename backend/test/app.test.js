@@ -32,6 +32,11 @@ test('GET /api/health returns a healthy envelope', async () => {
     assert.equal(body.data.status, 'healthy');
     assert.ok(Date.parse(body.data.timestamp));
     assert.equal(response.headers.get('x-powered-by'), null);
+    assert.match(response.headers.get('x-request-id'), /^[0-9a-f-]{36}$/);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+    assert.match(response.headers.get('content-security-policy'), /default-src 'none'/);
+    assert.match(response.headers.get('permissions-policy'), /camera=\(\)/);
 });
 
 test('CORS does not authorize an unconfigured origin', async () => {
@@ -55,6 +60,24 @@ test('CORS authorizes the configured frontend origin', async () => {
         response.headers.get('access-control-allow-origin'),
         'http://localhost:3000'
     );
+    assert.equal(response.headers.get('access-control-allow-credentials'), null);
+    assert.match(response.headers.get('access-control-expose-headers'), /X-Request-ID/);
+});
+
+test('CORS rejects the opaque null origin and does not advertise PUT', async () => {
+    const rejected = await fetch(`${baseUrl}/api/health`, {
+        headers: { Origin: 'null' },
+    });
+    assert.equal(rejected.status, 403);
+
+    const preflight = await fetch(`${baseUrl}/api/health`, {
+        method: 'OPTIONS',
+        headers: {
+            Origin: 'http://localhost:3000',
+            'Access-Control-Request-Method': 'PUT',
+        },
+    });
+    assert.doesNotMatch(preflight.headers.get('access-control-allow-methods') || '', /PUT/);
 });
 
 test('CORS permits the billing idempotency header for the configured frontend', async () => {
@@ -100,6 +123,20 @@ test('malformed JSON returns a stable public error without parser details', asyn
         error: 'Invalid request body',
         code: 'INVALID_JSON',
     });
+});
+
+test('request shape rejects unexpected query keys and unsupported media types', async () => {
+    const queryResponse = await fetch(`${baseUrl}/api/health?email=private%40example.com`);
+    assert.equal(queryResponse.status, 400);
+    assert.equal((await queryResponse.json()).code, 'UNEXPECTED_QUERY_PARAMETER');
+
+    const contentResponse = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: 'not-json',
+    });
+    assert.equal(contentResponse.status, 415);
+    assert.equal((await contentResponse.json()).code, 'UNSUPPORTED_CONTENT_TYPE');
 });
 
 test('protected endpoints reject missing authorization before external calls', async () => {

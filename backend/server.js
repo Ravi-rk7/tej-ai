@@ -22,9 +22,10 @@ try {
     validateEnvironment();
 
     server = app.listen(env.PORT, () => {
-        logger.info(`Server running on port ${env.PORT}`);
-        logger.info(`Frontend URL: ${env.FRONTEND_URL}`);
-        logger.info(`Environment: ${env.NODE_ENV}`);
+        logger.info('Server started', {
+            environment: env.APP_ENV,
+            port: env.PORT,
+        });
     });
 
     process.on('SIGTERM', () => shutdown('SIGTERM'));
@@ -33,7 +34,7 @@ try {
     logger.error('Server configuration is invalid', {
         code: error.code,
         missing: error.missing,
-        message: error.message,
+        errorType: error.name || 'Error',
     });
     process.exitCode = 1;
 }

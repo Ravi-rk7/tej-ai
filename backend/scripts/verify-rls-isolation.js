@@ -196,19 +196,22 @@ try {
     [userA, userB],
     [userB, userA],
   ]) {
-    const { data: visible, error: visibleError } = await current.client
+    const { error: directScanReadError } = await current.client
       .from("skin_analysis")
       .select("id,user_id");
-    assert(!visibleError, "Authenticated scan read failed");
-    assert(visible.length === 1, "A user could see more than their own scan");
-    assert(visible[0].user_id === current.id, "A user saw another user's scan");
+    assert(
+      directScanReadError,
+      "Browser client unexpectedly read the private scan table",
+    );
 
-    const { data: forbidden, error: forbiddenError } = await current.client
+    const { error: filteredScanReadError } = await current.client
       .from("skin_analysis")
       .select("id")
       .eq("user_id", other.id);
-    assert(!forbiddenError, "Cross-user filtered read failed unexpectedly");
-    assert(forbidden.length === 0, "Cross-user scan was readable");
+    assert(
+      filteredScanReadError,
+      "Browser client unexpectedly queried another user's scan",
+    );
 
     const { error: writeError } = await current.client
       .from("skin_analysis")
@@ -240,7 +243,7 @@ try {
   }
 
   console.log(
-    "RLS isolation, private billing tables, status API, and signup entitlements verified.",
+    "Private application tables, backend-only reads, API ownership, and signup entitlements verified.",
   );
 } finally {
   if (createdScanIds.length > 0) {

@@ -21,21 +21,28 @@ const getSupabase = () => {
 const AuthHeaderSchema = z
     .string()
     .min(8)
-    .regex(/^Bearer\s+.+$/, 'Missing or invalid authorization header');
+    .max(4096)
+    .regex(/^Bearer [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/, 'Missing or invalid authorization header');
 
 /**
  * Verify Supabase JWT and attach user info to request
  */
-export const authMiddleware = async (req, res, next) => {
+export const createAuthMiddleware = ({
+    getUser = (token) => getSupabase().auth.getUser(token),
+    authLogger = logger,
+} = {}) => async (req, res, next) => {
     try {
         const authHeader = AuthHeaderSchema.parse(req.headers.authorization);
 
         const token = authHeader.slice(7);
 
         // Verify token with Supabase
-        const { data, error } = await getSupabase().auth.getUser(token);
+        const { data, error } = await getUser(token);
         if (error || !data.user) {
-            logger.warn(`Auth failed: ${error?.message || 'Invalid token'}`);
+            authLogger.warn('Authentication rejected', {
+                requestId: req.requestId,
+                code: 'AUTH_TOKEN_REJECTED',
+            });
             return errorResponse(res, 'Unauthorized', 401);
         }
 
@@ -50,9 +57,15 @@ export const authMiddleware = async (req, res, next) => {
         if (err instanceof z.ZodError) {
             return errorResponse(res, 'Unauthorized', 401);
         }
-        logger.error('Auth middleware error', err);
+        authLogger.error('Authentication unavailable', {
+            requestId: req.requestId,
+            code: 'AUTH_VERIFICATION_FAILED',
+            errorType: err?.name || 'Error',
+        });
         return errorResponse(res, 'Unauthorized', 401);
     }
 };
+
+export const authMiddleware = createAuthMiddleware();
 
 export default authMiddleware;

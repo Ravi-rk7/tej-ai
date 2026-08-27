@@ -18,7 +18,13 @@
     "format:check": "prettier --check .",
     "check": "npm run lint && npm test"
   },
-  "keywords": ["skincare", "ai", "saas", "nodejs", "express"],
+  "keywords": [
+    "skincare",
+    "ai",
+    "saas",
+    "nodejs",
+    "express"
+  ],
   "author": "TejAi Team",
   "license": "MIT",
   "dependencies": {
@@ -30,6 +36,7 @@
     "dotenv": "^16.3.1",
     "express": "^5.2.1",
     "form-data": "^4.0.6",
+    "helmet": "^8.3.0",
     "multer": "^2.2.0",
     "sharp": "^0.35.3",
     "standardwebhooks": "1.0.0",

@@ -1,5 +1,18 @@
 import "./globals.css";
 import AuthProvider from "@/components/auth/AuthProvider";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-plus-jakarta",
+});
 
 export const metadata = {
   title: "TejAi — Cosmetic Skin Wellness",
@@ -16,7 +29,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="min-h-full flex flex-col antialiased">
+      <body className={`${inter.className} ${inter.variable} ${plusJakartaSans.variable} min-h-full flex flex-col antialiased`}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

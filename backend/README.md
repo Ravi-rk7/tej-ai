@@ -125,7 +125,7 @@ backend/
 
 **`POST /api/create-subscription` / `POST /api/webhook`**
 
-- Legacy paths are fail-closed. The signed webhook is `/api/billing/webhook`;
+- Legacy paths are fail-closed. The signed webhook is `/api/webhook`;
   verified lifecycle events are applied idempotently by the Day 9 database RPC.
 
 ### Privacy and deletion

@@ -256,6 +256,20 @@ export const validateEnvironment = ({
         throw new Error('DELETION_AUDIT_HMAC_SECRET must contain at least 32 characters outside development');
     }
 
+    const securitySecret = String(source.SECURITY_HMAC_SECRET || '');
+    if (
+        (appEnvironment === 'staging' || appEnvironment === 'production')
+        && securitySecret.length < 32
+    ) {
+        throw new Error('SECURITY_HMAC_SECRET must contain at least 32 characters outside development');
+    }
+    if (
+        (appEnvironment === 'staging' || appEnvironment === 'production')
+        && securitySecret === deletionSecret
+    ) {
+        throw new Error('SECURITY_HMAC_SECRET must be independent from DELETION_AUDIT_HMAC_SECRET');
+    }
+
     if (String(source.BILLING_WEBHOOK_ENABLED || '').trim().toLowerCase() === 'true'
         && (!source.DODO_BUSINESS_ID || !String(source.DODO_BUSINESS_ID).trim())) {
         throw new Error('DODO_BUSINESS_ID is required when BILLING_WEBHOOK_ENABLED is true');
@@ -367,6 +381,7 @@ const env = Object.freeze({
         365
     ),
     DELETION_AUDIT_HMAC_SECRET: readEnv('DELETION_AUDIT_HMAC_SECRET'),
+    SECURITY_HMAC_SECRET: readEnv('SECURITY_HMAC_SECRET'),
 
     LOG_LEVEL: readEnv('LOG_LEVEL', 'info'),
 });

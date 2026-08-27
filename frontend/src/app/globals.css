@@ -1,8 +1,4 @@
-/* ───────────────────────────────────────────
-   Google Fonts — must be first @import
-─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
-
+/* Font files are emitted locally by next/font in the root layout. */
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────
@@ -48,9 +44,9 @@
   --color-error-container: #ffdad6;
 
   /* Fonts */
-  --font-headline: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-sans: 'Inter', sans-serif;
+  --font-headline: var(--font-plus-jakarta), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-sans: var(--font-inter), sans-serif;
 
   /* Animation durations */
   --animate-float: float 6s ease-in-out infinite;

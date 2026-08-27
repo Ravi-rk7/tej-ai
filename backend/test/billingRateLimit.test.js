@@ -106,3 +106,24 @@ test('billing limiter rejects a missing authenticated owner without storage acce
     assert.equal(result.statusCode, 401);
     assert.equal(called, false);
 });
+
+test('billing limiter treats an Upstash timeout decision as unavailable', async () => {
+    const middleware = createBillingRateLimitMiddleware({
+        limiter: {
+            async limit() {
+                return { success: true, reason: 'timeout' };
+            },
+        },
+        billingLogger: { warn() {}, error() {} },
+    });
+    const { response, result } = responseRecorder();
+
+    await middleware(
+        { user: { id: 'private-user-id' } },
+        response,
+        () => assert.fail('timeout must fail closed')
+    );
+
+    assert.equal(result.statusCode, 503);
+    assert.equal(result.body.code, 'BILLING_RATE_LIMIT_UNAVAILABLE');
+});

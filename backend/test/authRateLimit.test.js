@@ -103,3 +103,24 @@ test("auth limiter fails closed when the rate-limit service is unavailable", asy
   assert.equal(response.statusCode, 503);
   assert.equal(response.body.code, "AUTH_RATE_LIMIT_UNAVAILABLE");
 });
+
+test("auth limiter treats an Upstash timeout decision as unavailable", async () => {
+  const middleware = createAuthRateLimitMiddleware({
+    keyPrefix: "test-auth-timeout",
+    limit: 3,
+    window: "1 h",
+    limiterFactory: () => ({
+      limit: async () => ({ success: true, reason: "timeout" }),
+    }),
+  });
+  const response = createResponse();
+
+  await middleware(
+    { body: { email: "person@example.com" }, ip: "127.0.0.1" },
+    response,
+    () => assert.fail("timeout must fail closed"),
+  );
+
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.body.code, "AUTH_RATE_LIMIT_UNAVAILABLE");
+});

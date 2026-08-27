@@ -10,7 +10,9 @@ import {
     relayBillingReturn,
 } from '../controllers/paymentController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
-import billingRateLimitMiddleware from '../middleware/billingRateLimitMiddleware.js';
+import billingRateLimitMiddleware, {
+    portalRateLimitMiddleware,
+} from '../middleware/billingRateLimitMiddleware.js';
 import rateLimitMiddleware from '../middleware/rateLimitMiddleware.js';
 
 const router = express.Router();
@@ -34,7 +36,7 @@ router.post(
     '/billing/portal',
     authMiddleware,
     portalAvailabilityMiddleware,
-    billingRateLimitMiddleware,
+    portalRateLimitMiddleware,
     createCustomerPortalHandler
 );
 

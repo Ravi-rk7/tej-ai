@@ -1,9 +1,9 @@
-import { createHash } from "node:crypto";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import env from "../config/env.js";
 import logger from "../utils/logger.js";
 import { errorResponse } from "../utils/responseFormatter.js";
+import { hashSecurityIdentifier } from "../utils/securityHash.js";
 
 const limiterCache = new Map();
 
@@ -24,7 +24,8 @@ const getLimiter = ({ keyPrefix, limit, window }) => {
         redis,
         limiter: Ratelimit.slidingWindow(limit, window),
         prefix: `tejai:${keyPrefix}`,
-        analytics: true,
+        analytics: false,
+        timeout: 750,
       }),
     );
   }
@@ -39,17 +40,28 @@ const buildIdentifier = (req) => {
       : "missing-email";
   const ip = req.ip || req.socket?.remoteAddress || "unknown-ip";
 
-  return createHash("sha256").update(`${ip}:${email}`).digest("hex");
+  return hashSecurityIdentifier(`${ip}:${email}`);
 };
 
+const buildIpIdentifier = (req) => hashSecurityIdentifier(
+  req.ip || req.socket?.remoteAddress || "unknown-ip",
+);
+
 export const createAuthRateLimitMiddleware =
-  ({ keyPrefix, limit, window, limiterFactory = getLimiter }) =>
+  ({
+    keyPrefix,
+    limit,
+    window,
+    limiterFactory = getLimiter,
+    identifierBuilder = buildIdentifier,
+  }) =>
   async (req, res, next) => {
     try {
       const limiter = limiterFactory({ keyPrefix, limit, window });
-      const { success, remaining, reset } = await limiter.limit(
-        buildIdentifier(req),
+      const { success, remaining, reset, reason } = await limiter.limit(
+        identifierBuilder(req),
       );
+      if (reason === "timeout") throw new Error("rate_limit_timeout");
       const resetAt = Number(reset) || Date.now();
       const retryAfterSeconds = Math.max(
         1,
@@ -73,8 +85,9 @@ export const createAuthRateLimitMiddleware =
       return next();
     } catch (error) {
       logger.error("Authentication rate limit unavailable", {
+        requestId: req.requestId,
         keyPrefix,
-        message: error.message,
+        errorType: error?.name || "Error",
       });
 
       return errorResponse(
@@ -92,8 +105,22 @@ export const loginRateLimit = createAuthRateLimitMiddleware({
   window: "15 m",
 });
 
+export const loginIpRateLimit = createAuthRateLimitMiddleware({
+  keyPrefix: "auth-login-ip",
+  limit: 20,
+  window: "15 m",
+  identifierBuilder: buildIpIdentifier,
+});
+
 export const passwordResetRateLimit = createAuthRateLimitMiddleware({
   keyPrefix: "auth-password-reset",
   limit: 3,
   window: "1 h",
+});
+
+export const passwordResetIpRateLimit = createAuthRateLimitMiddleware({
+  keyPrefix: "auth-password-reset-ip",
+  limit: 10,
+  window: "1 h",
+  identifierBuilder: buildIpIdentifier,
 });

@@ -1,7 +1,7 @@
 import express from 'express';
 import { scan } from '../controllers/scanController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
-import rateLimitMiddleware from '../middleware/rateLimitMiddleware.js';
+import { scanRateLimitMiddleware } from '../middleware/rateLimitMiddleware.js';
 import {
     reserveScanQuotaMiddleware,
     scanQuotaPrecheck,
@@ -21,7 +21,7 @@ const router = express.Router();
 router.post(
     '/scan',
     authMiddleware,
-    rateLimitMiddleware,
+    scanRateLimitMiddleware,
     privacyConsentMiddleware,
     scanQuotaPrecheck,
     uploadScanImage,

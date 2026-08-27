@@ -1,6 +1,7 @@
 import logger from '../utils/logger.js';
 import { errorResponse } from '../utils/responseFormatter.js';
 import { z } from 'zod';
+import { safeRouteTemplate } from './requestContextMiddleware.js';
 
 /**
  * Centralized error handler middleware
@@ -33,7 +34,8 @@ export const errorMiddleware = (err, req, res, _next) => {
 
     const logContext = {
         code: err.publicCode,
-        path: req.path,
+        requestId: req.requestId,
+        route: safeRouteTemplate(req),
         method: req.method,
     };
 
