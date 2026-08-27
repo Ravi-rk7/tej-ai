@@ -153,7 +153,7 @@ export const getDashboardSubscription = async (userId) => {
     try {
         const { data, error } = await getSupabase()
             .from('subscriptions')
-            .select('plan, status, current_period_end')
+            .select('plan, status, current_period_end, cancel_at_period_end, dodo_customer_id')
             .eq('user_id', userId)
             .maybeSingle();
 
@@ -173,7 +173,7 @@ export const getBillingSubscription = async (userId) => {
     try {
         const { data, error } = await getSupabase()
             .from('subscriptions')
-            .select('plan, status, current_period_end, cancel_at_period_end, updated_at')
+            .select('plan, status, current_period_end, cancel_at_period_end, dodo_customer_id, updated_at')
             .eq('user_id', userId)
             .maybeSingle();
 

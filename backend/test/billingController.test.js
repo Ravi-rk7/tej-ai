@@ -5,6 +5,8 @@ import {
     createBillingCheckoutHandler,
     createBillingRelayHandler,
     createCheckoutAvailabilityMiddleware,
+    createCustomerPortalHandlerFactory,
+    createPortalAvailabilityMiddleware,
     createSubscriptionStatusHandler,
     disabledBillingEndpoint,
     disabledWebhookEndpoint,
@@ -175,10 +177,12 @@ test('subscription status is owner-scoped, explicit, and missing rows resolve to
     assert.deepEqual(serializeBillingSubscription(null), {
         schemaVersion: 1,
         plan: 'free',
+        effectivePlan: 'free',
         status: 'active',
         scanLimit: 1,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
+        canManageBilling: false,
         updatedAt: null,
     });
 
@@ -203,10 +207,12 @@ test('subscription status is owner-scoped, explicit, and missing rows resolve to
     assert.deepEqual(result.body.data, {
         schemaVersion: 1,
         plan: 'growth',
+        effectivePlan: 'growth',
         status: 'active',
         scanLimit: 30,
         currentPeriodEnd: '2026-09-01T00:00:00.000Z',
         cancelAtPeriodEnd: true,
+        canManageBilling: true,
         updatedAt: '2026-08-23T00:00:00.000Z',
     });
 });
@@ -240,4 +246,38 @@ test('availability and legacy endpoint handlers fail closed with stable codes', 
     const webhook = responseRecorder();
     disabledWebhookEndpoint({}, webhook.response);
     assert.equal(webhook.result.body.code, 'WEBHOOK_NOT_READY');
+});
+
+test('customer portal is owner-scoped, empty-body only, and returns the hosted link', async () => {
+    let loadedUser;
+    let portalCustomer;
+    const handler = createCustomerPortalHandlerFactory({
+        loadSubscription: async (userId) => {
+            loadedUser = userId;
+            return { dodo_customer_id: 'cus_private' };
+        },
+        createPortal: async (customerId) => {
+            portalCustomer = customerId;
+            return { portalUrl: 'https://test.customer.dodopayments.com/session/abc' };
+        },
+    });
+    const { response, result } = responseRecorder();
+    await handler({ user: { id: 'authenticated-owner' }, body: undefined }, response);
+    assert.equal(result.statusCode, 201);
+    assert.deepEqual(result.body.data, { portalUrl: 'https://test.customer.dodopayments.com/session/abc' });
+    assert.equal(loadedUser, 'authenticated-owner');
+    assert.equal(portalCustomer, 'cus_private');
+
+    const invalid = responseRecorder();
+    await handler({ user: { id: 'authenticated-owner' }, body: { plan: 'pro' } }, invalid.response);
+    assert.equal(invalid.result.statusCode, 400);
+    assert.equal(invalid.result.body.code, 'BILLING_REQUEST_INVALID');
+});
+
+test('customer portal availability fails closed before provider work', () => {
+    const middleware = createPortalAvailabilityMiddleware({ enabled: () => false });
+    const { response, result } = responseRecorder();
+    middleware({}, response, () => assert.fail('must not continue'));
+    assert.equal(result.statusCode, 503);
+    assert.equal(result.body.code, 'BILLING_PORTAL_DISABLED');
 });

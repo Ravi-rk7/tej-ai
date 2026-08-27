@@ -8,7 +8,9 @@ import {
     getOrCreateCheckoutAttempt,
     getPlanFromSearch,
     normalizeCheckoutSession,
+    normalizePortalSession,
     normalizeSubscription,
+    getSafeBillingPortalError,
     readCheckoutAttempt,
     shouldPollSubscriptionReturn,
     shouldPreserveCheckoutAttempt,
@@ -73,12 +75,26 @@ test('normalizes the authoritative subscription contract without inventing activ
         updatedAt: '2026-08-23T00:00:00.000Z',
     });
     assert.equal(subscription.plan, 'growth');
+    assert.equal(subscription.effectivePlan, 'growth');
+    assert.equal(subscription.canManageBilling, false);
     assert.equal(subscription.scanLimit, 30);
     assert.equal(subscription.status, 'active');
 
     const malformedStatus = normalizeSubscription({ plan: 'starter', status: 'made_up' });
     assert.equal(malformedStatus.status, 'unknown');
     assert.equal(normalizeSubscription({ plan: 'made_up', status: 'active' }), null);
+});
+
+test('accepts only Dodo hosted customer portal links', () => {
+    assert.equal(normalizePortalSession({ portalUrl: 'https://test.customer.dodopayments.com/session/abc' }).portalUrl,
+        'https://test.customer.dodopayments.com/session/abc');
+    for (const portalUrl of [
+        'http://test.customer.dodopayments.com/session/abc',
+        'https://test.customer.dodopayments.com.evil.example/session/abc',
+        'https://user@test.customer.dodopayments.com/session/abc',
+        'https://customer.dodopayments.com:444/session/abc',
+    ]) assert.equal(normalizePortalSession({ portalUrl }), null);
+    assert.match(getSafeBillingPortalError({ body: { code: 'BILLING_PORTAL_DISABLED' } }), /temporarily unavailable/i);
 });
 
 test('allows only paid plan intent and neutral checkout return markers', () => {

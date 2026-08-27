@@ -7,6 +7,10 @@ import { z } from 'zod';
  * Must be the last middleware registered
  */
 export const errorMiddleware = (err, req, res, _next) => {
+    if (err?.type === 'entity.too.large' || (err?.status === 413 && req.path === '/api/webhook')) {
+        return errorResponse(res, 'Webhook request is too large', 413, 'WEBHOOK_BODY_TOO_LARGE');
+    }
+
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
         return errorResponse(
             res,

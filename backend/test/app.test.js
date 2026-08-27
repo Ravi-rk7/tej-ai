@@ -146,6 +146,11 @@ test('billing checkout and subscription endpoints authenticate before billing wo
     const statusBody = await statusResponse.json();
     assert.equal(statusResponse.status, 401);
     assert.equal(statusBody.error, 'Unauthorized');
+
+    const portalResponse = await fetch(`${baseUrl}/api/billing/portal`, { method: 'POST' });
+    const portalBody = await portalResponse.json();
+    assert.equal(portalResponse.status, 401);
+    assert.equal(portalBody.error, 'Unauthorized');
 });
 
 test('billing return and cancel relays discard provider-controlled query values', async () => {
@@ -183,5 +188,5 @@ test('legacy checkout and pre-Day-9 webhook endpoints remain fail-closed', async
     });
     const webhookBody = await webhookResponse.json();
     assert.equal(webhookResponse.status, 503);
-    assert.equal(webhookBody.code, 'WEBHOOK_NOT_READY');
+    assert.equal(webhookBody.code, 'WEBHOOK_DISABLED');
 });

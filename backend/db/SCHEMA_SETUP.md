@@ -13,9 +13,11 @@ the source of truth for deployed environments.
    2. `migrations/202608200001_day_2_auth_entitlements.sql`
    3. `migrations/202608220001_day_7_dashboard_history.sql`
    4. `migrations/202608220002_day_8_checkout_sessions.sql`
+   5. `migrations/202608280001_day_9_billing_webhooks_quotas.sql`
 4. Confirm that `skin_analysis`, `subscriptions`,
-   `payment_webhook_events`, and `billing_checkout_attempts` exist.
-5. Confirm RLS is enabled on all four tables.
+   `payment_webhook_events`, `billing_checkout_attempts`, and
+   `scan_quota_reservations` exist.
+5. Confirm RLS is enabled on all five tables.
 6. Confirm authenticated browser users can select only their own
    `skin_analysis` rows and cannot insert, update, or delete scan rows.
 7. Confirm browser roles cannot directly read or mutate `subscriptions` or

@@ -2,6 +2,10 @@ const CHECKOUT_ORIGINS = new Set([
     "https://test.checkout.dodopayments.com",
     "https://checkout.dodopayments.com",
 ]);
+const PORTAL_ORIGINS = new Set([
+    "https://test.customer.dodopayments.com",
+    "https://customer.dodopayments.com",
+]);
 
 export const PLAN_ORDER = Object.freeze(["free", "starter", "growth", "pro"]);
 
@@ -54,6 +58,7 @@ const SUBSCRIPTION_STATUSES = new Set([
     "cancelled",
     "expired",
     "failed",
+    "paused",
 ]);
 
 const CHECKOUT_STATUSES = new Set([
@@ -78,8 +83,13 @@ export const isPaidPlan = (value) => isPlanSlug(value) && value !== "free";
 
 export const canCreatePaidCheckout = (subscription, candidatePlan) => {
     if (!isObject(subscription) || !isPaidPlan(candidatePlan)) return false;
-    return (subscription.plan === "free" && subscription.status === "active")
-        || subscription.status === "expired";
+    if (subscription.plan === "free" && subscription.status === "active") return true;
+    if (["failed", "expired"].includes(subscription.status)) return true;
+    if (subscription.status === "cancelled") {
+        const periodEnd = Date.parse(subscription.currentPeriodEnd || "");
+        return Number.isFinite(periodEnd) && periodEnd <= Date.now();
+    }
+    return false;
 };
 
 export const getPlanFromSearch = (searchParams) => {
@@ -136,12 +146,14 @@ export const normalizeSubscription = (data) => {
     return {
         schemaVersion: Number.isInteger(data.schemaVersion) ? data.schemaVersion : 1,
         plan: source.plan,
+        effectivePlan: isPlanSlug(source.effectivePlan) ? source.effectivePlan : source.plan,
         status: SUBSCRIPTION_STATUSES.has(rawStatus) ? rawStatus : "unknown",
         scanLimit: Number.isInteger(source.scanLimit) && source.scanLimit > 0
             ? source.scanLimit
             : plan.scans,
         currentPeriodEnd: isIsoDate(source.currentPeriodEnd) ? source.currentPeriodEnd : null,
         cancelAtPeriodEnd: source.cancelAtPeriodEnd === true,
+        canManageBilling: source.canManageBilling === true,
         updatedAt: isIsoDate(source.updatedAt) ? source.updatedAt : null,
         checkout: rawCheckout
             ? {
@@ -162,6 +174,7 @@ export const getSubscriptionStatusLabel = (status) => ({
     cancelled: "Cancelled",
     expired: "Expired",
     failed: "Payment failed",
+    paused: "Paused",
     unknown: "Unavailable",
 }[status] || "Unavailable");
 
@@ -172,7 +185,7 @@ export const shouldPollSubscriptionReturn = ({
     maxAttempts = RETURN_STATUS_POLL_MAX_ATTEMPTS,
 }) => {
     if (!isObject(subscription) || !Number.isInteger(attempt) || attempt >= maxAttempts - 1) return false;
-    if (["failed", "cancelled", "expired"].includes(subscription.status)) return false;
+    if (["failed", "cancelled", "expired", "paused"].includes(subscription.status)) return false;
     if (["failed", "cancelled", "expired"].includes(subscription.checkout?.status)) return false;
     if (targetPlan && subscription.plan === targetPlan && subscription.status === "active") return false;
     return isPaidPlan(targetPlan);
@@ -197,6 +210,28 @@ export const getSafeCheckoutError = (error) => {
         return "Secure checkout is temporarily unavailable. Retry safely in a moment.";
     }
     return "We could not open secure checkout. Please try again.";
+};
+
+export const normalizePortalSession = (data) => {
+    if (!isObject(data) || typeof data.portalUrl !== "string") return null;
+    try {
+        const parsed = new URL(data.portalUrl);
+        if (!PORTAL_ORIGINS.has(parsed.origin) || parsed.username || parsed.password || parsed.port) return null;
+        return { portalUrl: parsed.toString() };
+    } catch {
+        return null;
+    }
+};
+
+export const getSafeBillingPortalError = (error) => {
+    const code = error?.body?.code;
+    if (error?.status === 401) return "Your session expired. Please sign in again.";
+    if (code === "BILLING_PORTAL_DISABLED") return "Billing management is temporarily unavailable.";
+    if (code === "BILLING_PORTAL_NOT_AVAILABLE") return "Billing management is not available for this account yet.";
+    if (code === "BILLING_PROVIDER_TIMEOUT") return "The billing provider took too long to respond. Please try again.";
+    if (code === "BILLING_PROVIDER_REJECTED") return "The billing provider could not open billing management. Please try again.";
+    if (error?.status >= 500) return "Billing management is temporarily unavailable. Please try again.";
+    return "We could not open billing management. Please try again.";
 };
 
 export const shouldPreserveCheckoutAttempt = (error) => {
@@ -276,6 +311,7 @@ const billingData = {
     getOrCreateCheckoutAttempt,
     getPlanFromSearch,
     normalizeCheckoutSession,
+    normalizePortalSession,
     normalizeSubscription,
 };
 

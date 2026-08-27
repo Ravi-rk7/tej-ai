@@ -5,6 +5,10 @@ import { generateAIRoutine } from '../services/aiRoutineService.js';
 import { calculateGlowScore } from '../services/glowScoreService.js';
 import { deriveSkinInsights } from '../services/skinInsightsService.js';
 import { saveSkinAnalysis } from '../services/supabaseService.js';
+import {
+    persistScanAndConsumeQuota,
+    refundScanQuota,
+} from '../services/quotaService.js';
 import { buildQualityWarnings, serializeScanResult } from '../services/scanResultService.js';
 import { releaseScanImage } from '../middleware/imageUploadMiddleware.js';
 
@@ -17,10 +21,27 @@ export const createScanHandler = ({
     calculateScore = calculateGlowScore,
     generateRoutine = generateAIRoutine,
     saveAnalysis = saveSkinAnalysis,
+    persistScan = persistScanAndConsumeQuota,
+    refundQuota = refundScanQuota,
     scanLogger = logger,
     releaseImage = releaseScanImage,
 } = {}) => async (req, res) => {
     const userId = req.user.id;
+    let finalized = false;
+    let reservationSettled = false;
+
+    const refundReservation = async (failureCode) => {
+        if (!req.scanQuota?.reservationId || finalized || reservationSettled) return;
+        try {
+            await refundQuota(userId, req.scanQuota.reservationId, failureCode);
+            reservationSettled = true;
+        } catch (refundError) {
+            reservationSettled = true;
+            scanLogger.error('Scan quota refund failed', {
+                code: refundError.publicCode || 'SCAN_LIMIT_UNAVAILABLE',
+            });
+        }
+    };
 
     try {
         scanLogger.info('Scan request started', {
@@ -39,6 +60,7 @@ export const createScanHandler = ({
                 category: serviceError.category || 'unknown',
                 code: serviceError.publicCode,
             });
+            await refundReservation('provider_failed');
             return errorResponse(res, message, statusCode, serviceError.publicCode);
         }
 
@@ -50,7 +72,7 @@ export const createScanHandler = ({
             concerns: insights.concernDetails,
         });
 
-        const savedScan = await saveAnalysis(userId, {
+        const scanPayload = {
             glowScore: insights.glowScore,
             skinType,
             concerns: insights.concerns,
@@ -65,7 +87,22 @@ export const createScanHandler = ({
             provider: skinAnalysis.provider,
             providerVersion: skinAnalysis.provider?.version,
             routine,
-        });
+        };
+
+        // The HTTP route always supplies a reservation. The unreserved branch
+        // preserves direct controller testability for existing callers only;
+        // production requests cannot reach it because the route reserves first.
+        let savedScan;
+        try {
+            savedScan = req.scanQuota?.reservationId
+                ? await persistScan(userId, req.scanQuota.reservationId, scanPayload)
+                : await saveAnalysis(userId, scanPayload);
+        } catch (persistenceError) {
+            await refundReservation('persistence_failed');
+            throw persistenceError;
+        }
+        finalized = Boolean(req.scanQuota?.reservationId);
+        reservationSettled = finalized;
 
         const result = serializeScanResult({
             ...savedScan,
@@ -90,6 +127,7 @@ export const createScanHandler = ({
 
         return successResponse(res, result);
     } catch (error) {
+        await refundReservation('processing_failed');
         scanLogger.error('Scan endpoint failed', {
             category: error.category || 'internal',
         });

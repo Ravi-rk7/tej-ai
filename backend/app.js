@@ -9,6 +9,7 @@ import resultRoutes from './routes/results.js';
 import dashboardRoutes from './routes/dashboard.js';
 import historyRoutes from './routes/history.js';
 import paymentRoutes from './routes/payment.js';
+import webhookRoutes from './routes/webhook.js';
 import authRoutes from './routes/auth.js';
 
 const app = express();
@@ -44,11 +45,12 @@ app.use((req, res, next) => {
 
 app.use(cors(corsOptions));
 
+// Dodo signs the exact request bytes. This route must run before the JSON
+// parser so no middleware can reserialize the body before verification.
+app.use('/api', webhookRoutes);
+
 app.use(express.json({
     limit: '1mb',
-    verify: (req, res, buffer) => {
-        req.rawBody = buffer.toString('utf8');
-    },
 }));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
 

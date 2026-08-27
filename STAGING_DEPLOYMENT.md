@@ -23,8 +23,9 @@ the three Dodo test products. The backend will reject missing, duplicate, or
 mixed-environment product configuration rather than start with an unsafe
 billing mapping.
 
-Do not configure a live Dodo webhook until the signed Standard Webhooks handler
-is completed and tested on Day 9.
+Configure only the Dodo test-mode Standard Webhooks target after the signed
+handler and migration have passed local checks. Production targets remain
+untouched.
 
 ## Frontend — Vercel
 
@@ -41,6 +42,7 @@ is completed and tested on Day 9.
    2. `202608200001_day_2_auth_entitlements.sql`
    3. `202608220001_day_7_dashboard_history.sql`
    4. `202608220002_day_8_checkout_sessions.sql`
+   5. `202608280001_day_9_billing_webhooks_quotas.sql`
 2. Verify RLS is enabled on every public table.
 3. Using two test users, confirm neither can read the other's scans.
 4. Confirm browser users cannot insert scans or directly read or update
@@ -74,12 +76,18 @@ Remove-Item Env:RLS_TEST_CONFIRM, Env:RLS_TEST_PROJECT_REF, Env:RLS_TEST_API_BAS
    or complete a subscription before Day 9.
 6. Repeat the same idempotent request and confirm one private checkout-attempt
    row and one Dodo session. The user must remain on Free.
-7. Confirm `/api/webhook` returns `503 WEBHOOK_NOT_READY` and that no Dodo
-   webhook targets it.
-8. Immediately restore `BILLING_CHECKOUT_ENABLED=false`, redeploy Railway, and
-   verify an authenticated checkout probe returns
-   `503 BILLING_CHECKOUT_DISABLED`. Do not leave checkout enabled after the
-   controlled Day 8 test.
+7. Keep `BILLING_WEBHOOK_ENABLED=false` while checking migration/RLS. When
+   ready for the Day 9 lifecycle probe, set it true with the test business ID,
+   register the exact `/api/webhook` target in Dodo test mode, and send only
+   provider-generated test events. Verify duplicate delivery is idempotent,
+   out-of-order delivery cannot regress state, and no raw payload or image data
+   is stored.
+8. Set `BILLING_PORTAL_ENABLED=true` for one authenticated disposable account;
+   verify Manage billing opens only the Dodo-hosted portal. Plan changes,
+   cancellation, payment recovery, and pause controls stay provider-hosted.
+9. Restore all billing flags to `false` after evidence capture and verify
+   disabled responses. Do not leave checkout, webhooks, or portal enabled after
+   the controlled staging test.
 
 Run the non-mutating release smoke checks after the kill switch is restored:
 
@@ -103,17 +111,18 @@ account so its private checkout-attempt row is removed by the user cascade.
   pre-Day-8 revision: those revisions expose the legacy checkout and webhook
   handlers and do not honor `BILLING_CHECKOUT_ENABLED`.
 - Before rollout, designate an exact backend rollback commit that retains the
-  Day 8 kill switch plus the `BILLING_ENDPOINT_DISABLED` and
-  `WEBHOOK_NOT_READY` quarantines. The Day 8 database migration is additive and
-  can remain applied; no database rollback is required.
-- For a frontend-only failure, roll back Vercel independently and leave the safe
-  Day 8 backend deployed with checkout disabled.
+  Day 8 kill switch plus the disabled webhook and portal flags. The Day 9
+  database migration is additive and can remain applied; no database rollback
+  is required.
+- For a frontend-only failure, roll back Vercel independently and leave the
+  safe backend deployed with checkout, webhook, and portal flags disabled.
 - For a backend failure, first set `BILLING_CHECKOUT_ENABLED=false` and verify
   the disabled response, then deploy only the designated safe backend commit.
   If no safe backend artifact is available, keep the current backend deployed
   and block billing routes at the platform edge; do not restore a pre-Day-8
   application revision.
-- Keep every Dodo webhook target absent until Day 9 regardless of rollback.
+- Keep production Dodo webhook targets absent regardless of rollback. The
+  staging test target may be removed after evidence capture.
 
 ## Deployment verification
 

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import crypto from 'crypto';
 import { z } from 'zod';
 import env from '../config/env.js';
 import logger from '../utils/logger.js';
@@ -465,34 +464,11 @@ export const createCheckoutSession = (userId, email, plan, idempotencyKey) => cr
     idempotencyKey,
 });
 
-/**
- * Legacy verification remains import-compatible only until the old webhook
- * route is quarantined. Day 9 replaces it with Standard Webhooks verification.
- */
-export const verifyWebhookSignature = (payload, signature) => {
-    if (!payload || !signature) return false;
-    const expected = crypto
-        .createHmac('sha256', env.DODO_WEBHOOK_SECRET)
-        .update(payload, 'utf8')
-        .digest('hex');
-    const normalizedSignature = signature.trim().replace(/^sha256=/, '');
-
-    try {
-        return crypto.timingSafeEqual(
-            Buffer.from(expected, 'hex'),
-            Buffer.from(normalizedSignature, 'hex')
-        );
-    } catch {
-        return false;
-    }
-};
-
 export default {
     createCheckout,
     createCheckoutSession,
     createPaymentService,
     getPlanCatalog,
-    verifyWebhookSignature,
     PAYMENT_ERROR_CODES,
     PLAN_INFO,
 };

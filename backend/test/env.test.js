@@ -162,6 +162,16 @@ test('validateEnvironment validates the billing checkout kill switch', () => {
     );
 });
 
+test('validateEnvironment requires the Dodo business ID only when signed webhooks are enabled', () => {
+    const source = validEnvironment();
+    delete source.DODO_BUSINESS_ID;
+    assert.equal(validateEnvironment({ source }), true);
+    assert.throws(
+        () => validateEnvironment({ source: { ...source, BILLING_WEBHOOK_ENABLED: 'true' } }),
+        /DODO_BUSINESS_ID is required/
+    );
+});
+
 test('buildBillingUrls produces fixed provider relays and neutral app markers', () => {
     assert.deepEqual(buildBillingUrls({
         apiOrigin: 'https://api-staging.tejai.example',

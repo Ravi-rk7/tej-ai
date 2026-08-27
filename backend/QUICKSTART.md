@@ -31,7 +31,7 @@ cp .env.example .env
 - Go to [Supabase Dashboard](https://app.supabase.com)
 - Select your project → SQL Editor
 - Apply every file in `backend/db/migrations/` in timestamp order, through
-  `202608220002_day_8_checkout_sessions.sql`.
+  `202608280001_day_9_billing_webhooks_quotas.sql`.
 - Follow `backend/db/SCHEMA_SETUP.md` for the required RLS verification.
 - Use `backend/db/schema.sql` only as a snapshot for a brand-new empty project,
   never in place of ordered migrations for an existing environment.
@@ -96,7 +96,8 @@ backend/
     ├── skin_analysis table (owner-readable scan results)
     ├── subscriptions table (service-role-only entitlements)
     ├── billing_checkout_attempts table (private idempotency state)
-    └── payment_webhook_events table (reserved for signed lifecycle events)
+    ├── payment_webhook_events table (signed lifecycle event ledger)
+    └── scan_quota_reservations table (atomic monthly scan allowance)
 ```
 
 ---

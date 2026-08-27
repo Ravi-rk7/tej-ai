@@ -29,7 +29,17 @@ export const resolveEntitlement = (subscription) => {
         ? subscription.status.trim().toLowerCase()
         : 'active';
     const recognized = plan !== 'free' || String(subscription?.plan || '').toLowerCase() === 'free';
-    const entitled = recognized && (status === 'active' || status === 'cancelled');
+    const hasPeriodValue = subscription?.current_period_end !== null
+        && subscription?.current_period_end !== undefined
+        && String(subscription.current_period_end).trim() !== '';
+    const periodEnd = Date.parse(subscription?.current_period_end || '');
+    // Older rows may not have a period end. Keep those active rows readable;
+    // the Day 9 quota RPC remains the authoritative server-side entitlement.
+    const hasFuturePeriod = !hasPeriodValue
+        || (Number.isFinite(periodEnd) && periodEnd > Date.now());
+    const entitled = plan === 'free'
+        ? recognized && status === 'active'
+        : recognized && status === 'active' && hasFuturePeriod;
     const resolvedPlan = entitled ? plan : 'free';
     return {
         plan: resolvedPlan,

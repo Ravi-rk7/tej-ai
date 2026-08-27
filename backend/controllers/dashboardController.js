@@ -1,12 +1,14 @@
 import logger from '../utils/logger.js';
 import { asyncHandler, errorResponse, successResponse } from '../utils/responseFormatter.js';
 import { countUserScansSince, getDashboardScans, getDashboardSubscription } from '../services/supabaseService.js';
+import { getScanQuotaStatus } from '../services/quotaService.js';
 import { buildDashboardSummary } from '../services/dashboardService.js';
 import { monthWindow } from '../services/entitlementService.js';
 
 export const createDashboardHandler = ({
     loadSubscription = getDashboardSubscription,
     loadCount = countUserScansSince,
+    loadQuotaStatus = null,
     loadScans = getDashboardScans,
     now = () => new Date(),
     dashboardLogger = logger,
@@ -16,16 +18,18 @@ export const createDashboardHandler = ({
     const { start } = monthWindow(currentTime);
 
     try {
-        const [subscription, scanCount, scans] = await Promise.all([
+        const [subscription, scanCount, scans, quotaStatus] = await Promise.all([
             loadSubscription(req.user.id),
             loadCount(req.user.id, start),
             loadScans(req.user.id, 12),
+            loadQuotaStatus ? loadQuotaStatus(req.user.id) : Promise.resolve(null),
         ]);
 
         return successResponse(res, buildDashboardSummary({
             subscription,
             scanCount,
             scans,
+            quotaStatus,
             now: currentTime,
         }));
     } catch (error) {
@@ -37,6 +41,8 @@ export const createDashboardHandler = ({
     }
 };
 
-export const getDashboard = asyncHandler(createDashboardHandler());
+export const getDashboard = asyncHandler(createDashboardHandler({
+    loadQuotaStatus: getScanQuotaStatus,
+}));
 
 export default { getDashboard };

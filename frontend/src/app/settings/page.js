@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/components/auth/AuthProvider";
 import useCheckout from "@/components/billing/useCheckout";
-import { getSubscription } from "@/lib/api";
+import { createCustomerPortalSession, getSubscription } from "@/lib/api";
 import {
     BILLING_PLANS,
     BILLING_PLAN_BY_SLUG,
@@ -16,7 +16,9 @@ import {
     clearCheckoutAttempt,
     getCheckoutMarker,
     getPlanFromSearch,
+    getSafeBillingPortalError,
     getSubscriptionStatusLabel,
+    normalizePortalSession,
     normalizeSubscription,
     readCheckoutAttempt,
     shouldPollSubscriptionReturn,
@@ -111,6 +113,8 @@ function BillingSection({ marker, requestedPlan }) {
     const [statusState, setStatusState] = useState("idle");
     const [loadAttempt, setLoadAttempt] = useState(0);
     const [completedAttempt, setCompletedAttempt] = useState(-1);
+    const [portalState, setPortalState] = useState("idle");
+    const [portalError, setPortalError] = useState("");
     const [targetPlan] = useState(() => readCheckoutAttempt()?.plan || requestedPlan || null);
     const {
         checkoutError,
@@ -195,6 +199,20 @@ function BillingSection({ marker, requestedPlan }) {
         ? selectedPlan
         : checkoutPlans[0]?.slug || null;
     const currentPeriodEnd = formatDate(subscription?.currentPeriodEnd);
+    const openBillingPortal = async () => {
+        setPortalState("loading");
+        setPortalError("");
+        try {
+            const data = await createCustomerPortalSession();
+            const portal = normalizePortalSession(data);
+            if (!portal) throw new Error("Invalid billing portal response");
+            setPortalState("redirecting");
+            window.location.assign(portal.portalUrl);
+        } catch (error) {
+            setPortalState("error");
+            setPortalError(getSafeBillingPortalError(error));
+        }
+    };
 
     return (
         <section className="rounded-[28px] border bg-white p-6 md:p-7" style={cardStyle} aria-labelledby="billing-heading">
@@ -242,11 +260,41 @@ function BillingSection({ marker, requestedPlan }) {
                             </div>
                             <p className="text-sm font-semibold" style={{ color: "#474554" }}>{subscription.scanLimit} scan{subscription.scanLimit === 1 ? "" : "s"} per month</p>
                         </div>
+                        {subscription.effectivePlan !== subscription.plan && (
+                            <p className="mt-3 text-sm font-semibold" style={{ color: "#8a5c00" }}>
+                                Effective access: <span className="capitalize">{subscription.effectivePlan}</span>. Access is controlled by the latest verified billing state.
+                            </p>
+                        )}
                         {currentPeriodEnd && (
                             <p className="mt-3 text-sm" style={{ color: "#474554" }}>
                                 {subscription.cancelAtPeriodEnd ? "Access is scheduled to end" : "Current billing period ends"} on {currentPeriodEnd}.
                             </p>
                         )}
+                        {["on_hold", "past_due", "failed", "paused"].includes(subscription.status) && (
+                            <p className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold" style={{ background: "#fff2f2", color: "#8f1d1d" }}>
+                                Billing needs attention. Use Manage billing to review payment details with Dodo.
+                            </p>
+                        )}
+                        {subscription.status === "cancelled" && (
+                            <p className="mt-3 rounded-xl px-3 py-2 text-sm" style={{ background: "#fff9e8", color: "#6f5100" }}>
+                                This subscription is cancelled. Your effective access follows the verified end date above.
+                            </p>
+                        )}
+                        {subscription.canManageBilling && (
+                            <div className="mt-4 flex flex-wrap items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={openBillingPortal}
+                                    disabled={portalState === "loading" || portalState === "redirecting"}
+                                    className="rounded-full border px-5 py-2.5 text-sm font-bold disabled:cursor-wait disabled:opacity-60"
+                                    style={{ borderColor: "#5845cb", color: "#5845cb", background: "#fff" }}
+                                >
+                                    {portalState === "loading" ? "Opening billing…" : portalState === "redirecting" ? "Redirecting…" : "Manage billing"}
+                                </button>
+                                <span className="text-xs" style={{ color: "#787585" }}>Securely hosted by Dodo Payments</span>
+                            </div>
+                        )}
+                        {portalError && <p className="mt-3 text-sm font-semibold" style={{ color: "#ba1a1a" }} role="alert">{portalError}</p>}
                     </div>
 
                     <div className="mt-7">

@@ -4,7 +4,12 @@ import logger from '../utils/logger.js';
 import { errorResponse, successResponse } from '../utils/responseFormatter.js';
 import { createCheckout } from '../services/paymentService.js';
 import { getBillingSubscription } from '../services/supabaseService.js';
-import { PLAN_LIMITS } from '../services/entitlementService.js';
+import { getScanQuotaStatus } from '../services/quotaService.js';
+import { PLAN_LIMITS, resolveEntitlement } from '../services/entitlementService.js';
+import {
+    PortalError,
+    createCustomerPortalSession,
+} from '../services/customerPortalService.js';
 
 const PAID_PLANS = new Set(['starter', 'growth', 'pro']);
 const KNOWN_PLANS = new Set(['free', ...PAID_PLANS]);
@@ -14,6 +19,8 @@ const KNOWN_STATUSES = new Set([
     'past_due',
     'pending',
     'on_hold',
+    'paused',
+    'failed',
     'expired',
 ]);
 const BLOCKED_PAID_STATUSES = new Set([
@@ -21,8 +28,8 @@ const BLOCKED_PAID_STATUSES = new Set([
     'on_hold',
     'past_due',
     'pending',
+    'paused',
 ]);
-
 const CheckoutRequestSchema = z
     .object({
         plan: z.enum(['starter', 'growth', 'pro']),
@@ -58,15 +65,17 @@ const publicPaymentError = (res, error) => {
     );
 };
 
-export const serializeBillingSubscription = (subscription) => {
+export const serializeBillingSubscription = (subscription, quotaStatus = null) => {
     if (!subscription) {
         return {
             schemaVersion: 1,
             plan: 'free',
+            effectivePlan: 'free',
             status: 'active',
             scanLimit: PLAN_LIMITS.free,
             currentPeriodEnd: null,
             cancelAtPeriodEnd: false,
+            canManageBilling: false,
             updatedAt: null,
         };
     }
@@ -76,13 +85,17 @@ export const serializeBillingSubscription = (subscription) => {
         ? subscription.status
         : 'unavailable';
 
+    const fallbackEntitlement = resolveEntitlement(subscription);
     return {
         schemaVersion: 1,
         plan,
+        effectivePlan: quotaStatus?.effectivePlan || fallbackEntitlement.plan,
         status,
-        scanLimit: PLAN_LIMITS[plan],
+        scanLimit: quotaStatus?.limit || fallbackEntitlement.limit,
         currentPeriodEnd: safeDate(subscription.current_period_end),
         cancelAtPeriodEnd: subscription.cancel_at_period_end === true,
+        canManageBilling: typeof subscription.dodo_customer_id === 'string'
+            && subscription.dodo_customer_id.trim().length > 0,
         updatedAt: safeDate(subscription.updated_at),
     };
 };
@@ -101,23 +114,20 @@ export const assertCheckoutAllowedForSubscription = (
         throw error;
     }
 
-    if (subscription.status === 'expired') return;
+    if (subscription.status === 'failed' || subscription.status === 'expired') return;
 
     if (subscription.status === 'cancelled') {
-        const periodEnd = safeDate(subscription.current_period_end);
-        if (periodEnd && Date.parse(periodEnd) <= now.getTime()) return;
-        if (!periodEnd) {
-            const error = new Error('Cancelled subscription has no valid period end');
-            error.publicMessage = 'Unable to verify the current subscription';
-            error.publicCode = 'SUBSCRIPTION_STATE_INVALID';
-            error.statusCode = 503;
-            throw error;
-        }
+        const periodEnd = Date.parse(subscription.current_period_end || '');
+        if (!Number.isFinite(periodEnd) || periodEnd <= now.getTime()) return;
+        const error = new Error('A paid subscription is still active');
+        error.publicMessage = 'A paid subscription is already active for this account';
+        error.publicCode = 'SUBSCRIPTION_ALREADY_ACTIVE';
+        error.statusCode = 409;
+        throw error;
     }
 
     if (
         BLOCKED_PAID_STATUSES.has(subscription.status)
-        || subscription.status === 'cancelled'
     ) {
         const error = new Error('A paid subscription is already active');
         error.publicMessage = 'A paid subscription is already active for this account';
@@ -244,13 +254,17 @@ export const createBillingCheckoutHandler = ({
 
 export const createSubscriptionStatusHandler = ({
     loadSubscription = getBillingSubscription,
+    loadQuotaStatus = null,
     paymentLogger = logger,
 } = {}) => async (req, res) => {
     setPrivateNoStore(res);
 
     try {
-        const subscription = await loadSubscription(req.user.id);
-        return successResponse(res, serializeBillingSubscription(subscription));
+        const [subscription, quotaStatus] = await Promise.all([
+            loadSubscription(req.user.id),
+            loadQuotaStatus ? loadQuotaStatus(req.user.id) : Promise.resolve(null),
+        ]);
+        return successResponse(res, serializeBillingSubscription(subscription, quotaStatus));
     } catch (_error) {
         paymentLogger.error('Billing subscription status failed', {
             code: 'SUBSCRIPTION_STATUS_UNAVAILABLE',
@@ -261,6 +275,55 @@ export const createSubscriptionStatusHandler = ({
             503,
             'SUBSCRIPTION_STATUS_UNAVAILABLE'
         );
+    }
+};
+
+export const createPortalAvailabilityMiddleware = ({
+    enabled = () => env.BILLING_PORTAL_ENABLED,
+} = {}) => (_req, res, next) => {
+    if (!enabled()) {
+        setPrivateNoStore(res);
+        return errorResponse(res, 'Billing portal is temporarily unavailable', 503, 'BILLING_PORTAL_DISABLED');
+    }
+    return next();
+};
+
+export const createCustomerPortalHandlerFactory = ({
+    loadSubscription = getBillingSubscription,
+    createPortal = createCustomerPortalSession,
+    paymentLogger = logger,
+} = {}) => async (req, res) => {
+    setPrivateNoStore(res);
+
+    if (req.body !== undefined && req.body !== null) {
+        const parsed = z.object({}).strict().safeParse(req.body);
+        if (!parsed.success) {
+            return errorResponse(res, 'Portal request body must be empty', 400, 'BILLING_REQUEST_INVALID');
+        }
+    }
+
+    try {
+        const subscription = await loadSubscription(req.user.id);
+        if (!subscription?.dodo_customer_id) {
+            return errorResponse(res, 'Billing portal is not available for this account', 409, 'BILLING_PORTAL_NOT_AVAILABLE');
+        }
+
+        const portal = await createPortal(subscription.dodo_customer_id);
+        if (typeof portal?.portalUrl !== 'string') {
+            throw new PortalError('BILLING_INVALID_PROVIDER_RESPONSE', 'Billing provider returned an invalid portal link', 502);
+        }
+        return successResponse(res, portal, 201);
+    } catch (error) {
+        if (error instanceof PortalError || error.publicMessage) {
+            return errorResponse(
+                res,
+                error.publicMessage || 'Unable to open billing portal',
+                error.statusCode || 503,
+                error.publicCode
+            );
+        }
+        paymentLogger.error('Billing portal session failed', { code: 'BILLING_PORTAL_FAILED' });
+        return errorResponse(res, 'Unable to open billing portal', 503, 'BILLING_PORTAL_FAILED');
     }
 };
 
@@ -292,7 +355,11 @@ export const disabledWebhookEndpoint = (_req, res) => {
 
 export const checkoutAvailabilityMiddleware = createCheckoutAvailabilityMiddleware();
 export const createBillingCheckout = createBillingCheckoutHandler();
-export const getSubscriptionStatus = createSubscriptionStatusHandler();
+export const portalAvailabilityMiddleware = createPortalAvailabilityMiddleware();
+export const createCustomerPortalHandler = createCustomerPortalHandlerFactory();
+export const getSubscriptionStatus = createSubscriptionStatusHandler({
+    loadQuotaStatus: getScanQuotaStatus,
+});
 export const relayBillingReturn = createBillingRelayHandler(
     env.BILLING_RETURN_REDIRECT_URL
 );
@@ -305,6 +372,8 @@ export default {
     createBillingCheckout,
     disabledBillingEndpoint,
     disabledWebhookEndpoint,
+    portalAvailabilityMiddleware,
+    createCustomerPortalHandler,
     getSubscriptionStatus,
     relayBillingCancel,
     relayBillingReturn,

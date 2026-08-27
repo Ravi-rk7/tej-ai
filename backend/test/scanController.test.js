@@ -125,3 +125,36 @@ test('derives the provider score, generates a safe routine, persists fields, and
     assert.equal(calls.save[0].data.providerVersion, 'skin-analysis-pro-v1.7.1');
     assert.equal(calls.score[0].scoreInfo.totalScore, 84);
 });
+
+test('refunds one reservation with a persistence failure and always releases the image', async () => {
+    const refunds = [];
+    let releases = 0;
+    const handler = createScanHandler({
+        analyzeSkin: async () => ({
+            skinType: 'Combination',
+            scoreInfo: {
+                totalScore: 84, skinTypeScore: 80, darkCircleScore: 100, wrinkleScore: 100,
+                oilyIntensityScore: 83, poresScore: 85, blackheadScore: 100, acneScore: 76,
+                sensitivityScore: 82, melaninScore: 68, waterScore: 79, roughScore: 89,
+            },
+            provider: { name: 'ailabtools', version: 'skin-analysis-pro-v1.7.1' },
+        }),
+        calculateScore: async () => ({ trend: 'stable' }),
+        generateRoutine: async () => ({ source: 'fallback' }),
+        persistScan: async () => { throw new Error('database unavailable'); },
+        refundQuota: async (...args) => refunds.push(args),
+        releaseImage: () => { releases += 1; },
+        scanLogger: quietLogger,
+    });
+    const req = {
+        user: { id: 'user-id' },
+        scanQuota: { reservationId: '11111111-1111-4111-8111-111111111111' },
+        scanImage: { buffer: Buffer.from('image'), width: 600, height: 600 },
+    };
+    const { response, result } = responseRecorder();
+    await handler(req, response);
+
+    assert.equal(result.statusCode, 500);
+    assert.deepEqual(refunds, [['user-id', '11111111-1111-4111-8111-111111111111', 'persistence_failed']]);
+    assert.equal(releases, 1);
+});

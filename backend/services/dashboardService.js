@@ -44,8 +44,10 @@ export const buildTrend = (scans = []) => {
     return { direction, delta, points };
 };
 
-export const buildDashboardSummary = ({ subscription, scanCount, scans, now = new Date() }) => {
-    const entitlement = resolveEntitlement(subscription);
+export const buildDashboardSummary = ({ subscription, scanCount, scans, quotaStatus, now = new Date() }) => {
+    const entitlement = quotaStatus
+        ? { plan: quotaStatus.effectivePlan, status: quotaStatus.status, limit: quotaStatus.limit }
+        : resolveEntitlement(subscription);
     const { resetAt } = monthWindow(now);
     const orderedScans = sortLatestFirst(scans);
     const trend = buildTrend(orderedScans);
@@ -62,10 +64,10 @@ export const buildDashboardSummary = ({ subscription, scanCount, scans, now = ne
             concerns: cleanConcerns(latest.concerns),
         } : null,
         trend,
-        usage: buildUsage({ used: scanCount, entitlement, resetAt }),
+        usage: buildUsage({ used: quotaStatus?.used ?? scanCount, entitlement, resetAt }),
         subscription: {
             plan: entitlement.plan,
-            status: entitlement.status,
+            status: quotaStatus?.status || entitlement.status,
         },
     };
 };

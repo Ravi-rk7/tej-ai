@@ -188,8 +188,8 @@ and reports usage without printing credentials or image data.
 1. Go to API Settings
 2. Generate the environment-specific API key.
 3. Reserve a staging-only webhook secret in the secret manager because runtime
-   validation requires it. The quarantined Day 8 route does not consume it;
-   do not register a Dodo webhook target until the signed Day 9 handler passes.
+   validation requires it when webhooks are enabled. Keep the Day 9 signed
+   webhook switch off until the migration and verification gates pass.
 4. Add the values to `.env`:
    ```
    APP_ENV=staging
@@ -198,6 +198,7 @@ and reports usage without printing credentials or image data.
    DODO_API_BASE_URL=https://test.dodopayments.com
    DODO_API_KEY=<test-mode-key>
    DODO_WEBHOOK_SECRET=xxx
+   DODO_BUSINESS_ID=<dodo-business-id>
    DODO_PRODUCT_ID_STARTER=<test-starter-product>
    DODO_PRODUCT_ID_GROWTH=<test-growth-product>
    DODO_PRODUCT_ID_PRO=<test-pro-product>
@@ -233,7 +234,7 @@ In `services/paymentService.js`, plans are defined:
 ### Step 2: Apply Ordered Migrations
 
 Apply every file in `backend/db/migrations/` in timestamp order, through
-`202608220002_day_8_checkout_sessions.sql`. Migration files are the source of
+`202608280001_day_9_billing_webhooks_quotas.sql`. Migration files are the source of
 truth for deployed environments. Use `backend/db/schema.sql` only as a readable
 snapshot for a brand-new empty project. See `backend/db/SCHEMA_SETUP.md` for the
 exact order and access checks.
@@ -246,6 +247,7 @@ exact order and access checks.
 | `subscriptions`             | Service-role-only entitlement state                  |
 | `billing_checkout_attempts` | Private checkout idempotency and provider session state |
 | `payment_webhook_events`    | Reserved replay records for the signed Day 9 lifecycle |
+| `scan_quota_reservations`   | Atomic monthly scan reservations and refunds |
 
 ### Step 3: Verify Tables
 
@@ -255,11 +257,12 @@ exact order and access checks.
    - `subscriptions`
    - `billing_checkout_attempts`
    - `payment_webhook_events`
+   - `scan_quota_reservations`
 3. Click each table to verify columns exist
 
 ### Step 4: Verify RLS Policies
 
-1. Confirm RLS is enabled on all four public tables.
+1. Confirm RLS is enabled on all five public tables.
 2. Run the staging isolation script described in `backend/db/SCHEMA_SETUP.md`.
 3. Confirm browser users can read only their own scans and cannot directly read
    or mutate subscriptions, checkout attempts, or the private checkout-claim

@@ -1,8 +1,8 @@
-# Day 8 billing checkout contract
+# Day 9 billing and checkout contract
 
-Day 8 creates Dodo test-mode Checkout Sessions. It does not confirm payments,
-change entitlements, or process subscription lifecycle events. Those operations
-require the signed, replay-safe webhook work scheduled for Day 9.
+Day 8 creates Dodo test-mode Checkout Sessions. Day 9 adds signed, replay-safe
+subscription lifecycle processing, server-owned entitlements, atomic scan quota
+reservations, and a hosted customer portal.
 
 ## Server-owned plan catalog
 
@@ -67,10 +67,12 @@ only:
   "data": {
     "schemaVersion": 1,
     "plan": "free",
+    "effectivePlan": "free",
     "status": "active",
     "scanLimit": 1,
     "currentPeriodEnd": null,
     "cancelAtPeriodEnd": false,
+    "canManageBilling": false,
     "updatedAt": null
   }
 }
@@ -94,6 +96,39 @@ The frontend treats `returned` as an instruction to check server status. It
 does not treat URL parameters, the presence of a checkout session, or browser
 navigation as evidence that payment succeeded.
 
+## Signed lifecycle webhooks
+
+`POST /api/webhook` accepts only Dodo Standard Webhooks. The exact raw request
+bytes are verified using `webhook-id`, `webhook-signature`, and
+`webhook-timestamp`; the business ID and allowlisted subscription event types
+are checked before the server-owned RPC runs. Duplicate IDs are audited and
+return success without applying state twice. Unknown signed events are recorded
+as ignored. No webhook body, customer identifier, or provider payload is logged.
+
+Set `BILLING_WEBHOOK_ENABLED=true` only after `DODO_BUSINESS_ID` is configured.
+The server maps Dodo product IDs to plans; the payload cannot choose an
+entitlement.
+
+## Atomic scan allowance
+
+Every scan reserves one slot in `scan_quota_reservations` immediately before a
+provider call. A successful scan atomically consumes the reservation with its
+sanitized result. Provider, processing, persistence, or timeout failures refund
+the reservation. Stale reservations expire automatically in the database, so
+concurrent requests cannot oversubscribe the monthly allowance.
+
+Paid access is effective only for an active subscription whose verified period
+has not ended. Failed, on-hold, paused, cancelled, and expired states resolve to
+the Free allowance according to the server RPC.
+
+## Hosted billing portal
+
+`POST /api/billing/portal` requires the authenticated owner and an empty body.
+The API requests a Dodo customer-portal session and returns only a validated
+HTTPS link on the Dodo customer-portal host. The browser never receives
+provider customer or subscription IDs; plan changes and pause controls remain
+provider-hosted.
+
 ## Environment and release controls
 
 - `BILLING_CHECKOUT_ENABLED` defaults to false.
@@ -101,6 +136,6 @@ navigation as evidence that payment succeeded.
 - Production accepts only `DODO_ENVIRONMENT=live_mode`.
 - Test and live API origins are derived by the server.
 - All three paid product IDs must be present and distinct.
-- The Day 8 webhook endpoint is quarantined and cannot mutate entitlements.
-- Production billing remains disabled until Day 9 and the final controlled
+- `BILLING_WEBHOOK_ENABLED` and `BILLING_PORTAL_ENABLED` default to false.
+- Production billing remains disabled until the final controlled
   release gate.

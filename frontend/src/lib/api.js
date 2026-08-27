@@ -162,5 +162,11 @@ export const getSubscription = async ({ signal } = {}) =>
         signal,
     });
 
+export const createCustomerPortalSession = async ({ signal } = {}) =>
+    request("/api/billing/portal", {
+        method: "POST",
+        signal,
+    });
+
 export const isLimitError = (error) =>
     error?.status === 403 && error?.body?.code === "SCAN_LIMIT_REACHED";

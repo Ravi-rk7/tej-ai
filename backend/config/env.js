@@ -206,6 +206,21 @@ export const validateEnvironment = ({
         throw new Error('BILLING_CHECKOUT_ENABLED must be true or false');
     }
 
+    for (const flag of ['BILLING_WEBHOOK_ENABLED', 'BILLING_PORTAL_ENABLED']) {
+        const value = source[flag];
+        if (
+            value !== undefined
+            && !['true', 'false'].includes(String(value).trim().toLowerCase())
+        ) {
+            throw new Error(`${flag} must be true or false`);
+        }
+    }
+
+    if (String(source.BILLING_WEBHOOK_ENABLED || '').trim().toLowerCase() === 'true'
+        && (!source.DODO_BUSINESS_ID || !String(source.DODO_BUSINESS_ID).trim())) {
+        throw new Error('DODO_BUSINESS_ID is required when BILLING_WEBHOOK_ENABLED is true');
+    }
+
     const billingUrls = buildBillingUrls({
         apiOrigin,
         frontendOrigin: frontendOrigins[0],
@@ -273,6 +288,7 @@ const env = Object.freeze({
 
     DODO_API_KEY: readEnv('DODO_API_KEY'),
     DODO_WEBHOOK_SECRET: readEnv('DODO_WEBHOOK_SECRET'),
+    DODO_BUSINESS_ID: readEnv('DODO_BUSINESS_ID'),
     DODO_PRODUCT_ID_STARTER: readEnv('DODO_PRODUCT_ID_STARTER'),
     DODO_PRODUCT_ID_GROWTH: readEnv('DODO_PRODUCT_ID_GROWTH'),
     DODO_PRODUCT_ID_PRO: readEnv('DODO_PRODUCT_ID_PRO'),
@@ -293,6 +309,12 @@ const env = Object.freeze({
     BILLING_CANCEL_REDIRECT_URL: configuredBillingUrls.cancelRedirectUrl,
     BILLING_CHECKOUT_ENABLED: parseBoolean(
         readEnv('BILLING_CHECKOUT_ENABLED', 'false')
+    ),
+    BILLING_WEBHOOK_ENABLED: parseBoolean(
+        readEnv('BILLING_WEBHOOK_ENABLED', 'false')
+    ),
+    BILLING_PORTAL_ENABLED: parseBoolean(
+        readEnv('BILLING_PORTAL_ENABLED', 'false')
     ),
 
     LOG_LEVEL: readEnv('LOG_LEVEL', 'info'),
