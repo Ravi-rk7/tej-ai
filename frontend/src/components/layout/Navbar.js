@@ -32,9 +32,9 @@ export default function Navbar() {
       {/* Desktop nav links */}
       <div className="hidden md:flex items-center gap-8">
         {[
-          { label: "Features", href: "#features" },
-          { label: "How It Works", href: "#how-it-works" },
-          { label: "Pricing", href: "#pricing" },
+          { label: "Features", href: "/#features" },
+          { label: "How It Works", href: "/#how-it-works" },
+          { label: "Pricing", href: "/#pricing" },
         ].map(({ label, href }) => (
           <a
             key={label}
@@ -91,7 +91,7 @@ export default function Navbar() {
             borderBottom: "1px solid rgba(200,196,214,0.25)",
           }}
         >
-          {["#features", "#how-it-works", "#pricing"].map((href, i) => (
+          {["/#features", "/#how-it-works", "/#pricing"].map((href, i) => (
             <a
               key={i}
               href={href}

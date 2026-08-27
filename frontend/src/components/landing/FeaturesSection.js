@@ -6,7 +6,7 @@ const FEATURES = [
   {
     icon: "🔬",
     badge: "Precision",
-    title: "Detect Skin Issues",
+    title: "Review Cosmetic Characteristics",
     desc: "Our AI reviews cosmetic skin signals such as acne, dryness, pigmentation, pores, and more to guide your routine.",
     gradient: "from-[#e4dfff] to-[#efebff]",
     accent: "#5845cb",
@@ -16,7 +16,7 @@ const FEATURES = [
     icon: "✨",
     badge: "Personalized",
     title: "Get Your Routine",
-    desc: "Receive a simple 3-step skincare routine built specifically for your skin type and concerns. No overwhelming steps.",
+    desc: "Receive ordered morning and night cosmetic wellness steps selected from a server-approved safety catalog.",
     gradient: "from-[#ffd7f3] to-[#fff0fb]",
     accent: "#a01e96",
     delay: "120ms",

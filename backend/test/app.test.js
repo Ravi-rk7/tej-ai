@@ -129,6 +129,45 @@ test('result endpoint rejects missing authorization before result lookup', async
     assert.equal(body.error, 'Unauthorized');
 });
 
+test('privacy and deletion endpoints authenticate before external work', async () => {
+    const requests = [
+        fetch(`${baseUrl}/api/privacy/status`),
+        fetch(`${baseUrl}/api/privacy/consent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                noticeVersion: 'face-scan-2026-01',
+                faceScanProcessing: true,
+                adultConfirmation: true,
+            }),
+        }),
+        fetch(`${baseUrl}/api/privacy/consent/withdraw`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+        }),
+        fetch(`${baseUrl}/api/scans/11111111-1111-4111-8111-111111111111`, {
+            method: 'DELETE',
+        }),
+        fetch(`${baseUrl}/api/account`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                confirmation: 'DELETE MY ACCOUNT',
+                currentPassword: 'not-sent-to-auth',
+            }),
+        }),
+    ];
+
+    for (const responsePromise of requests) {
+        const response = await responsePromise;
+        const body = await response.json();
+        assert.equal(response.status, 401);
+        assert.equal(body.success, false);
+        assert.equal(body.error, 'Unauthorized');
+    }
+});
+
 test('billing checkout and subscription endpoints authenticate before billing work', async () => {
     const checkoutResponse = await fetch(`${baseUrl}/api/billing/checkout`, {
         method: 'POST',

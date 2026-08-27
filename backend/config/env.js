@@ -54,6 +54,11 @@ const parseBoolean = (value, defaultValue = false) => {
     return defaultValue;
 };
 
+const parseInteger = (value, defaultValue) => {
+    const parsed = Number(String(value || ''));
+    return Number.isInteger(parsed) ? parsed : defaultValue;
+};
+
 const assertValidUrl = (name, value, protocols = ['http:', 'https:']) => {
     try {
         const parsed = new URL(value);
@@ -216,6 +221,41 @@ export const validateEnvironment = ({
         }
     }
 
+    const consentEnforcement = source.PRIVACY_CONSENT_ENFORCEMENT;
+    if (
+        consentEnforcement !== undefined
+        && !['true', 'false'].includes(String(consentEnforcement).trim().toLowerCase())
+    ) {
+        throw new Error('PRIVACY_CONSENT_ENFORCEMENT must be true or false');
+    }
+
+    if (
+        appEnvironment === 'production'
+        && String(consentEnforcement || 'true').trim().toLowerCase() !== 'true'
+    ) {
+        throw new Error('PRIVACY_CONSENT_ENFORCEMENT must be true in production');
+    }
+
+    const noticeVersion = String(source.PRIVACY_NOTICE_VERSION || 'face-scan-2026-01').trim();
+    if (!/^[a-z0-9][a-z0-9._-]{2,99}$/i.test(noticeVersion)) {
+        throw new Error('PRIVACY_NOTICE_VERSION must be a stable version identifier');
+    }
+
+    const auditRetentionDays = Number(
+        String(source.PRIVACY_AUDIT_RETENTION_DAYS || '365')
+    );
+    if (!Number.isInteger(auditRetentionDays) || auditRetentionDays < 30 || auditRetentionDays > 3650) {
+        throw new Error('PRIVACY_AUDIT_RETENTION_DAYS must be between 30 and 3650');
+    }
+
+    const deletionSecret = String(source.DELETION_AUDIT_HMAC_SECRET || '');
+    if (
+        (appEnvironment === 'staging' || appEnvironment === 'production')
+        && deletionSecret.length < 32
+    ) {
+        throw new Error('DELETION_AUDIT_HMAC_SECRET must contain at least 32 characters outside development');
+    }
+
     if (String(source.BILLING_WEBHOOK_ENABLED || '').trim().toLowerCase() === 'true'
         && (!source.DODO_BUSINESS_ID || !String(source.DODO_BUSINESS_ID).trim())) {
         throw new Error('DODO_BUSINESS_ID is required when BILLING_WEBHOOK_ENABLED is true');
@@ -316,6 +356,17 @@ const env = Object.freeze({
     BILLING_PORTAL_ENABLED: parseBoolean(
         readEnv('BILLING_PORTAL_ENABLED', 'false')
     ),
+
+    PRIVACY_NOTICE_VERSION: readEnv('PRIVACY_NOTICE_VERSION', 'face-scan-2026-01'),
+    PRIVACY_CONSENT_ENFORCEMENT: parseBoolean(
+        readEnv('PRIVACY_CONSENT_ENFORCEMENT', 'true'),
+        true
+    ),
+    PRIVACY_AUDIT_RETENTION_DAYS: parseInteger(
+        readEnv('PRIVACY_AUDIT_RETENTION_DAYS', '365'),
+        365
+    ),
+    DELETION_AUDIT_HMAC_SECRET: readEnv('DELETION_AUDIT_HMAC_SECRET'),
 
     LOG_LEVEL: readEnv('LOG_LEVEL', 'info'),
 });

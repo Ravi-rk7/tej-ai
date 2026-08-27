@@ -27,3 +27,6 @@ export const signInWithPassword = async ({ email, password, clientIp }) =>
 
 export const sendPasswordResetEmail = async ({ email, redirectTo, clientIp }) =>
   createAuthClient(clientIp).auth.resetPasswordForEmail(email, { redirectTo });
+
+export const deleteAuthUser = async (userId) =>
+  createAuthClient().auth.admin.deleteUser(userId, false);

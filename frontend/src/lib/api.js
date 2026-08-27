@@ -168,5 +168,46 @@ export const createCustomerPortalSession = async ({ signal } = {}) =>
         signal,
     });
 
+export const getPrivacyStatus = ({ signal } = {}) =>
+    request("/api/privacy/status", {
+        method: "GET",
+        cache: "no-store",
+        signal,
+    });
+
+export const grantPrivacyConsent = ({ noticeVersion, signal } = {}) =>
+    request("/api/privacy/consent", {
+        method: "POST",
+        body: JSON.stringify({
+            noticeVersion,
+            faceScanProcessing: true,
+            adultConfirmation: true,
+        }),
+        signal,
+    });
+
+export const withdrawPrivacyConsent = ({ signal } = {}) =>
+    request("/api/privacy/consent/withdraw", {
+        method: "POST",
+        body: JSON.stringify({}),
+        signal,
+    });
+
+export const deleteScan = (scanId, { signal } = {}) =>
+    request(`/api/scans/${encodeURIComponent(scanId)}`, {
+        method: "DELETE",
+        signal,
+    });
+
+export const deleteAccount = ({ confirmation, currentPassword, signal } = {}) =>
+    request("/api/account", {
+        method: "DELETE",
+        body: JSON.stringify({
+            confirmation,
+            currentPassword,
+        }),
+        signal,
+    });
+
 export const isLimitError = (error) =>
     error?.status === 403 && error?.body?.code === "SCAN_LIMIT_REACHED";

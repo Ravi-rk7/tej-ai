@@ -35,14 +35,12 @@ export const errorMiddleware = (err, req, res, _next) => {
         code: err.publicCode,
         path: req.path,
         method: req.method,
-        userId: req.user?.id,
     };
 
     if (statusCode >= 500) {
         logger.error('Unhandled server error', {
             ...logContext,
-            message: err.message,
-            stack: err.stack,
+            errorType: err?.name || 'Error',
         });
     } else {
         logger.warn('Request rejected', logContext);

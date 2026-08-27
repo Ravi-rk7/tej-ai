@@ -11,6 +11,7 @@ import historyRoutes from './routes/history.js';
 import paymentRoutes from './routes/payment.js';
 import webhookRoutes from './routes/webhook.js';
 import authRoutes from './routes/auth.js';
+import privacyRoutes from './routes/privacy.js';
 
 const app = express();
 const allowedOrigins = new Set(
@@ -64,6 +65,7 @@ app.use('/api', resultRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', historyRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api', privacyRoutes);
 app.use('/api', authRoutes);
 
 app.use((req, res) => res.status(404).json({

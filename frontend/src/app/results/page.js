@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
-import { getScanResult } from "@/lib/api";
+import { deleteScan, getScanResult } from "@/lib/api";
 import { normalizeScanResult } from "@/lib/scanResult";
 import { classifyResultError, isValidScanId } from "@/lib/resultState";
 
@@ -39,14 +39,17 @@ function useCountUp(target, duration = 900) {
     return value;
 }
 
-function ResultHeader({ onRescan }) {
+function ResultHeader({ deleting, onDelete, onRescan }) {
     return (
         <header className="mb-7 md:mb-9 flex items-center justify-between gap-4 flex-wrap">
             <div>
                 <p className="text-xs font-bold tracking-[0.16em] uppercase" style={{ color: "#787585", fontFamily: "'Inter', sans-serif" }}>Results overview</p>
                 <h1 className="mt-2 text-4xl md:text-5xl font-black tracking-tight" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Your Radiant Journey</h1>
             </div>
-            <button type="button" onClick={onRescan} className="rounded-full px-7 py-3.5 text-sm md:text-base font-bold" style={{ background: "linear-gradient(135deg, #5845cb 0%, #a88bff 100%)", color: "#fff", border: "none", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Scan Again</button>
+            <div className="flex flex-wrap gap-3">
+                {onDelete && <button type="button" onClick={onDelete} disabled={deleting} className="rounded-full border px-6 py-3 text-sm font-bold disabled:opacity-50" style={{ borderColor: "#8f1d1d", color: "#8f1d1d", background: "#fff", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{deleting ? "Deleting…" : "Delete result"}</button>}
+                <button type="button" onClick={onRescan} className="rounded-full px-7 py-3.5 text-sm md:text-base font-bold" style={{ background: "linear-gradient(135deg, #5845cb 0%, #a88bff 100%)", color: "#fff", border: "none", cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Scan Again</button>
+            </div>
         </header>
     );
 }
@@ -166,6 +169,8 @@ function ResultsContent() {
     const [loadedScanId, setLoadedScanId] = useState(null);
     const [completedRetryToken, setCompletedRetryToken] = useState(-1);
     const [retryToken, setRetryToken] = useState(0);
+    const [deleteState, setDeleteState] = useState("idle");
+    const [deleteError, setDeleteError] = useState("");
 
     useEffect(() => {
         if (!scanId || !isValidScanId(scanId)) return undefined;
@@ -202,11 +207,25 @@ function ResultsContent() {
         [displayState, rawResult]
     );
     const goToScan = useCallback(() => router.push("/scan"), [router]);
+    const removeResult = useCallback(async () => {
+        if (deleteState === "deleting" || !window.confirm("Delete this saved result? This cannot be undone and does not restore scan allowance.")) return;
+        setDeleteState("deleting");
+        setDeleteError("");
+        try {
+            const result = await deleteScan(scanId);
+            if (result?.deleted !== true) throw new Error("Scan deletion was not confirmed");
+            router.replace("/history");
+        } catch (requestError) {
+            setDeleteState("error");
+            setDeleteError(requestError?.message || "This result could not be deleted.");
+        }
+    }, [deleteState, router, scanId]);
 
     return (
         <div className="min-h-screen px-5 sm:px-8 lg:px-12 py-9 lg:py-11">
             <div className="mx-auto w-full max-w-6xl">
-                <ResultHeader onRescan={goToScan} />
+                <ResultHeader onRescan={goToScan} onDelete={displayState === "success" ? removeResult : null} deleting={deleteState === "deleting"} />
+                {deleteError && <div className="mb-5 rounded-2xl p-4 text-sm font-semibold" style={{ background: "#fff2f2", color: "#8f1d1d" }} role="alert">{deleteError}</div>}
                 {displayState === "loading" && <LoadingCard />}
                 {displayState === "empty" && <StatusCard title="No result selected" message="Choose a saved scan result or start a new scan to see your cosmetic wellness analysis." actionLabel="Start a Scan" onAction={goToScan} />}
                 {displayState === "invalid" && <StatusCard title="Results unavailable" message="We could not read a valid saved scan result. Please start a new scan." actionLabel="Start a Scan" onAction={goToScan} role="alert" />}

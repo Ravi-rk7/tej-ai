@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
-import { getHistory } from "@/lib/api";
+import { deleteScan, getHistory } from "@/lib/api";
 import { appendHistoryItems, normalizeHistoryPage } from "@/lib/historyData";
 import { resultPathFor } from "@/lib/resultState";
 
@@ -44,15 +44,18 @@ function FetchError({ message, onRetry }) {
     );
 }
 
-function HistoryCard({ item, index, onOpen }) {
+function HistoryCard({ item, index, onDelete, onOpen, deleting }) {
     return (
-        <button type="button" onClick={() => onOpen(item.scanId)} className="rounded-2xl p-5 text-left w-full transition-transform hover:-translate-y-0.5" style={{ background: "#fcf8ff", border: "1px solid rgba(200,196,214,0.45)", opacity: 0, animation: `fade-up 0.5s ease-out ${index * 0.06 + 0.1}s forwards`, cursor: "pointer" }} aria-label={`Open scan from ${formatDate(item.createdAt)}`}>
+        <article className="rounded-2xl p-5 text-left w-full transition-transform hover:-translate-y-0.5" style={{ background: "#fcf8ff", border: "1px solid rgba(200,196,214,0.45)", opacity: 0, animation: `fade-up 0.5s ease-out ${index * 0.06 + 0.1}s forwards` }}>
             <p className="text-xs uppercase tracking-[0.14em] font-semibold" style={{ color: "#787585", fontFamily: "'Inter', sans-serif" }}>{formatDate(item.createdAt)}</p>
             <p className="mt-3 text-4xl font-black" style={{ color: "#5845cb", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{item.glowScore}</p>
             <p className="mt-1 text-xs" style={{ color: "#787585", fontFamily: "'Inter', sans-serif" }}>{item.skinType || "Skin type unavailable"}</p>
             {item.concerns.length > 0 ? <div className="mt-3 flex flex-wrap gap-1.5">{item.concerns.map((concern) => <span key={`${item.scanId}-${concern}`} className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(228,223,255,0.6)", color: "#5845cb", fontFamily: "'Inter', sans-serif" }}>{concern}</span>)}</div> : <p className="mt-3 text-xs" style={{ color: "#787585" }}>No flagged concerns</p>}
-            <span className="mt-4 inline-block text-xs font-bold" style={{ color: "#5845cb" }}>View result →</span>
-        </button>
+            <div className="mt-4 flex items-center justify-between gap-3">
+                <button type="button" onClick={() => onOpen(item.scanId)} className="text-xs font-bold" style={{ color: "#5845cb" }} aria-label={`Open scan from ${formatDate(item.createdAt)}`}>View result →</button>
+                <button type="button" onClick={() => onDelete(item)} disabled={deleting} className="text-xs font-bold disabled:opacity-50" style={{ color: "#8f1d1d" }} aria-label={`Delete scan from ${formatDate(item.createdAt)}`}>{deleting ? "Deleting…" : "Delete"}</button>
+            </div>
+        </article>
     );
 }
 
@@ -66,6 +69,8 @@ export default function HistoryPage() {
     const [attempt, setAttempt] = useState(0);
     const [completedAttempt, setCompletedAttempt] = useState(-1);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [deletingScanId, setDeletingScanId] = useState(null);
+    const [deleteError, setDeleteError] = useState("");
 
     useEffect(() => {
         let active = true;
@@ -113,6 +118,20 @@ export default function HistoryPage() {
 
     const displayState = completedAttempt !== attempt ? "loading" : state;
     const retry = () => setAttempt((value) => value + 1);
+    const removeScan = async (item) => {
+        if (deletingScanId || !window.confirm(`Delete the scan from ${formatDate(item.createdAt)}? This cannot be undone and does not restore scan allowance.`)) return;
+        setDeletingScanId(item.scanId);
+        setDeleteError("");
+        try {
+            const result = await deleteScan(item.scanId);
+            if (result?.deleted !== true) throw new Error("Scan deletion was not confirmed");
+            setItems((current) => current.filter((entry) => entry.scanId !== item.scanId));
+        } catch (requestError) {
+            setDeleteError(requestError?.message || "The scan could not be deleted.");
+        } finally {
+            setDeletingScanId(null);
+        }
+    };
 
     return (
         <AppLayout>
@@ -126,7 +145,8 @@ export default function HistoryPage() {
                         {displayState === "invalid" && <FetchError message="History is temporarily unavailable." onRetry={retry} />}
                         {displayState === "success" && items.length === 0 && <EmptyHistory onScan={() => router.push("/scan")} />}
                         {displayState === "success" && items.length > 0 && <>
-                            <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">{items.map((item, index) => <HistoryCard key={item.scanId} item={item} index={index} onOpen={(scanId) => router.push(resultPathFor(scanId))} />)}</div>
+                            {deleteError && <div className="mt-5 rounded-xl p-4 text-sm font-semibold" style={{ background: "#fff5f5", color: "#ba1a1a" }} role="alert">{deleteError}</div>}
+                            <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">{items.map((item, index) => <HistoryCard key={item.scanId} item={item} index={index} onOpen={(scanId) => router.push(resultPathFor(scanId))} onDelete={removeScan} deleting={deletingScanId === item.scanId} />)}</div>
                             {loadMoreError && <div className="mt-5 flex items-center justify-between gap-3 rounded-xl p-4" style={{ background: "#fff5f5" }} role="alert"><span className="text-sm" style={{ color: "#ba1a1a" }}>{loadMoreError}</span><button type="button" onClick={loadMore} className="text-sm font-bold" style={{ color: "#ba1a1a" }}>Retry</button></div>}
                             {pageInfo.hasMore && <div className="mt-7 text-center"><button type="button" onClick={loadMore} disabled={loadingMore} className="rounded-full px-6 py-3 text-sm font-bold" style={{ background: "#5845cb", color: "#fff", border: "none", cursor: loadingMore ? "wait" : "pointer", opacity: loadingMore ? 0.7 : 1 }}>{loadingMore ? "Loading…" : "Load more scans"}</button></div>}
                         </>}

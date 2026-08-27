@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { scanSkinFile, isLimitError, isUnauthorizedError } from "@/lib/api";
+import { isConsentError } from "@/lib/privacyData";
 import { isValidScanId, resultPathFor } from "@/lib/resultState";
 import {
   inspectScanDimensions,
@@ -253,7 +254,7 @@ function PreviewPanel({ src, state, onRemove }) {
                 letterSpacing: "0.02em",
               }}
             >
-              Analyzing skin markers...
+              Reviewing cosmetic skin characteristics...
             </span>
           </div>
         ) : (
@@ -415,11 +416,11 @@ function ScanButton({ state, onClick }) {
               flexShrink: 0,
             }}
           />
-          Analyzing your skin...
+          Reviewing your scan...
         </>
       ) : (
         <>
-          {isRetry ? "Try scan again" : "Start AI Scan"}
+          {isRetry ? "Try scan again" : "Start Cosmetic Scan"}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="5" y1="12" x2="19" y2="12" />
             <polyline points="12 5 19 12 12 19" />
@@ -434,7 +435,7 @@ function ScanButton({ state, onClick }) {
 function TrustRow() {
   const items = [
     { icon: "⚡", text: "Processing time varies" },
-    { icon: "🔒", text: "Not stored by TejAi" },
+    { icon: "🔒", text: "Photo not retained by TejAi" },
     { icon: "✅", text: "Sign in to save results" },
   ];
   return (
@@ -471,7 +472,7 @@ function FaceGuidanceBanner() {
   );
 }
 
-export default function ScanUploader({ onScanComplete, onLimitReached }) {
+export default function ScanUploader({ onScanComplete, onLimitReached, onConsentRequired }) {
   const router = useRouter();
   const [state, setState] = useState(STATE.EMPTY);
   const [imageSrc, setImageSrc] = useState(null);
@@ -595,13 +596,19 @@ export default function ScanUploader({ onScanComplete, onLimitReached }) {
         return;
       }
 
+      if (isConsentError(err)) {
+        handleRemove();
+        if (typeof onConsentRequired === "function") onConsentRequired();
+        return;
+      }
+
       // All other errors → show inline banner and reset to preview state
       setState(STATE.ERROR);
       setErrorMessage(
         err?.message || "Something went wrong. Please try again."
       );
     }
-  }, [state, imageFile, onScanComplete, onLimitReached, router]);
+  }, [state, imageFile, onScanComplete, onLimitReached, onConsentRequired, router, handleRemove]);
 
   const hasImage =
     state === STATE.PREVIEW ||

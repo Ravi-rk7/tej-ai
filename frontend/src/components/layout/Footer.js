@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { LEGAL_CONFIG } from "@/lib/legalConfig";
+
 export default function Footer() {
   return (
     <footer
@@ -13,23 +16,27 @@ export default function Footer() {
             TejAi
           </span>
           <span className="text-sm" style={{ color: "#474554" }}>
-            © 2024 TejAi Skincare. All rights reserved.
+            © {new Date().getFullYear()} {LEGAL_CONFIG.legalBusinessName || LEGAL_CONFIG.brandName}. All rights reserved.
           </span>
         </div>
 
         {/* Links */}
         <div className="flex flex-wrap justify-center gap-6">
-          {["Privacy Policy", "Terms of Service", "Scientific Method", "Contact"].map((link) => (
-            <a
-              key={link}
-              href="#"
+          {[
+            { label: "Privacy Notice", href: "/privacy" },
+            { label: "Terms of Service", href: "/terms" },
+            { label: "Support", href: "/support" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
               className="text-sm transition-colors duration-200"
               style={{ color: "#474554" }}
               onMouseEnter={e => (e.currentTarget.style.color = "#5845cb")}
               onMouseLeave={e => (e.currentTarget.style.color = "#474554")}
             >
-              {link}
-            </a>
+              {item.label}
+            </Link>
           ))}
         </div>
       </div>

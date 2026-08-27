@@ -14,10 +14,12 @@ the source of truth for deployed environments.
    3. `migrations/202608220001_day_7_dashboard_history.sql`
    4. `migrations/202608220002_day_8_checkout_sessions.sql`
    5. `migrations/202608280001_day_9_billing_webhooks_quotas.sql`
+   6. `migrations/202608280002_day_10_privacy_deletion.sql`
 4. Confirm that `skin_analysis`, `subscriptions`,
    `payment_webhook_events`, `billing_checkout_attempts`, and
-   `scan_quota_reservations` exist.
-5. Confirm RLS is enabled on all five tables.
+   `scan_quota_reservations`, `privacy_consent_events`,
+   `privacy_deletion_audits`, and `deleted_billing_subjects` exist.
+5. Confirm RLS is enabled on all eight tables.
 6. Confirm authenticated browser users can select only their own
    `skin_analysis` rows and cannot insert, update, or delete scan rows.
 7. Confirm browser roles cannot directly read or mutate `subscriptions` or
@@ -26,6 +28,10 @@ the source of truth for deployed environments.
    through the authenticated `/api/billing/subscription` endpoint.
 8. Run the staging RLS isolation check documented in the root deployment
    runbook before enabling checkout.
+9. Confirm browser roles cannot read or mutate any privacy/audit/tombstone table
+   and cannot execute any Day 10 deletion RPC. Only `service_role` may do so.
+10. Run the consent, owner-scoped scan deletion, paid-account cancellation,
+    cascade, and late-webhook checks in `docs/PRIVACY_DELETION_CONTRACT.md`.
 
 ## Rules
 

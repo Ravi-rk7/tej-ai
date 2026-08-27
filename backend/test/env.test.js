@@ -17,6 +17,7 @@ const validEnvironment = () => ({
     SUPABASE_URL: 'https://example.supabase.co',
     UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
     DODO_API_BASE_URL: 'https://test.dodopayments.com',
+    DELETION_AUDIT_HMAC_SECRET: 'test-deletion-audit-secret-1234567890',
 });
 
 test('validateEnvironment accepts complete test-mode development configuration', () => {
@@ -160,6 +161,45 @@ test('validateEnvironment validates the billing checkout kill switch', () => {
         }),
         /BILLING_CHECKOUT_ENABLED must be true or false/
     );
+});
+
+test('validateEnvironment requires enforced production consent and a deletion audit secret', () => {
+    const production = {
+        ...validEnvironment(),
+        APP_ENV: 'production',
+        DODO_ENVIRONMENT: 'live_mode',
+        API_BASE_URL: 'https://api.tejai.example',
+        FRONTEND_URL: 'https://app.tejai.example',
+        DODO_API_BASE_URL: 'https://live.dodopayments.com',
+        PRIVACY_CONSENT_ENFORCEMENT: 'false',
+    };
+    assert.throws(() => validateEnvironment({ source: production }), /must be true in production/);
+    production.PRIVACY_CONSENT_ENFORCEMENT = 'true';
+    production.DELETION_AUDIT_HMAC_SECRET = 'short';
+    assert.throws(() => validateEnvironment({ source: production }), /at least 32 characters/);
+});
+
+test('validateEnvironment rejects malformed privacy versions and retention values', () => {
+    assert.throws(
+        () => validateEnvironment({
+            source: {
+                ...validEnvironment(),
+                PRIVACY_NOTICE_VERSION: 'not a stable version',
+            },
+        }),
+        /stable version identifier/
+    );
+    for (const value of ['29', '365days', '365.5', '3651']) {
+        assert.throws(
+            () => validateEnvironment({
+                source: {
+                    ...validEnvironment(),
+                    PRIVACY_AUDIT_RETENTION_DAYS: value,
+                },
+            }),
+            /must be between 30 and 3650/
+        );
+    }
 });
 
 test('validateEnvironment requires the Dodo business ID only when signed webhooks are enabled', () => {

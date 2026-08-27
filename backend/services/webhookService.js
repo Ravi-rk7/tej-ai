@@ -130,6 +130,10 @@ const parseCustomerId = (data) => {
 };
 
 const sha256 = (body) => crypto.createHash('sha256').update(body).digest('hex');
+const hmacSha256 = (value, secret) => crypto
+    .createHmac('sha256', secret)
+    .update(String(value), 'utf8')
+    .digest('hex');
 
 const normalizeRpcRow = (data) => Array.isArray(data) ? data[0] : data;
 
@@ -223,6 +227,24 @@ export const createWebhookProcessor = ({ databaseClient, runtimeEnv = env } = {}
         const data = parsedData.data;
         if (data.payload_type && data.payload_type.toLowerCase() !== 'subscription') {
             throw webhookError('Invalid webhook payload', 400, 'WEBHOOK_PAYLOAD_INVALID');
+        }
+
+        const deletionSecret = String(runtimeEnv.DELETION_AUDIT_HMAC_SECRET || '');
+        if (deletionSecret.length >= 32) {
+            const deletedSubject = await rpc('record_deleted_dodo_subscription_event', {
+                p_provider_event_id: webhookId,
+                p_event_type: eventType,
+                p_payload_hash: payloadHash,
+                p_event_at: eventAt.toISOString(),
+                p_sent_at: sentAt.toISOString(),
+                p_subscription_hash: hmacSha256(
+                    `subscription:${data.subscription_id}`,
+                    deletionSecret
+                ),
+            });
+            if (deletedSubject?.matched === true) {
+                return { outcome: deletedSubject.outcome || 'ignored' };
+            }
         }
 
         const planCatalog = getPlanCatalog(runtimeEnv);

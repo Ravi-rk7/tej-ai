@@ -17,6 +17,7 @@ const runtimeEnv = {
     DODO_PRODUCT_ID_GROWTH: 'prod_growth',
     DODO_PRODUCT_ID_PRO: 'prod_pro',
 };
+const DELETION_SECRET = 'day-ten-deletion-webhook-secret-123456789';
 
 const signedPayload = (overrides = {}) => {
     const timestamp = Math.floor(Date.now() / 1000);
@@ -97,6 +98,26 @@ test('duplicate signed deliveries are delegated to the idempotent database event
     assert.deepEqual(await processor.handle(request.raw, request.headers), { outcome: 'applied' });
     assert.deepEqual(await processor.handle(request.raw, request.headers), { outcome: 'duplicate' });
     assert.equal(calls.length, 2);
+});
+
+test('a deleted billing tombstone acknowledges later signed events before owner metadata is used', async () => {
+    const calls = [];
+    const processor = createWebhookProcessor({
+        databaseClient: { rpc: async (name, args) => {
+            calls.push({ name, args });
+            if (name === 'record_deleted_dodo_subscription_event') {
+                return { data: [{ matched: true, outcome: 'ignored' }], error: null };
+            }
+            throw new Error('deleted billing event must not reach subscription mutation');
+        } },
+        runtimeEnv: { ...runtimeEnv, DELETION_AUDIT_HMAC_SECRET: DELETION_SECRET },
+    });
+    const request = signedPayload();
+    assert.deepEqual(await processor.handle(request.raw, request.headers), { outcome: 'ignored' });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].name, 'record_deleted_dodo_subscription_event');
+    assert.match(calls[0].args.p_subscription_hash, /^[0-9a-f]{64}$/);
+    assert.equal(JSON.stringify(calls[0].args).includes('sub_test_123'), false);
 });
 
 test('quota repository normalizes atomic reservation, refund, and persistence RPCs', async () => {

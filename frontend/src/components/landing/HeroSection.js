@@ -66,7 +66,7 @@ export default function HeroSection() {
               className="text-[2.75rem] md:text-[3.5rem] lg:text-[4rem] font-black leading-[1.08] tracking-tight"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#1a1930" }}
             >
-              Know What&apos;s Wrong{" "}
+              Explore Your Skin{" "}
               <br className="hidden md:block" />
               With Your Skin —
               <br />
@@ -78,9 +78,9 @@ export default function HeroSection() {
               className="text-lg leading-relaxed"
               style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}
             >
-              Scan your face, detect skin issues, and get a routine that{" "}
-              <span className="font-semibold" style={{ color: "#1a1930" }}>actually works</span>.
-              Powered by AI-assisted cosmetic insights.
+              Submit one clear photo to review cosmetic skin characteristics and receive a{" "}
+              <span className="font-semibold" style={{ color: "#1a1930" }}>safe wellness routine</span>.
+              Results are automated guidance, not a medical diagnosis.
             </p>
 
             {/* CTA buttons */}
@@ -115,22 +115,9 @@ export default function HeroSection() {
               Account required • Images are not stored by TejAi • Cosmetic wellness only
             </p>
 
-            {/* Social proof */}
-            <div className="flex items-center gap-3 pt-1">
-              <div className="flex -space-x-2">
-                {["bg-purple-300", "bg-pink-300", "bg-indigo-300", "bg-violet-400"].map((c, i) => (
-                  <div
-                    key={i}
-                    className={`w-8 h-8 rounded-full border-2 border-white ${c} flex items-center justify-center text-xs font-bold text-white`}
-                  >
-                    {["A", "M", "S", "K"][i]}
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm" style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}>
-                <span className="font-bold" style={{ color: "#1a1930" }}>2,400+</span> scans completed today
-              </p>
-            </div>
+            <p className="text-sm" style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}>
+              Explicit consent is required before the photo uploader is enabled.
+            </p>
           </div>
 
           {/* ── RIGHT: Hero visual ── */}

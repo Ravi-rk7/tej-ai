@@ -204,6 +204,10 @@ and reports usage without printing credentials or image data.
    DODO_PRODUCT_ID_PRO=<test-pro-product>
    DODO_CHECKOUT_RETURN_URL=https://api-staging.example.com/api/billing/return
    DODO_CHECKOUT_CANCEL_URL=https://api-staging.example.com/api/billing/cancel
+   PRIVACY_NOTICE_VERSION=face-scan-2026-01
+   PRIVACY_CONSENT_ENFORCEMENT=true
+   PRIVACY_AUDIT_RETENTION_DAYS=365
+   DELETION_AUDIT_HMAC_SECRET=<independent-32-plus-character-secret>
    ```
 
 Staging must use `test_mode`; production must use `live_mode`. The server pins
@@ -234,7 +238,7 @@ In `services/paymentService.js`, plans are defined:
 ### Step 2: Apply Ordered Migrations
 
 Apply every file in `backend/db/migrations/` in timestamp order, through
-`202608280001_day_9_billing_webhooks_quotas.sql`. Migration files are the source of
+`202608280002_day_10_privacy_deletion.sql`. Migration files are the source of
 truth for deployed environments. Use `backend/db/schema.sql` only as a readable
 snapshot for a brand-new empty project. See `backend/db/SCHEMA_SETUP.md` for the
 exact order and access checks.
@@ -248,6 +252,9 @@ exact order and access checks.
 | `billing_checkout_attempts` | Private checkout idempotency and provider session state |
 | `payment_webhook_events`    | Reserved replay records for the signed Day 9 lifecycle |
 | `scan_quota_reservations`   | Atomic monthly scan reservations and refunds |
+| `privacy_consent_events`    | Append-only, versioned face-scan consent history |
+| `privacy_deletion_audits`   | Keyed-hash deletion lifecycle evidence |
+| `deleted_billing_subjects`  | Keyed billing tombstones for late signed events |
 
 ### Step 3: Verify Tables
 
@@ -258,15 +265,26 @@ exact order and access checks.
    - `billing_checkout_attempts`
    - `payment_webhook_events`
    - `scan_quota_reservations`
+   - `privacy_consent_events`
+   - `privacy_deletion_audits`
+   - `deleted_billing_subjects`
 3. Click each table to verify columns exist
 
 ### Step 4: Verify RLS Policies
 
-1. Confirm RLS is enabled on all five public tables.
+1. Confirm RLS is enabled on all eight public tables.
 2. Run the staging isolation script described in `backend/db/SCHEMA_SETUP.md`.
 3. Confirm browser users can read only their own scans and cannot directly read
    or mutate subscriptions, checkout attempts, or the private checkout-claim
    function.
+4. Confirm browser roles cannot read or mutate the three privacy/deletion
+   tables or execute Day 10 deletion functions.
+
+Deploy Day 10 in this order: backward-compatible frontend, database migration,
+backend privacy/deletion secret and configuration, then backend application.
+Run `docs/PRIVACY_DELETION_CONTRACT.md` in staging before marking the release
+complete. Do not deploy the Day 10 legal release until verified business and
+legal configuration is present.
 
 ---
 
@@ -460,6 +478,9 @@ Then follow interactive prompts.
 - [ ] Three Dodo product IDs are present, distinct, recurring, and verified in the selected environment
 - [ ] Checkout return/cancel URLs are the fixed backend relay URLs
 - [ ] `BILLING_CHECKOUT_ENABLED` remains false until the staging gates pass
+- [ ] `PRIVACY_CONSENT_ENFORCEMENT=true` and the notice version matches the frontend
+- [ ] The independent deletion-audit HMAC secret is at least 32 characters and stored only in backend secrets
+- [ ] Day 10 privacy tables/functions are service-role-only and the deletion acceptance journey passes
 - [ ] `NODE_ENV=production` on production server
 - [ ] CORS `FRONTEND_URL` points to your domain (not localhost)
 - [ ] Supabase RLS policies enabled

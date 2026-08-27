@@ -10,6 +10,7 @@ import {
     prepareScanImage,
     uploadScanImage,
 } from '../middleware/imageUploadMiddleware.js';
+import privacyConsentMiddleware from '../middleware/privacyConsentMiddleware.js';
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.post(
     '/scan',
     authMiddleware,
     rateLimitMiddleware,
+    privacyConsentMiddleware,
     scanQuotaPrecheck,
     uploadScanImage,
     prepareScanImage,

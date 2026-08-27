@@ -8,6 +8,11 @@ const PUBLIC_COPY_FILES = [
     'src/components/landing/CtaSection.js',
     'src/components/landing/HowItWorks.js',
     'src/components/paywall/PaywallModal.js',
+    'src/components/layout/Footer.js',
+    'src/components/layout/Sidebar.js',
+    'src/app/privacy/page.js',
+    'src/app/terms/page.js',
+    'src/app/support/page.js',
 ];
 
 test('public purchase surfaces do not advertise deferred or unsupported claims', async () => {
@@ -22,6 +27,17 @@ test('public purchase surfaces do not advertise deferred or unsupported claims',
         /no signup/i,
         /track glow score daily/i,
         /thousands of users/i,
+        /2,400\+/,
+        /detect skin issues/i,
+        /know what(?:&apos;|')s wrong/i,
+        /actually works/i,
+        /clinical[- ]grade/i,
+        /42 markers/i,
+        /no dermatologist appointment/i,
+        /never shared with third parties/i,
+        /href=["']#["']/i,
+        /\/community/i,
+        /scientific method/i,
     ]) {
         assert.doesNotMatch(publicCopy, forbidden);
     }

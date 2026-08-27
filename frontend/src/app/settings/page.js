@@ -6,7 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/components/auth/AuthProvider";
 import useCheckout from "@/components/billing/useCheckout";
-import { createCustomerPortalSession, getSubscription } from "@/lib/api";
+import {
+    createCustomerPortalSession,
+    deleteAccount,
+    getPrivacyStatus,
+    getSubscription,
+    withdrawPrivacyConsent,
+} from "@/lib/api";
+import { normalizePrivacyStatus } from "@/lib/privacyData";
 import {
     BILLING_PLANS,
     BILLING_PLAN_BY_SLUG,
@@ -363,8 +370,139 @@ function BillingSection({ marker, requestedPlan }) {
     );
 }
 
+function PrivacySection() {
+    const [state, setState] = useState("loading");
+    const [status, setStatus] = useState(null);
+    const [error, setError] = useState("");
+    const [attempt, setAttempt] = useState(0);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        getPrivacyStatus({ signal: controller.signal })
+            .then((payload) => {
+                const normalized = normalizePrivacyStatus(payload);
+                if (!normalized) throw new Error("Privacy status response was invalid");
+                setStatus(normalized);
+                setState("success");
+            })
+            .catch((requestError) => {
+                if (requestError?.name === "AbortError") return;
+                setStatus(null);
+                setState("error");
+                setError(requestError?.message || "Privacy settings are unavailable.");
+            });
+        return () => controller.abort();
+    }, [attempt]);
+
+    const withdraw = async () => {
+        if (!status?.granted || !window.confirm("Withdraw face-scan consent? Existing results will remain saved until you delete them.")) return;
+        setState("saving");
+        setError("");
+        try {
+            const payload = await withdrawPrivacyConsent();
+            const normalized = normalizePrivacyStatus(payload);
+            if (!normalized) throw new Error("Privacy status response was invalid");
+            setStatus(normalized);
+            setState("success");
+        } catch (requestError) {
+            setState("error");
+            setError(requestError?.message || "Consent could not be withdrawn.");
+        }
+    };
+
+    const retry = () => {
+        setState("loading");
+        setError("");
+        setAttempt((value) => value + 1);
+    };
+
+    return (
+        <section className="rounded-[28px] border bg-white p-6 md:p-7" style={cardStyle} aria-labelledby="privacy-settings-heading">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "#787585" }}>Privacy</p>
+                    <h2 id="privacy-settings-heading" className="mt-2 text-xl font-black" style={{ color: "#1a1930" }}>Face-scan consent</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: "#474554" }}>Consent controls future photo processing. Withdrawing it does not delete your saved cosmetic results.</p>
+                </div>
+                {state === "success" && status && <span className="rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: status.granted ? "#effaf4" : "#fff8e7", color: status.granted ? "#1a6645" : "#6f5100" }}>{status.granted ? "Consent active" : "Consent not active"}</span>}
+            </div>
+            {state === "loading" && <div className="mt-5 h-20 animate-pulse rounded-2xl bg-[#eeeaf7]" role="status"><span className="sr-only">Loading privacy status</span></div>}
+            {state === "error" && <div className="mt-5 rounded-2xl p-4" style={{ background: "#fff2f2" }} role="alert"><p className="text-sm font-semibold" style={{ color: "#8f1d1d" }}>{error}</p><button type="button" onClick={retry} className="mt-3 text-sm font-bold text-[#8f1d1d] underline">Try again</button></div>}
+            {(state === "success" || state === "saving") && status && (
+                <div className="mt-5 rounded-2xl p-5" style={{ background: "#f7f4ff" }}>
+                    <p className="text-sm leading-6" style={{ color: "#474554" }}>{status.granted ? "TejAi may enable the uploader after verifying this consent version. You can withdraw before any future scan." : "The uploader will request a new explicit choice before another face photo can be selected."}</p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                        {status.granted && <button type="button" onClick={withdraw} disabled={state === "saving"} className="rounded-full border px-5 py-2.5 text-sm font-bold disabled:opacity-60" style={{ borderColor: "#8f1d1d", color: "#8f1d1d", background: "#fff" }}>{state === "saving" ? "Withdrawing…" : "Withdraw consent"}</button>}
+                        <Link href="/privacy" className="rounded-full bg-[#e9e5ff] px-5 py-2.5 text-sm font-bold text-[#5845cb]">Read Privacy Notice</Link>
+                        <Link href="/support" className="rounded-full bg-[#e9e5ff] px-5 py-2.5 text-sm font-bold text-[#5845cb]">Privacy support</Link>
+                    </div>
+                </div>
+            )}
+        </section>
+    );
+}
+
+function AccountDeletionSection({ onDeleted }) {
+    const [open, setOpen] = useState(false);
+    const [confirmation, setConfirmation] = useState("");
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [state, setState] = useState("idle");
+    const [error, setError] = useState("");
+    const canDelete = confirmation === "DELETE MY ACCOUNT" && currentPassword.length > 0 && state !== "deleting";
+
+    const close = () => {
+        if (state === "deleting") return;
+        setOpen(false);
+        setConfirmation("");
+        setCurrentPassword("");
+        setError("");
+        setState("idle");
+    };
+
+    const submit = async () => {
+        if (!canDelete) return;
+        setState("deleting");
+        setError("");
+        try {
+            const result = await deleteAccount({ confirmation, currentPassword });
+            if (result?.deleted !== true) throw new Error("Account deletion was not confirmed");
+            await onDeleted();
+        } catch (requestError) {
+            setState("error");
+            setCurrentPassword("");
+            setError(requestError?.message || "Account deletion could not be completed.");
+        }
+    };
+
+    return (
+        <section className="rounded-[28px] border bg-white p-6 md:p-7" style={{ borderColor: "rgba(186,26,26,0.35)" }} aria-labelledby="danger-zone-heading">
+            <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "#8f1d1d" }}>Danger zone</p>
+            <h2 id="danger-zone-heading" className="mt-2 text-xl font-black" style={{ color: "#1a1930" }}>Permanently delete account</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: "#474554" }}>This removes your authentication account, scans, routines, consent history, quota records, and TejAi subscription linkage. A linked Dodo subscription is cancelled immediately before deletion. Limited pseudonymous deletion and legally required payment records may remain for the disclosed retention period.</p>
+            <button type="button" onClick={() => setOpen(true)} className="mt-5 rounded-full px-5 py-3 text-sm font-bold" style={{ background: "#8f1d1d", color: "#fff" }}>Delete my account</button>
+
+            {open && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(26,25,48,0.55)] p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+                    <div className="w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl sm:p-7" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+                        <h3 id="delete-account-title" className="text-2xl font-black" style={{ color: "#1a1930" }}>This cannot be undone</h3>
+                        <p className="mt-3 text-sm leading-6" style={{ color: "#474554" }}>Type <strong>DELETE MY ACCOUNT</strong> and enter your current password. Paid billing will be cancelled immediately; deletion stops if cancellation cannot be confirmed.</p>
+                        <label className="mt-5 block text-sm font-bold" style={{ color: "#1a1930" }}>Confirmation phrase<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" className="mt-2 w-full rounded-xl border px-4 py-3 font-normal" style={{ borderColor: "rgba(200,196,214,0.8)" }} /></label>
+                        <label className="mt-4 block text-sm font-bold" style={{ color: "#1a1930" }}>Current password<input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" className="mt-2 w-full rounded-xl border px-4 py-3 font-normal" style={{ borderColor: "rgba(200,196,214,0.8)" }} /></label>
+                        {error && <p className="mt-4 rounded-xl p-3 text-sm font-semibold" style={{ background: "#fff2f2", color: "#8f1d1d" }} role="alert">{error}</p>}
+                        <div className="mt-6 flex flex-wrap justify-end gap-3">
+                            <button type="button" onClick={close} disabled={state === "deleting"} className="rounded-full border px-5 py-2.5 text-sm font-bold disabled:opacity-50" style={{ borderColor: "rgba(200,196,214,0.8)", color: "#474554" }}>Cancel</button>
+                            <button type="button" onClick={submit} disabled={!canDelete} className="rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50" style={{ background: "#8f1d1d", color: "#fff" }}>{state === "deleting" ? "Deleting…" : "Permanently delete"}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </section>
+    );
+}
+
 function SettingsContent() {
-    const { user } = useAuth();
+    const { signOut, user } = useAuth();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const [marker] = useState(() => getCheckoutMarker(searchParams));
     const [requestedPlan] = useState(() => getPlanFromSearch(searchParams));
@@ -381,6 +519,8 @@ function SettingsContent() {
 
                     <div className="grid gap-5">
                         <BillingSection marker={marker} requestedPlan={requestedPlan} />
+
+                        <PrivacySection />
 
                         <section className="rounded-[28px] border bg-white p-6 md:p-7" style={cardStyle}>
                             <h2 className="text-xl font-black" style={{ color: "#1a1930" }}>Profile</h2>
@@ -409,6 +549,11 @@ function SettingsContent() {
                                 </Link>
                             </div>
                         </section>
+
+                        <AccountDeletionSection onDeleted={async () => {
+                            await signOut();
+                            router.replace("/?account=deleted");
+                        }} />
                     </div>
                 </div>
             </div>

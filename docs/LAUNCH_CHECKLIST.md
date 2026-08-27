@@ -18,6 +18,9 @@ output in the release issue; do not check a box on expectation alone.
 - [ ] Free and paid quotas are enforced atomically and reset correctly.
 - [ ] Dodo live checkout, webhook, renewal, cancellation, and expiry pass.
 - [ ] Individual scan deletion and complete account deletion pass.
+  - Local owner scoping, reauthentication, immediate paid cancellation,
+    cascade ordering, pseudonymous audit, and late-webhook tests pass on Day 10.
+  - Staging paid-account deletion and post-delete late-webhook evidence remain.
 
 ## Security and privacy
 
@@ -29,6 +32,9 @@ output in the release issue; do not check a box on expectation alone.
 - [ ] Logs contain no tokens, emails, image bytes, or raw provider payloads.
 - [ ] Images are processed transiently and retention behavior is verified.
 - [ ] Consent, privacy policy, terms, disclaimer, and business details are approved.
+  - Versioned opt-in/withdrawal and pre-upload enforcement are implemented.
+  - Verified legal business/contact/jurisdiction/effective-date values and legal
+    approval remain launch blockers.
 
 ## Reliability and operations
 

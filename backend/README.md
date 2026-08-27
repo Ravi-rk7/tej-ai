@@ -125,8 +125,28 @@ backend/
 
 **`POST /api/create-subscription` / `POST /api/webhook`**
 
-- Legacy paths are fail-closed. Signed Standard Webhooks and entitlement
-  mutation are assigned to Day 9.
+- Legacy paths are fail-closed. The signed webhook is `/api/billing/webhook`;
+  verified lifecycle events are applied idempotently by the Day 9 database RPC.
+
+### Privacy and deletion
+
+**`GET /api/privacy/status` / `POST /api/privacy/consent` /
+`POST /api/privacy/consent/withdraw`** (authenticated)
+
+- Reads, grants, or withdraws the current versioned face-scan consent.
+- Consent is enforced before the scan upload parser or any quota/provider work.
+
+**`DELETE /api/scans/:scanId`** (authenticated)
+
+- Deletes one owner-scoped saved result without refunding monthly quota.
+- Missing and foreign IDs have the same privacy-safe response.
+
+**`DELETE /api/account`** (authenticated)
+
+- Requires the exact confirmation phrase and current password reauthentication.
+- Immediately cancels a linked non-terminal Dodo subscription before hard Auth
+  deletion and cascading user-data deletion.
+- See `../docs/PRIVACY_DELETION_CONTRACT.md` for ordering and staging gates.
 
 ### Health
 
@@ -320,6 +340,10 @@ DODO_API_BASE_URL        Exact canonical API origin for the selected Dodo mode
 DODO_CHECKOUT_RETURN_URL Fixed backend /api/billing/return relay URL
 DODO_CHECKOUT_CANCEL_URL Fixed backend /api/billing/cancel relay URL
 BILLING_CHECKOUT_ENABLED Checkout kill switch (defaults to false)
+PRIVACY_NOTICE_VERSION  Current versioned face-scan privacy notice
+PRIVACY_CONSENT_ENFORCEMENT Fail-closed consent switch; must be true in production
+PRIVACY_AUDIT_RETENTION_DAYS Pseudonymous deletion evidence retention (30-3650)
+DELETION_AUDIT_HMAC_SECRET Independent backend-only HMAC key (32+ characters in staging/production)
 APP_ENV                  development/test/staging/production deployment boundary
 API_BASE_URL             Canonical public backend origin
 FRONTEND_URL             CORS origin (e.g., http://localhost:3000)

@@ -1,6 +1,6 @@
 # Staging release record
 
-Status: **Deployed — Day 8 checkout verified on staging and disabled by default; consented-image gates pending**
+Status: **Day 8 deployed; Days 9-10 implemented locally and awaiting ordered staging verification**
 
 This record must contain no credentials, tokens, emails, or provider payloads.
 
@@ -13,6 +13,9 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 | Release commit             | `d818a9e`                               |
 | Rollback commit            | `b9fba93` (Day 8 code only; no database rollback required) |
 | Deployed at (UTC)          | `2026-08-23T13:55:45Z`                  |
+
+Day 10 is not included in the deployed commit above. The Day 10 release commit,
+new migrations, verified legal configuration, and staging evidence are pending.
 
 ## Current Day 8 deployment observation
 
@@ -269,3 +272,29 @@ open.
   callback relays. Railway runs Node 22.23.2.
 - Day 9 signed webhook lifecycle handling and atomic paid-entitlement updates
   remain intentionally unavailable. Production was not deployed or modified.
+
+## Day 10 privacy and deletion implementation evidence
+
+- Versioned, append-only face-scan consent is enforced before multipart parsing,
+  quota reservation, image processing, or provider work. Withdrawal blocks
+  future scans without deleting existing results.
+- Authenticated users can delete one owner-scoped result. A foreign or missing
+  result has the same response, no quota is restored, and the audit contains
+  only keyed hashes and lifecycle timestamps.
+- Permanent account deletion requires the exact confirmation phrase and fresh
+  password verification. A linked non-terminal Dodo subscription is cancelled
+  immediately and its validated provider response is required before TejAi data
+  or the Auth user is removed.
+- Billing tombstones retain only keyed hashes so late signed Dodo subscription
+  events are acknowledged without recreating deleted ownership or retaining the
+  raw provider subscription/customer identifiers.
+- Privacy, Terms, and Support routes now disclose actual processors and cosmetic
+  wellness limitations. Unsupported claims, fake usage figures, placeholder
+  links, and the deferred Community navigation item were removed.
+- Local Day 10 gate passes 129 backend tests, 29 frontend tests,
+  backend/frontend lint, the production frontend build, and zero-vulnerability
+  production dependency audits. Release-commit evidence is still pending.
+- Staging remains blocked on Day 9 lifecycle proof plus verified legal business
+  name, support/privacy contacts, operating country, governing law, effective
+  date, and legal approval. Migration `202608280002`, the Day 10 app, and legal
+  pages have not been deployed. Production was not deployed or modified.
