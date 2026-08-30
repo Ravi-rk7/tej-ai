@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import nextConfig from "../next.config.mjs";
+import nextConfig, { buildReleaseHeader } from "../next.config.mjs";
 
 test("frontend security headers constrain frames, objects, connections, and browser capabilities", async () => {
   const entries = await nextConfig.headers();
@@ -24,4 +24,13 @@ test("fonts are emitted by next/font without a runtime Google Fonts request", as
   assert.doesNotMatch(css, /fonts\.googleapis\.com/);
   assert.match(css, /var\(--font-inter\)/);
   assert.match(layout, /next\/font\/google/);
+});
+
+test("release headers expose only bounded Git commit identifiers", () => {
+  assert.deepEqual(buildReleaseHeader("abcdef123456"), {
+    key: "X-TejAI-Release",
+    value: "abcdef123456",
+  });
+  assert.equal(buildReleaseHeader(""), null);
+  assert.throws(() => buildReleaseHeader("not-a-release"), /commit SHA/);
 });

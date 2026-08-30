@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "test:e2e:staging": "playwright test",
+    "test:e2e:staging:list": "playwright test --list"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
@@ -20,6 +22,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",

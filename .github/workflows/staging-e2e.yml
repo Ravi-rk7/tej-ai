@@ -1,0 +1,117 @@
+name: Protected staging E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Exact commit already deployed to both staging services
+        required: true
+        type: string
+      confirmation:
+        description: Type I_ACKNOWLEDGE_STAGING_ONLY
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-e2e
+  cancel-in-progress: false
+
+jobs:
+  staging-release-gate:
+    name: Staging release journey twice
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 45
+    steps:
+      - name: Validate operator confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_SHA: ${{ inputs.release_sha }}
+        run: |
+          test "$CONFIRMATION" = "I_ACKNOWLEDGE_STAGING_ONLY"
+          printf '%s' "$EXPECTED_SHA" | grep -Eq '^[a-fA-F0-9]{40}$'
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_sha }}
+
+      - name: Verify checked-out release
+        env:
+          EXPECTED_SHA: ${{ inputs.release_sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Verify staging API smoke contract
+        working-directory: backend
+        env:
+          SMOKE_BASE_URL: ${{ vars.E2E_API_URL }}
+          SMOKE_FRONTEND_URL: ${{ vars.E2E_FRONTEND_URL }}
+        run: npm run smoke
+
+      - name: Verify test-mode Dodo products
+        working-directory: backend
+        env:
+          DODO_API_BASE_URL: https://test.dodopayments.com
+          DODO_API_KEY: ${{ secrets.DODO_TEST_API_KEY }}
+          DODO_PRODUCT_ID_STARTER: ${{ secrets.DODO_TEST_PRODUCT_ID_STARTER }}
+          DODO_PRODUCT_ID_GROWTH: ${{ secrets.DODO_TEST_PRODUCT_ID_GROWTH }}
+          DODO_PRODUCT_ID_PRO: ${{ secrets.DODO_TEST_PRODUCT_ID_PRO }}
+        run: npm run test:billing-products
+
+      - name: Verify two-account API and RLS isolation
+        working-directory: backend
+        env:
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          RLS_TEST_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          RLS_TEST_CONFIRM: staging
+          RLS_TEST_API_BASE_URL: ${{ vars.E2E_API_URL }}
+        run: npm run test:rls
+
+      - name: Install frontend and Chromium
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run the P0 staging journey twice
+        working-directory: frontend
+        env:
+          E2E_CONFIRM_STAGING: I_ACKNOWLEDGE_STAGING_ONLY
+          E2E_DODO_MODE: test_mode
+          E2E_MAX_PROVIDER_SCANS: "1"
+          E2E_RELEASE_SHA: ${{ inputs.release_sha }}
+          E2E_FRONTEND_URL: ${{ vars.E2E_FRONTEND_URL }}
+          E2E_API_URL: ${{ vars.E2E_API_URL }}
+          E2E_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          E2E_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_CONSENTED_JPEG_URL: ${{ secrets.E2E_CONSENTED_JPEG_URL }}
+          E2E_DODO_TEST_API_KEY: ${{ secrets.DODO_TEST_API_KEY }}
+        run: |
+          E2E_RUN_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-1" npm run test:e2e:staging
+          E2E_RUN_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-2" npm run test:e2e:staging
+
+      - name: Upload privacy-safe HTML report on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: staging-e2e-report-${{ github.run_id }}
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7

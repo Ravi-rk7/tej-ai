@@ -11,8 +11,9 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
     "test": "npm --prefix backend test && npm --prefix frontend test",
+    "coverage": "npm --prefix backend run test:coverage",
     "build": "npm --prefix frontend run build",
     "audit": "npm --prefix backend audit --omit=dev && npm --prefix frontend audit --omit=dev",
-    "check": "npm run lint && npm test && npm run build"
+    "check": "npm run lint && npm run coverage && npm --prefix frontend test && npm run build"
   }
 }

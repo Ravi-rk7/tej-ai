@@ -70,6 +70,7 @@ app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.get('/api/health', (req, res) => successResponse(res, {
     status: 'healthy',
     timestamp: new Date().toISOString(),
+    releaseSha: env.RELEASE_SHA || null,
 }));
 
 app.use('/api', scanRoutes);

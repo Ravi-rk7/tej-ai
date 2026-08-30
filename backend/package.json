@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test:coverage": "node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include=controllers/**/*.js --test-coverage-include=middleware/**/*.js --test-coverage-include=services/**/*.js --test-coverage-include=utils/**/*.js --test-coverage-exclude=utils/logger.js --test-coverage-exclude=services/supabaseService.js --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 test/*.test.js",
     "test:watch": "node --test --watch --test-concurrency=1 test/*.test.js",
     "test:provider": "node scripts/verify-ailab-provider.js",
     "test:billing-products": "node scripts/verify-dodo-products.js",

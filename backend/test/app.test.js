@@ -30,6 +30,7 @@ test('GET /api/health returns a healthy envelope', async () => {
     assert.equal(response.status, 200);
     assert.equal(body.success, true);
     assert.equal(body.data.status, 'healthy');
+    assert.equal(body.data.releaseSha, null);
     assert.ok(Date.parse(body.data.timestamp));
     assert.equal(response.headers.get('x-powered-by'), null);
     assert.match(response.headers.get('x-request-id'), /^[0-9a-f-]{36}$/);

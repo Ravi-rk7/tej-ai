@@ -1,6 +1,6 @@
 # Staging release record
 
-Status: **Day 8 deployed; Days 9-10 implemented locally and awaiting ordered staging verification**
+Status: **Day 8 deployed; Days 9-12 implemented locally and awaiting ordered staging verification**
 
 This record must contain no credentials, tokens, emails, or provider payloads.
 
@@ -14,7 +14,7 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 | Rollback commit            | `b9fba93` (Day 8 code only; no database rollback required) |
 | Deployed at (UTC)          | `2026-08-23T13:55:45Z`                  |
 
-Day 10 is not included in the deployed commit above. The Day 10 release commit,
+Days 9-12 are not included in the deployed commit above. Their release commit,
 new migrations, verified legal configuration, and staging evidence are pending.
 
 ## Current Day 8 deployment observation
@@ -319,3 +319,22 @@ open.
   production dependency vulnerabilities in both applications. The release
   commit and CI secret-scan evidence remain pending. Staging and production
   have not been modified by Day 11 work.
+
+## Day 12 automated release suite evidence
+
+- Backend business-logic coverage is enforced in Node 22 CI at no less than
+  80% for lines, functions, and branches. The first verified local report is
+  89.84% lines, 86.15% functions, and 80.25% branches.
+- The protected Playwright journey covers signup/confirmation, login/logout and
+  recovery, first scan, saved-result reload, dashboard/history, free exhaustion,
+  Dodo test checkout, webhook-confirmed paid allocation/cancellation, owner
+  isolation, and scan/account deletion. No P0 test is skipped or retried.
+- `.github/workflows/staging-e2e.yml` checks the exact frontend and backend
+  release SHA, repeats the complete journey twice, limits provider use to one
+  scan per pass, disables portrait-bearing browser artifacts, and deletes its
+  disposable accounts.
+- `docs/TEST_MATRIX.md` records the test boundaries, protected environment
+  configuration, and maximum two AILabTools credits for the two-pass gate.
+- Staging has not been updated with Days 9-12, so the protected workflow has not
+  been run. `QA-001` remains open until both passes and normal CI are green on
+  the exact release commit. Production was not deployed or modified.

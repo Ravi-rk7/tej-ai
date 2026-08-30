@@ -168,6 +168,11 @@ export const validateEnvironment = ({
         throw new Error(`APP_ENV must be one of: ${APP_ENVIRONMENTS.join(', ')}`);
     }
 
+    const releaseSha = String(source.RELEASE_SHA || '').trim();
+    if (releaseSha && !/^[a-f0-9]{7,40}$/i.test(releaseSha)) {
+        throw new Error('RELEASE_SHA must be a 7 to 40 character Git commit SHA');
+    }
+
     const dodoEnvironment = String(source.DODO_ENVIRONMENT || '').trim().toLowerCase();
     if (!DODO_ENVIRONMENTS.includes(dodoEnvironment)) {
         throw new Error(`DODO_ENVIRONMENT must be one of: ${DODO_ENVIRONMENTS.join(', ')}`);
@@ -324,6 +329,7 @@ const env = Object.freeze({
     PORT: parsePort(readEnv('PORT', '3001')),
     API_BASE_URL: readEnv('API_BASE_URL', 'http://localhost:3001'),
     FRONTEND_URL: readEnv('FRONTEND_URL', 'http://localhost:3000'),
+    RELEASE_SHA: readEnv('RELEASE_SHA'),
 
     SUPABASE_URL: readEnv('SUPABASE_URL'),
     SUPABASE_ANON_KEY: readEnv('SUPABASE_ANON_KEY'),

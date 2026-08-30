@@ -164,6 +164,14 @@ test('validateEnvironment validates the billing checkout kill switch', () => {
     );
 });
 
+test('validateEnvironment accepts only bounded Git release identifiers', () => {
+    assert.equal(validateEnvironment({ source: { ...validEnvironment(), RELEASE_SHA: 'abcdef123456' } }), true);
+    assert.throws(
+        () => validateEnvironment({ source: { ...validEnvironment(), RELEASE_SHA: 'not-a-release' } }),
+        /RELEASE_SHA/
+    );
+});
+
 test('validateEnvironment requires enforced production consent and a deletion audit secret', () => {
     const production = {
         ...validEnvironment(),

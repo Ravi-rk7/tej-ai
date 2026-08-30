@@ -38,6 +38,17 @@ const supabaseWebSocketOrigin = supabaseOrigin
   : null;
 const isDevelopment = process.env.NODE_ENV !== "production";
 
+export const buildReleaseHeader = (value) => {
+  const releaseSha = String(value || "").trim();
+  if (!releaseSha) return null;
+  if (!/^[a-f0-9]{7,40}$/i.test(releaseSha)) {
+    throw new Error(
+      "NEXT_PUBLIC_RELEASE_SHA must be a 7 to 40 character Git commit SHA",
+    );
+  }
+  return { key: "X-TejAI-Release", value: releaseSha };
+};
+
 const compactPolicy = (directives) => directives
   .map(([name, values]) => [name, values.filter(Boolean).join(" ")].filter(Boolean).join(" "))
   .join("; ");
@@ -74,6 +85,9 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
+
+const releaseHeader = buildReleaseHeader(process.env.NEXT_PUBLIC_RELEASE_SHA);
+if (releaseHeader) securityHeaders.push(releaseHeader);
 
 if (["staging", "production"].includes(appEnvironment)) {
   securityHeaders.push({

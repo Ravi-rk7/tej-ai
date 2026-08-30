@@ -29,76 +29,92 @@ const PasswordResetSchema = z
 
 const getFrontendUrl = () => env.FRONTEND_URL.split(",")[0].trim();
 
-export const login = async (req, res, next) => {
-  try {
-    const credentials = LoginSchema.parse(req.body);
-    const { data, error } = await signInWithPassword({
-      ...credentials,
-      clientIp: req.ip,
-    });
-
-    if (error || !data.session || !data.user) {
-      return errorResponse(
-        res,
-        "Email or password is incorrect.",
-        401,
-        "AUTH_INVALID_CREDENTIALS",
-      );
-    }
-
-    res.set("Cache-Control", "no-store");
-    return successResponse(res, {
-      session: {
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        expires_at: data.session.expires_at,
-        expires_in: data.session.expires_in,
-        token_type: data.session.token_type,
-      },
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-      },
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
-export const requestPasswordReset = async (req, res, next) => {
-  try {
-    const { email } = PasswordResetSchema.parse(req.body);
-    const redirectTo = new URL("/reset-password", getFrontendUrl()).toString();
-    const { error } = await sendPasswordResetEmail({
-      email,
-      redirectTo,
-      clientIp: req.ip,
-    });
-
-    if (error) {
-      logger.warn("Password reset provider rejected a request", {
-        status: error.status,
+export const createAuthHandlers = ({
+  signIn = signInWithPassword,
+  sendReset = sendPasswordResetEmail,
+  authLogger = logger,
+  frontendUrl = getFrontendUrl,
+} = {}) => {
+  const loginHandler = async (req, res, next) => {
+    try {
+      const credentials = LoginSchema.parse(req.body);
+      const { data, error } = await signIn({
+        ...credentials,
+        clientIp: req.ip,
       });
-    }
 
-    res.set("Cache-Control", "no-store");
-    return successResponse(res, {
-      message:
-        "If an account exists for that email, a reset link has been sent.",
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+      if (error || !data.session || !data.user) {
+        return errorResponse(
+          res,
+          "Email or password is incorrect.",
+          401,
+          "AUTH_INVALID_CREDENTIALS",
+        );
+      }
+
+      res.set("Cache-Control", "no-store");
+      return successResponse(res, {
+        session: {
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+          expires_at: data.session.expires_at,
+          expires_in: data.session.expires_in,
+          token_type: data.session.token_type,
+        },
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
+      });
+    } catch (error) {
       return next(error);
     }
+  };
 
-    logger.error("Password reset request failed", {
-      requestId: req.requestId,
-      errorType: error?.name || "Error",
-    });
-    res.set("Cache-Control", "no-store");
-    return successResponse(res, {
-      message:
-        "If an account exists for that email, a reset link has been sent.",
-    });
-  }
+  const passwordResetHandler = async (req, res, next) => {
+    try {
+      const { email } = PasswordResetSchema.parse(req.body);
+      const redirectTo = new URL("/reset-password", frontendUrl()).toString();
+      const { error } = await sendReset({
+        email,
+        redirectTo,
+        clientIp: req.ip,
+      });
+
+      if (error) {
+        authLogger.warn("Password reset provider rejected a request", {
+          status: error.status,
+        });
+      }
+
+      res.set("Cache-Control", "no-store");
+      return successResponse(res, {
+        message:
+          "If an account exists for that email, a reset link has been sent.",
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return next(error);
+      }
+
+      authLogger.error("Password reset request failed", {
+        requestId: req.requestId,
+        errorType: error?.name || "Error",
+      });
+      res.set("Cache-Control", "no-store");
+      return successResponse(res, {
+        message:
+          "If an account exists for that email, a reset link has been sent.",
+      });
+    }
+  };
+
+  return Object.freeze({
+    login: loginHandler,
+    requestPasswordReset: passwordResetHandler,
+  });
 };
+
+const defaultAuthHandlers = createAuthHandlers();
+export const login = defaultAuthHandlers.login;
+export const requestPasswordReset = defaultAuthHandlers.requestPasswordReset;
