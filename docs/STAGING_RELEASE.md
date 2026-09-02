@@ -1,6 +1,6 @@
 # Staging release record
 
-Status: **Day 8 deployed; Days 9-12 implemented locally and awaiting ordered staging verification**
+Status: **Day 8 deployed; Days 9-13 and Day 14 rehearsal tooling implemented locally, awaiting ordered staging verification**
 
 This record must contain no credentials, tokens, emails, or provider payloads.
 
@@ -14,7 +14,7 @@ This record must contain no credentials, tokens, emails, or provider payloads.
 | Rollback commit            | `b9fba93` (Day 8 code only; no database rollback required) |
 | Deployed at (UTC)          | `2026-08-23T13:55:45Z`                  |
 
-Days 9-12 are not included in the deployed commit above. Their release commit,
+Days 9-14 are not included in the deployed commit above. Their release commit,
 new migrations, verified legal configuration, and staging evidence are pending.
 
 ## Current Day 8 deployment observation
@@ -338,3 +338,56 @@ open.
 - Staging has not been updated with Days 9-12, so the protected workflow has not
   been run. `QA-001` remains open until both passes and normal CI are green on
   the exact release commit. Production was not deployed or modified.
+
+## Day 13 production operations implementation evidence
+
+- Migration `202608310001` adds identity-free, service-role-only provider call
+  reservations with atomic UTC daily caps plus a data-free readiness probe.
+- AILabTools capacity is reserved before the provider request. Capacity denial
+  refunds user quota and makes no paid call; an attempted call remains counted
+  even if the provider or application later fails.
+- OpenAI capacity denial, timeout, quota, refusal, or invalid output uses the
+  deterministic fallback. Aggregate input/output token counts may be retained,
+  but prompts, completions, images, and identity are not stored.
+- `/api/health` remains dependency-free liveness. `/api/ready` checks Supabase
+  and Upstash with bounded timeouts, generic states, and a short success cache.
+- Optional backend and frontend error monitoring strips PII, requests,
+  breadcrumbs, messages, replay, tracing, and default integrations. It remains
+  disabled until approved DSNs are configured.
+- A scheduled aggregate usage report is disabled by default, and the load
+  harness refuses provider/mutation paths and non-staging execution.
+- Production deployment, Supabase plan changes, monitoring accounts, alert
+  delivery, backup restore, load evidence, and rollback rehearsal remain
+  pending. No external environment was modified by the local Day 13 work.
+- The final local gate passes 176 backend tests, 33 frontend tests, the Next.js
+  production build, dependency audits with zero known vulnerabilities, and
+  enforced coverage at 90.25% lines, 87.01% functions, and 81.06% branches.
+
+## Day 14 rehearsal tooling evidence
+
+- The protected release journey no longer assumes that authentication state is
+  shared between Playwright tests. Every protected stage now signs in within
+  its own isolated browser context before accessing scan, dashboard, checkout,
+  result deletion, or account deletion surfaces.
+- A separate compatibility suite seeds one derived, image-free result through
+  the staging service role and deletes its disposable owner after each project.
+  It covers branded Chrome, branded Edge, Firefox, desktop WebKit, Android
+  Chromium, and iPhone WebKit.
+- The compatibility suite rejects any scan, checkout, portal, or webhook
+  request. Its 24 tests cover private result/dashboard/history rendering,
+  settings/legal pages, client-side invalid upload rejection, a safe dashboard
+  outage, and expired-session redirection.
+- Both browser suites require healthy and ready backend responses plus matching
+  frontend/backend release SHAs before creating test data.
+- A staging-only provider-budget verifier sends eight concurrent database
+  reservations, requires exactly one grant, and makes zero AILabTools/OpenAI
+  HTTP calls. It requires distinct staging and production project references.
+- The final Day 14 local gate passes 178 backend tests, 34 frontend tests, the
+  Next.js production build, and dependency audits with zero known
+  vulnerabilities. The compatibility suite enumerates 24 tests across six
+  browser/device projects, while the protected release journey retains six
+  ordered stages.
+- `docs/DAY_14_BUG_BASH.md` is the evidence and cleanup record. The exact-SHA
+  CI run, ordered staging migrations, browser execution, provider usage,
+  performance, alerts, backup restore, and rollback evidence remain pending.
+  No external environment was modified by this local implementation.

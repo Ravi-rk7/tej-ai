@@ -92,6 +92,16 @@ async function run() {
         assert(body.data?.status === 'healthy', 'health status was not healthy');
     });
 
+    await check('GET /api/ready reports critical dependencies ready', async () => {
+        const response = await fetch(endpoint('/api/ready'));
+        const body = await readJson(response);
+        assert(response.status === 200, `received HTTP ${response.status}`);
+        assert(body.success === true, 'success was not true');
+        assert(body.data?.status === 'ready', 'readiness status was not ready');
+        assert(body.data?.checks?.database === 'ready', 'database was not ready');
+        assert(body.data?.checks?.rateLimitStore === 'ready', 'rate-limit store was not ready');
+    });
+
     await check('POST /api/scan authenticates before upload parsing', async () => {
         const form = new FormData();
         form.append(

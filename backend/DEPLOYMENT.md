@@ -238,7 +238,7 @@ In `services/paymentService.js`, plans are defined:
 ### Step 2: Apply Ordered Migrations
 
 Apply every file in `backend/db/migrations/` in timestamp order, through
-`202608280002_day_10_privacy_deletion.sql`. Migration files are the source of
+`202608310001_day_13_operational_guards.sql`. Migration files are the source of
 truth for deployed environments. Use `backend/db/schema.sql` only as a readable
 snapshot for a brand-new empty project. See `backend/db/SCHEMA_SETUP.md` for the
 exact order and access checks.

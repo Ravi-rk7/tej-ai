@@ -13,9 +13,12 @@
     "lint": "eslint",
     "test": "node --test test/*.test.js",
     "test:e2e:staging": "playwright test",
-    "test:e2e:staging:list": "playwright test --list"
+    "test:e2e:staging:list": "playwright test --list",
+    "test:e2e:compat": "playwright test --config=playwright.compat.config.js",
+    "test:e2e:compat:list": "playwright test --config=playwright.compat.config.js --list"
   },
   "dependencies": {
+    "@sentry/browser": "^10.72.0",
     "@supabase/supabase-js": "^2.105.1",
     "next": "16.3.1",
     "react": "19.2.4",

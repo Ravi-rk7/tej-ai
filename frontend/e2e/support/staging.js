@@ -25,19 +25,21 @@ const canonicalHttpsOrigin = (name) => {
   return parsed.origin;
 };
 
-export const readStagingEnvironment = () => {
+const readStagingCoreEnvironment = ({ dodoMode, maxProviderScans }) => {
   if (process.env.E2E_CONFIRM_STAGING !== REQUIRED_STAGING_CONFIRMATION) {
     throw new Error(
       `Set E2E_CONFIRM_STAGING=${REQUIRED_STAGING_CONFIRMATION} to authorize staging-only E2E`,
     );
   }
-  if (process.env.E2E_DODO_MODE !== "test_mode") {
+  if (process.env.E2E_DODO_MODE !== dodoMode) {
     throw new Error(
-      "E2E_DODO_MODE must be test_mode; live billing is forbidden",
+      `E2E_DODO_MODE must be ${dodoMode}; live billing is forbidden`,
     );
   }
-  if (process.env.E2E_MAX_PROVIDER_SCANS !== "1") {
-    throw new Error("E2E_MAX_PROVIDER_SCANS must be exactly 1 per E2E pass");
+  if (process.env.E2E_MAX_PROVIDER_SCANS !== maxProviderScans) {
+    throw new Error(
+      `E2E_MAX_PROVIDER_SCANS must be exactly ${maxProviderScans} for this suite`,
+    );
   }
 
   const releaseSha = required("E2E_RELEASE_SHA");
@@ -51,10 +53,25 @@ export const readStagingEnvironment = () => {
   if (new URL(supabaseUrl).protocol !== "https:") {
     throw new Error("E2E_SUPABASE_URL must use HTTPS");
   }
+  return {
+    frontendUrl,
+    apiUrl,
+    releaseSha,
+    supabaseUrl,
+    supabaseAnonKey: required("E2E_SUPABASE_ANON_KEY"),
+    supabaseServiceRoleKey: required("E2E_SUPABASE_SERVICE_ROLE_KEY"),
+  };
+};
+
+export const readStagingEnvironment = () => {
+  const core = readStagingCoreEnvironment({
+    dodoMode: "test_mode",
+    maxProviderScans: "1",
+  });
   const portraitUrl = new URL(required("E2E_CONSENTED_JPEG_URL"));
   if (
     portraitUrl.protocol !== "https:" ||
-    portraitUrl.origin !== new URL(supabaseUrl).origin ||
+    portraitUrl.origin !== new URL(core.supabaseUrl).origin ||
     !portraitUrl.pathname.startsWith("/storage/v1/object/sign/")
   ) {
     throw new Error(
@@ -63,17 +80,19 @@ export const readStagingEnvironment = () => {
   }
 
   return Object.freeze({
-    frontendUrl,
-    apiUrl,
-    releaseSha,
-    supabaseUrl,
-    supabaseAnonKey: required("E2E_SUPABASE_ANON_KEY"),
-    supabaseServiceRoleKey: required("E2E_SUPABASE_SERVICE_ROLE_KEY"),
+    ...core,
     portraitUrl: portraitUrl.toString(),
     dodoApiKey: required("E2E_DODO_TEST_API_KEY"),
     dodoApiUrl: "https://test.dodopayments.com",
   });
 };
+
+export const readCompatibilityEnvironment = () => Object.freeze(
+  readStagingCoreEnvironment({
+    dodoMode: "disabled",
+    maxProviderScans: "0",
+  }),
+);
 
 export const createAdminClient = (configuration) =>
   createClient(

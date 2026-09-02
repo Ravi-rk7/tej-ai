@@ -39,6 +39,8 @@ output in the release issue; do not check a box on expectation alone.
 ## Reliability and operations
 
 - [ ] Full CI and E2E suite passes twice consecutively against staging.
+  - Day 14 locally defines six full-journey stages plus 24 zero-provider
+    compatibility checks; protected staging evidence is pending.
 - [ ] Production frontend, API, database migration, and readiness checks pass.
 - [ ] Monitoring and uptime alerts reach an actively monitored channel.
 - [ ] Supabase backup restore rehearsal succeeds.

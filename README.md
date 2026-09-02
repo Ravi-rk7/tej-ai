@@ -32,6 +32,9 @@ Frontend: `http://localhost:3000`
 
 Backend health: `http://localhost:3001/api/health`
 
+Backend readiness: `http://localhost:3001/api/ready` (database and rate-limit
+store only; paid providers are never called by this endpoint).
+
 ## Quality gate
 
 ```powershell

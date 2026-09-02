@@ -192,7 +192,7 @@ test('subscription status is owner-scoped, explicit, and missing rows resolve to
             return {
                 plan: 'growth',
                 status: 'active',
-                current_period_end: '2026-09-01T00:00:00Z',
+                current_period_end: '2099-09-01T00:00:00Z',
                 cancel_at_period_end: true,
                 updated_at: '2026-08-23T00:00:00Z',
                 dodo_customer_id: 'must-not-leak',
@@ -210,7 +210,7 @@ test('subscription status is owner-scoped, explicit, and missing rows resolve to
         effectivePlan: 'growth',
         status: 'active',
         scanLimit: 30,
-        currentPeriodEnd: '2026-09-01T00:00:00.000Z',
+        currentPeriodEnd: '2099-09-01T00:00:00.000Z',
         cancelAtPeriodEnd: true,
         canManageBilling: true,
         updatedAt: '2026-08-23T00:00:00.000Z',

@@ -1,6 +1,7 @@
 import "./globals.css";
 import AuthProvider from "@/components/auth/AuthProvider";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import ObservabilityProvider from "@/components/ObservabilityProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +31,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} ${inter.variable} ${plusJakartaSans.variable} min-h-full flex flex-col antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <ObservabilityProvider configuration={{
+          dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+          environment: process.env.APP_ENV,
+          release: process.env.NEXT_PUBLIC_RELEASE_SHA,
+        }}>
+          <AuthProvider>{children}</AuthProvider>
+        </ObservabilityProvider>
       </body>
     </html>
   );

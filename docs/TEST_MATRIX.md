@@ -1,6 +1,6 @@
-# Day 12 automated release test matrix
+# Automated release test matrix
 
-Status: local implementation complete; protected staging execution pending.
+Status: Days 12-14 local tooling complete; protected staging execution pending.
 
 ## Release gates
 
@@ -12,6 +12,10 @@ Status: local implementation complete; protected staging execution pending.
 | HTTP integration      | Express middleware ordering, CORS, auth rejection, body/query limits, callbacks, and legacy quarantine                                                               | Included in backend tests                    | Local loopback only       |
 | RLS integration       | Two independent users, browser-role denial, owner-only API results, quota and billing RPC privileges                                                                 | `npm --prefix backend run test:rls`          | Staging Supabase/API only |
 | P0 browser E2E        | Signup/confirmation, login/logout/reset, free scan, reload, dashboard/history, quota exhaustion, test checkout, paid allocation, cancellation, scan/account deletion | `npm --prefix frontend run test:e2e:staging` | Protected staging only    |
+| Browser compatibility | Seeded dashboard/result/history, settings/legal, invalid upload, safe outage, expired session across six browser/device projects                              | `npm --prefix frontend run test:e2e:compat`  | Staging API/database only |
+| Day 13 operations     | Readiness timeout/cache, observability redaction, provider-capacity denial, token accounting, aggregate alerts, migration permissions                             | Included in backend/frontend tests          | None                      |
+| Budget concurrency    | Concurrent atomic provider reservations with one synthetic grant and no provider HTTP request                                                              | `npm --prefix backend run test:provider-budget` | Staging Supabase only  |
+| Non-provider load     | Liveness, readiness, and approved authenticated GET endpoints; 1-25 workers and 10-300 seconds                                                                    | `npm --prefix backend run test:load`         | Protected staging only    |
 
 The coverage command excludes `utils/logger.js`, whose redaction contract has
 focused tests, and `services/supabaseService.js`, the raw database adapter.
@@ -28,8 +32,10 @@ The browser suite fails before creating data unless all of the following are tru
 - The operator supplies `I_ACKNOWLEDGE_STAGING_ONLY`.
 - Dodo is fixed to `test_mode`; its live origin is not configurable by the suite.
 - The provider budget is exactly one portrait scan per pass.
+- The compatibility suite requires zero provider scans and `E2E_DODO_MODE=disabled`.
 - The backend health response and frontend `X-TejAI-Release` header equal the exact
   checked-out commit.
+- Backend readiness must be HTTP 200 and report the same release commit.
 - A service-role credential and one explicitly consented JPG are supplied only
   through the protected GitHub `staging` environment. The JPG is loaded from an
   expiring private signed URL on the same staging Supabase origin.
@@ -42,6 +48,9 @@ and `afterAll` performs service-role cleanup if an earlier assertion fails.
 The workflow runs product verification and two-account RLS isolation once, then
 runs every P0 browser test twice consecutively. There are no conditional skips,
 retries, or mocked provider/payment success paths in this protected workflow.
+It then runs 24 zero-provider checks in branded Chrome, branded Edge, Firefox,
+desktop WebKit, Android Chromium, and iPhone WebKit. The compatibility project
+creates only a synthetic derived-result row and deletes its disposable owner.
 
 ## Cost ceiling
 
@@ -52,12 +61,17 @@ API, so no real payment is processed. The suite does not add OpenAI credit,
 prepaid balances, or auto-recharge; the existing safe routine fallback remains
 valid when OpenAI is unavailable.
 
+The compatibility suite makes no scan, checkout, portal, or webhook request.
+The database concurrency verifier creates one identity-free synthetic provider
+reservation, finalizes it as unknown, and makes zero provider HTTP calls.
+
 ## Required GitHub staging configuration
 
 Environment variables:
 
 - `E2E_FRONTEND_URL`
 - `E2E_API_URL`
+- `PRODUCTION_SUPABASE_PROJECT_REF` (deny-only guard for the staging budget test)
 
 Environment secrets:
 
@@ -73,5 +87,12 @@ Environment secrets:
 
 The staging frontend deployment must set `NEXT_PUBLIC_RELEASE_SHA`; the backend
 must set the same commit as `RELEASE_SHA`. Deploy migrations `202608220002`,
-`202608280002`, and `202608280003` before starting the workflow. Production is
-not an authorized target.
+`202608280002`, `202608280003`, and `202608310001` before starting the workflow.
+Production is not an authorized target.
+
+The Day 13 load harness additionally requires `LOAD_TEST_ENVIRONMENT=staging`,
+an exact `LOAD_TEST_ALLOW_HOST`, a different `LOAD_TEST_PRODUCTION_HOST` deny
+target, and `I_ACKNOWLEDGE_STAGING_LOAD_ONLY`. Its allowlist contains no scan,
+checkout, portal, webhook, email, or deletion endpoint, and redirects are
+rejected. Passing requires p95 below one second and fewer than 1% unexpected
+responses.

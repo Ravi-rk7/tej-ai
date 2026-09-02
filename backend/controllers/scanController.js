@@ -55,18 +55,29 @@ export const createScanHandler = ({
         } catch (serviceError) {
             const statusCode = serviceError.statusCode || 502;
             const message = serviceError.publicMessage || 'Skin analysis service is unavailable';
+            if (serviceError.resetAt && typeof res.set === 'function') {
+                const retryAfter = Math.max(
+                    1,
+                    Math.ceil((Date.parse(serviceError.resetAt) - Date.now()) / 1000)
+                );
+                res.set('Retry-After', String(retryAfter));
+            }
             scanLogger.warn('Skin analysis service failed', {
                 statusCode,
                 category: serviceError.category || 'unknown',
                 code: serviceError.publicCode,
             });
-            await refundReservation('provider_failed');
+            const noProviderAttempt = [
+                'SCAN_CAPACITY_REACHED',
+                'PROVIDER_BUDGET_UNAVAILABLE',
+            ].includes(serviceError.publicCode);
+            await refundReservation(noProviderAttempt ? 'processing_failed' : 'provider_failed');
             return errorResponse(res, message, statusCode, serviceError.publicCode);
         }
 
         const { skinType, scoreInfo } = skinAnalysis;
         const insights = deriveSkinInsights(scoreInfo);
-        const { trend } = await calculateScore(scoreInfo, userId);
+        await calculateScore(scoreInfo, userId);
         const routine = await generateRoutine({
             skinType,
             concerns: insights.concernDetails,
@@ -120,9 +131,8 @@ export const createScanHandler = ({
         });
 
         scanLogger.info('Scan completed successfully', {
-            glowScore: insights.glowScore,
-            trend,
-            routineSource: routine.source,
+            provider: 'ailabtools',
+            outcome: 'success',
         });
 
         return successResponse(res, result);

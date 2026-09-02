@@ -25,8 +25,15 @@ const admin = createAdminClient(configuration);
 let primaryUserId;
 let secondaryUserId;
 let scanId;
-let primaryToken;
 let portrait;
+
+const loginPrimary = async (page) => {
+  await page.goto("/login");
+  await page.getByPlaceholder("Email address").fill(primaryEmail);
+  await page.getByPlaceholder("Password").fill(updatedPassword);
+  await page.getByRole("button", { name: "Sign In" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+};
 
 test.beforeAll(async () => {
   let portraitResponse;
@@ -168,16 +175,12 @@ test("password reset establishes a new password and authenticated session", asyn
   await page.getByPlaceholder("Password").fill(updatedPassword);
   await page.getByRole("button", { name: "Sign In" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  primaryToken = await accessTokenFor(
-    configuration,
-    primaryEmail,
-    updatedPassword,
-  );
 });
 
 test("first free scan persists, reloads, and remains owner-only", async ({
   page,
 }) => {
+  await loginPrimary(page);
   await page.goto("/scan");
   await expect(
     page.getByRole("heading", {
@@ -222,6 +225,7 @@ test("first free scan persists, reloads, and remains owner-only", async ({
 test("dashboard, history, and free quota exhaustion reflect the persisted scan", async ({
   page,
 }) => {
+  await loginPrimary(page);
   await page.goto("/dashboard");
   await expect(page.getByText("Latest Glow Score")).toBeVisible();
   await expect(page.getByText("1/1")).toBeVisible();
@@ -248,6 +252,17 @@ test("dashboard, history, and free quota exhaustion reflect the persisted scan",
 test("Dodo test checkout activates paid allocation and cancellation is webhook-confirmed", async ({
   page,
 }) => {
+  await loginPrimary(page);
+  await page.goto("/scan");
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "consented-staging.jpg",
+    mimeType: "image/jpeg",
+    buffer: portrait,
+  });
+  await page.getByRole("button", { name: "Start Cosmetic Scan" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Choose a larger scan allowance" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Continue with Starter" }).click();
   await page.waitForURL(/^https:\/\/test\.checkout\.dodopayments\.com\//, {
     timeout: 30_000,
@@ -312,6 +327,7 @@ test("Dodo test checkout activates paid allocation and cancellation is webhook-c
 test("scan and account deletion remove the disposable staging identity", async ({
   page,
 }) => {
+  await loginPrimary(page);
   await page.goto(`/results?id=${encodeURIComponent(scanId)}`);
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Delete result" }).click();

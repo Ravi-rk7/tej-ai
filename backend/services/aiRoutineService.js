@@ -2,6 +2,10 @@ import axios from 'axios';
 import { z } from 'zod';
 import env from '../config/env.js';
 import logger from '../utils/logger.js';
+import {
+    finalizeProviderCall,
+    reserveProviderCall,
+} from './providerBudgetService.js';
 
 export const OPENAI_API_TIMEOUT = 15_000;
 export const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -207,6 +211,24 @@ const parseStructuredResponse = (response) => {
     return ModelRoutineSchema.parse(JSON.parse(message.content));
 };
 
+const readTokenUsage = (response) => {
+    const inputUnits = Number(response?.data?.usage?.prompt_tokens);
+    const outputUnits = Number(response?.data?.usage?.completion_tokens);
+    return {
+        inputUnits: Number.isInteger(inputUnits) && inputUnits >= 0 ? inputUnits : 0,
+        outputUnits: Number.isInteger(outputUnits) && outputUnits >= 0 ? outputUnits : 0,
+        estimatedCostMicros: 0,
+    };
+};
+
+const failureOutcome = (error) => {
+    if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') return 'timeout';
+    if (error?.response?.status === 429) return 'quota';
+    if (error?.response?.data?.choices?.[0]?.message?.refusal) return 'refusal';
+    if (error instanceof SyntaxError || error instanceof z.ZodError) return 'invalid_response';
+    return 'unavailable';
+};
+
 const buildPrompt = (skinData) => [
     'Choose a conservative cosmetic skincare routine from the allowed catalog tokens.',
     'Return only the schema-bound JSON object. Do not write instructions, diagnoses, medical claims, or product names.',
@@ -220,6 +242,8 @@ export const createRoutineGenerator = ({
     httpClient = axios,
     runtimeEnv = env,
     routineLogger = logger,
+    reserveBudget = reserveProviderCall,
+    finalizeBudget = finalizeProviderCall,
 } = {}) => async (skinData) => {
     const parsedSkinData = normalizeInput(skinData);
     const fallback = createFallback(parsedSkinData);
@@ -228,6 +252,35 @@ export const createRoutineGenerator = ({
         routineLogger.warn('OPENAI_API_KEY missing. Using fallback routine.');
         return fallback;
     }
+
+    let budgetReservationId = null;
+    try {
+        const reservation = await reserveBudget(
+            'openai',
+            runtimeEnv.OPENAI_DAILY_CALL_LIMIT
+        );
+        budgetReservationId = reservation.reservationId;
+    } catch (error) {
+        routineLogger.warn('Using fallback routine because AI capacity is unavailable', {
+            provider: 'openai',
+            code: error.publicCode || 'PROVIDER_BUDGET_UNAVAILABLE',
+        });
+        return fallback;
+    }
+
+    const finalizeSafely = async (details) => {
+        if (!budgetReservationId) return;
+        const reservationId = budgetReservationId;
+        budgetReservationId = null;
+        try {
+            await finalizeBudget(reservationId, details);
+        } catch (error) {
+            routineLogger.error('AI usage finalization failed', {
+                provider: 'openai',
+                code: error.publicCode || 'PROVIDER_BUDGET_UNAVAILABLE',
+            });
+        }
+    };
 
     try {
         const response = await httpClient.post(
@@ -255,15 +308,25 @@ export const createRoutineGenerator = ({
         const modelTokens = parseStructuredResponse(response);
         if (!validateTokens(modelTokens)) throw new Error('Routine catalog rules rejected the response');
         const routine = toPublicRoutine(modelTokens, 'openai', parsedSkinData.concerns);
+        await finalizeSafely({
+            state: 'succeeded',
+            outcome: 'success',
+            ...readTokenUsage(response),
+        });
         routineLogger.info('AI routine generated', {
-            skinType: parsedSkinData.skinType,
-            concernsCount: parsedSkinData.concerns.length,
+            provider: 'openai',
+            outcome: 'success',
         });
         return routine;
     } catch (error) {
+        await finalizeSafely({
+            state: 'failed',
+            outcome: failureOutcome(error),
+        });
         routineLogger.warn('Using fallback routine due to generation error', {
             status: error.response?.status,
             code: error.code,
+            provider: 'openai',
         });
         return fallback;
     }

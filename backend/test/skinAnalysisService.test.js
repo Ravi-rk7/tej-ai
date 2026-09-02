@@ -6,6 +6,7 @@ import {
     createSkinAnalysisService,
     normalizeProviderResponse,
 } from '../services/skinAnalysisService.js';
+import { ProviderBudgetError } from '../services/providerBudgetService.js';
 
 const fixtureUrl = (name) => new URL(`./fixtures/ailabtools/${name}`, import.meta.url);
 const readFixture = async (name) => JSON.parse(await readFile(fixtureUrl(name), 'utf8'));
@@ -26,7 +27,13 @@ const axiosError = ({ status, data, code }) => ({
     response: status ? { status, data } : undefined,
 });
 
-const serviceFor = ({ responses, logger = quietLogger(), breaker, now } = {}) => {
+const serviceFor = ({
+    responses,
+    logger = quietLogger(),
+    breaker,
+    now,
+    serviceOptions = {},
+} = {}) => {
     let calls = 0;
     const httpClient = {
         async post() {
@@ -43,6 +50,7 @@ const serviceFor = ({ responses, logger = quietLogger(), breaker, now } = {}) =>
         serviceLogger: logger,
         circuitBreaker: breaker || createCircuitBreaker(),
         now,
+        ...serviceOptions,
     });
     return { service, logger, calls: () => calls };
 };
@@ -98,19 +106,56 @@ test('retries one transient provider failure and then succeeds', async () => {
     const successFixture = await readFixture('skin-analysis-success.json');
     const errorFixture = await readFixture('skin-analysis-service-error.json');
     const logger = quietLogger();
+    const reservations = [];
+    const finalizations = [];
     const { service, calls } = serviceFor({
         responses: [
             axiosError({ status: 503, data: errorFixture }),
             { status: 200, data: successFixture },
         ],
         logger,
+        serviceOptions: {
+            providerDailyLimit: 2,
+            reserveBudget: async () => {
+                const reservationId = `reservation-${reservations.length + 1}`;
+                reservations.push(reservationId);
+                return { reservationId };
+            },
+            finalizeBudget: async (...args) => { finalizations.push(args); },
+        },
     });
 
     const result = await service.runSkinAnalysis(Buffer.from('jpeg'));
 
     assert.equal(result.scoreInfo.totalScore, 84);
     assert.equal(calls(), 2);
+    assert.equal(reservations.length, 2);
+    assert.deepEqual(finalizations, [
+        ['reservation-1', { state: 'failed', outcome: 'provider_error' }],
+        ['reservation-2', { state: 'succeeded', outcome: 'success' }],
+    ]);
     assert.equal(logger.entries.filter((entry) => entry.metadata.outcome === 'retry').length, 1);
+});
+
+test('provider capacity denial makes no HTTP request', async () => {
+    const { service, calls } = serviceFor({
+        responses: [],
+        serviceOptions: {
+            providerDailyLimit: 1,
+            reserveBudget: async () => {
+                throw new ProviderBudgetError('capacity', {
+                    publicCode: 'SCAN_CAPACITY_REACHED',
+                    publicMessage: 'Daily scan capacity has been reached.',
+                });
+            },
+        },
+    });
+
+    await assert.rejects(
+        service.runSkinAnalysis(Buffer.from('jpeg')),
+        (error) => error.publicCode === 'SCAN_CAPACITY_REACHED'
+    );
+    assert.equal(calls(), 0);
 });
 
 test('returns a retryable timeout after exactly one retry', async () => {

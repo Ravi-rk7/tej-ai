@@ -19,6 +19,9 @@ const validEnvironment = () => ({
     DODO_API_BASE_URL: 'https://test.dodopayments.com',
     DELETION_AUDIT_HMAC_SECRET: 'test-deletion-audit-secret-1234567890',
     SECURITY_HMAC_SECRET: 'test-security-hmac-secret-123456789012',
+    AILAB_DAILY_CALL_LIMIT: '5',
+    OPENAI_DAILY_CALL_LIMIT: '5',
+    PROVIDER_USAGE_RETENTION_DAYS: '90',
 });
 
 test('validateEnvironment accepts complete test-mode development configuration', () => {
@@ -250,4 +253,18 @@ test('buildBillingUrls produces fixed provider relays and neutral app markers', 
         returnRedirectUrl: 'https://staging.tejai.example/settings?checkout=returned',
         cancelRedirectUrl: 'https://staging.tejai.example/settings?checkout=cancelled',
     });
+});
+
+test('validateEnvironment requires bounded provider guards in public environments', () => {
+    const staging = {
+        ...validEnvironment(),
+        APP_ENV: 'staging',
+        API_BASE_URL: 'https://api-staging.tejai.example',
+        FRONTEND_URL: 'https://staging.tejai.example',
+    };
+    delete staging.AILAB_DAILY_CALL_LIMIT;
+    assert.throws(() => validateEnvironment({ source: staging }), /AILAB_DAILY_CALL_LIMIT is required/);
+    staging.AILAB_DAILY_CALL_LIMIT = '5';
+    staging.OPENAI_DAILY_CALL_LIMIT = '0';
+    assert.throws(() => validateEnvironment({ source: staging }), /OPENAI_DAILY_CALL_LIMIT must be an integer/);
 });

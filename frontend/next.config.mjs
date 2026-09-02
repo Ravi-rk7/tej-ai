@@ -36,6 +36,20 @@ const supabaseOrigin = parseOrigin(
 const supabaseWebSocketOrigin = supabaseOrigin
   ? supabaseOrigin.replace(/^http/, "ws")
   : null;
+const sentryOrigin = (() => {
+  const value = process.env.NEXT_PUBLIC_SENTRY_DSN;
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:") throw new Error("non-HTTPS DSN");
+    return parsed.origin;
+  } catch {
+    if (isPublicEnvironment) {
+      throw new Error("NEXT_PUBLIC_SENTRY_DSN must be a valid HTTPS DSN");
+    }
+    return null;
+  }
+})();
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 export const buildReleaseHeader = (value) => {
@@ -70,6 +84,7 @@ const contentSecurityPolicy = compactPolicy([
     apiOrigin,
     supabaseOrigin,
     supabaseWebSocketOrigin,
+    sentryOrigin,
     isDevelopment ? "ws:" : null,
   ]],
   ["worker-src", ["'self'", "blob:"]],

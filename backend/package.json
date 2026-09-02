@@ -13,6 +13,9 @@
     "test:provider": "node scripts/verify-ailab-provider.js",
     "test:billing-products": "node scripts/verify-dodo-products.js",
     "test:rls": "node scripts/verify-rls-isolation.js",
+    "test:load": "node scripts/load-test.js",
+    "test:provider-budget": "node scripts/verify-provider-budget-concurrency.js",
+    "report:provider-usage": "node scripts/report-provider-usage.js",
     "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -29,6 +32,7 @@
   "author": "TejAi Team",
   "license": "MIT",
   "dependencies": {
+    "@sentry/node": "^10.72.0",
     "@supabase/supabase-js": "^2.41.0",
     "@upstash/ratelimit": "^1.0.0",
     "@upstash/redis": "^1.26.0",

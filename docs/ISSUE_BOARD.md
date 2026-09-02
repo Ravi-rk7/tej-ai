@@ -1,6 +1,6 @@
 # TejAi MVP issue board
 
-Updated: 2026-08-31
+Updated: 2026-09-02
 
 Severity definitions:
 
@@ -25,16 +25,16 @@ is linked in the issue or release record. Any newly found launch blocker is P0.
 | COPY-001     | P1       | Product     | Day 10 | Remove deferred features and unsupported claims from all surfaces | Local static checks pass; verified business details and product/legal review pending |
 | SECURITY-001 | P0       | Engineering | Day 11 | Backend-only data boundary, browser/API hardening, and abuse controls | Local implementation and security matrix pass; staging verification pending |
 | QA-001       | P0       | Engineering | Day 12 | Automated release suite and backend business-logic coverage | Local 80% coverage gate and protected E2E implementation pass; exact-release staging suite must pass twice |
+| OPS-002      | P0       | Engineering | Day 13 | Production deploy, monitoring, backup restore, and rollback | Local readiness, cost guards, monitoring hooks, runbooks, and tests implemented; staging/production evidence pending |
+| PERF-001     | P1       | Engineering | Day 13 | Meet non-scan p95 and cost targets | Staging-only load harness and atomic daily provider caps implemented; live evidence pending |
+| QA-002       | P0       | Team        | Day 14 | Cross-browser staging bug bash with zero open P0/P1 defects | Six-project zero-provider compatibility harness, corrected isolated-session journey, budget verifier, and evidence record implemented locally; staging run pending |
 
 ## Ready
 
 | ID           | Severity | Owner         | Target      | Issue                                                                     | Acceptance evidence               |
 | ------------ | -------- | ------------- | ----------- | ------------------------------------------------------------------------- | --------------------------------- |
 | ROUTINE-001  | P0       | Engineering   | Day 5       | Correct score, concern mapping, and safe routine fallback                 | Local implementation + 48 backend/8 frontend tests; one consented staging portrait pending |
-| OPS-002      | P0       | Engineering   | Day 13      | Production deploy, monitoring, backup restore, and rollback               | Rehearsal record                  |
-| QA-002       | P0       | Team          | Day 14      | Cross-browser staging bug bash with zero open P0/P1 defects               | Signed bug-bash record            |
 | LAUNCH-001   | P0       | Team          | Day 15      | Controlled launch and live payment/scan verification                      | Completed launch checklist        |
-| PERF-001     | P1       | Engineering   | Day 13      | Meet non-scan p95 and cost targets                                        | Load/cost test report             |
 | UX-001       | P2       | Design        | Post-launch | Polish non-blocking empty/loading transitions                             | Visual QA                         |
 
 ## Done

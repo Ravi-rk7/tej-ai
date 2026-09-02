@@ -2,6 +2,7 @@ import logger from '../utils/logger.js';
 import { errorResponse } from '../utils/responseFormatter.js';
 import { z } from 'zod';
 import { safeRouteTemplate } from './requestContextMiddleware.js';
+import { captureOperationalError } from '../services/observabilityService.js';
 
 /**
  * Centralized error handler middleware
@@ -43,6 +44,12 @@ export const errorMiddleware = (err, req, res, _next) => {
         logger.error('Unhandled server error', {
             ...logContext,
             errorType: err?.name || 'Error',
+        });
+        captureOperationalError(err, {
+            errorCode: err.publicCode || 'INTERNAL_ERROR',
+            requestId: req.requestId,
+            route: safeRouteTemplate(req),
+            method: req.method,
         });
     } else {
         logger.warn('Request rejected', logContext);

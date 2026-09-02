@@ -83,6 +83,19 @@ jobs:
           RLS_TEST_API_BASE_URL: ${{ vars.E2E_API_URL }}
         run: npm run test:rls
 
+      - name: Verify atomic provider budget without a provider call
+        working-directory: backend
+        env:
+          APP_ENV: staging
+          BUDGET_TEST_CONFIRM: I_ACKNOWLEDGE_STAGING_BUDGET_ONLY
+          BUDGET_TEST_PROVIDER: openai
+          BUDGET_TEST_CONCURRENCY: "8"
+          BUDGET_TEST_STAGING_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+          BUDGET_TEST_PRODUCTION_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run test:provider-budget
+
       - name: Install frontend and Chromium
         working-directory: frontend
         run: |
@@ -106,6 +119,25 @@ jobs:
         run: |
           E2E_RUN_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-1" npm run test:e2e:staging
           E2E_RUN_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-2" npm run test:e2e:staging
+
+      - name: Install compatibility browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium firefox webkit chrome msedge
+
+      - name: Run zero-provider browser and mobile compatibility
+        working-directory: frontend
+        env:
+          E2E_CONFIRM_STAGING: I_ACKNOWLEDGE_STAGING_ONLY
+          E2E_DODO_MODE: disabled
+          E2E_MAX_PROVIDER_SCANS: "0"
+          E2E_RELEASE_SHA: ${{ inputs.release_sha }}
+          E2E_FRONTEND_URL: ${{ vars.E2E_FRONTEND_URL }}
+          E2E_API_URL: ${{ vars.E2E_API_URL }}
+          E2E_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          E2E_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-compat
+        run: npm run test:e2e:compat
 
       - name: Upload privacy-safe HTML report on failure
         if: failure()

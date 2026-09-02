@@ -59,6 +59,18 @@ const parseInteger = (value, defaultValue) => {
     return Number.isInteger(parsed) ? parsed : defaultValue;
 };
 
+const assertIntegerInRange = (name, value, minimum, maximum, { required = false } = {}) => {
+    if (value === undefined || String(value).trim() === '') {
+        if (required) throw new Error(`${name} is required`);
+        return;
+    }
+
+    const parsed = Number(String(value));
+    if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
+        throw new Error(`${name} must be an integer between ${minimum} and ${maximum}`);
+    }
+};
+
 const assertValidUrl = (name, value, protocols = ['http:', 'https:']) => {
     try {
         const parsed = new URL(value);
@@ -302,6 +314,43 @@ export const validateEnvironment = ({
         throw new Error('AILAB_API_URL must use the official provider host outside local development');
     }
 
+    assertIntegerInRange(
+        'AILAB_DAILY_CALL_LIMIT',
+        source.AILAB_DAILY_CALL_LIMIT,
+        requirePublicHttps ? 1 : 0,
+        100_000,
+        { required: requirePublicHttps }
+    );
+    assertIntegerInRange(
+        'OPENAI_DAILY_CALL_LIMIT',
+        source.OPENAI_DAILY_CALL_LIMIT,
+        requirePublicHttps ? 1 : 0,
+        100_000,
+        { required: requirePublicHttps }
+    );
+    assertIntegerInRange(
+        'PROVIDER_USAGE_RETENTION_DAYS',
+        source.PROVIDER_USAGE_RETENTION_DAYS || '90',
+        30,
+        365
+    );
+    assertIntegerInRange(
+        'READINESS_TIMEOUT_MS',
+        source.READINESS_TIMEOUT_MS || '1000',
+        100,
+        5000
+    );
+    assertIntegerInRange(
+        'READINESS_CACHE_MS',
+        source.READINESS_CACHE_MS || '30000',
+        0,
+        60_000
+    );
+
+    if (source.SENTRY_DSN) {
+        assertValidUrl('SENTRY_DSN', source.SENTRY_DSN, ['https:']);
+    }
+
     return true;
 };
 
@@ -342,6 +391,12 @@ const env = Object.freeze({
     ),
 
     OPENAI_API_KEY: readEnv('OPENAI_API_KEY'),
+    AILAB_DAILY_CALL_LIMIT: parseInteger(readEnv('AILAB_DAILY_CALL_LIMIT', '0'), 0),
+    OPENAI_DAILY_CALL_LIMIT: parseInteger(readEnv('OPENAI_DAILY_CALL_LIMIT', '0'), 0),
+    PROVIDER_USAGE_RETENTION_DAYS: parseInteger(
+        readEnv('PROVIDER_USAGE_RETENTION_DAYS', '90'),
+        90
+    ),
 
     UPSTASH_REDIS_REST_URL: readEnv('UPSTASH_REDIS_REST_URL'),
     UPSTASH_REDIS_REST_TOKEN: readEnv('UPSTASH_REDIS_REST_TOKEN'),
@@ -388,6 +443,10 @@ const env = Object.freeze({
     ),
     DELETION_AUDIT_HMAC_SECRET: readEnv('DELETION_AUDIT_HMAC_SECRET'),
     SECURITY_HMAC_SECRET: readEnv('SECURITY_HMAC_SECRET'),
+
+    READINESS_TIMEOUT_MS: parseInteger(readEnv('READINESS_TIMEOUT_MS', '1000'), 1000),
+    READINESS_CACHE_MS: parseInteger(readEnv('READINESS_CACHE_MS', '30000'), 30000),
+    SENTRY_DSN: readEnv('SENTRY_DSN'),
 
     LOG_LEVEL: readEnv('LOG_LEVEL', 'info'),
 });

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { readStagingEnvironment } from "./support/staging.js";
+import { readCompatibilityEnvironment } from "./support/staging.js";
 
-export default async function globalSetup() {
-  const configuration = readStagingEnvironment();
+export default async function compatibilityGlobalSetup() {
+  const configuration = readCompatibilityEnvironment();
   const [healthResponse, readinessResponse, frontendResponse] = await Promise.all([
     fetch(`${configuration.apiUrl}/api/health`, {
       headers: { Origin: configuration.frontendUrl },
@@ -12,6 +12,7 @@ export default async function globalSetup() {
     }),
     fetch(configuration.frontendUrl, { redirect: "manual" }),
   ]);
+
   assert.equal(healthResponse.status, 200, "Staging API health check failed");
   assert.equal(readinessResponse.status, 200, "Staging API readiness check failed");
   const health = await healthResponse.json();

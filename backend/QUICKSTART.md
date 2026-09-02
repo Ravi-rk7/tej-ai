@@ -31,7 +31,7 @@ cp .env.example .env
 - Go to [Supabase Dashboard](https://app.supabase.com)
 - Select your project → SQL Editor
 - Apply every file in `backend/db/migrations/` in timestamp order, through
-  `202608280001_day_9_billing_webhooks_quotas.sql`.
+  `202608310001_day_13_operational_guards.sql`.
 - Follow `backend/db/SCHEMA_SETUP.md` for the required RLS verification.
 - Use `backend/db/schema.sql` only as a snapshot for a brand-new empty project,
   never in place of ordered migrations for an existing environment.

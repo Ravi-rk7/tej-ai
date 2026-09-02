@@ -16,6 +16,7 @@ import securityHeadersMiddleware, {
     apiSecurityPolicyMiddleware,
 } from './middleware/securityHeadersMiddleware.js';
 import requestShapeMiddleware from './middleware/requestShapeMiddleware.js';
+import readiness from './controllers/readinessController.js';
 
 const app = express();
 const allowedOrigins = new Set(
@@ -72,6 +73,7 @@ app.get('/api/health', (req, res) => successResponse(res, {
     timestamp: new Date().toISOString(),
     releaseSha: env.RELEASE_SHA || null,
 }));
+app.get('/api/ready', readiness);
 
 app.use('/api', scanRoutes);
 app.use('/api', resultRoutes);

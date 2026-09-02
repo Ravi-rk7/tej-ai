@@ -4,6 +4,10 @@ import { z } from 'zod';
 import env from '../config/env.js';
 import logger from '../utils/logger.js';
 import { MAX_IMAGE_BYTES } from './imageService.js';
+import {
+    finalizeProviderCall,
+    reserveProviderCall,
+} from './providerBudgetService.js';
 
 const API_TIMEOUT_MS = 8000;
 const RETRY_ATTEMPTS = 1;
@@ -442,6 +446,13 @@ const normalizeThrownError = (error) => {
     });
 };
 
+const budgetOutcomeFor = (error) => {
+    if (error.category === 'timeout') return 'timeout';
+    if (error.category === 'rate_limited') return 'quota';
+    if (error.category === 'invalid_response') return 'invalid_response';
+    return 'provider_error';
+};
+
 export const createSkinAnalysisService = ({
     httpClient = axios,
     apiUrl = env.AILAB_API_URL,
@@ -451,6 +462,9 @@ export const createSkinAnalysisService = ({
     retryAttempts = RETRY_ATTEMPTS,
     circuitBreaker = defaultCircuitBreaker,
     now = Date.now,
+    reserveBudget = reserveProviderCall,
+    finalizeBudget = finalizeProviderCall,
+    providerDailyLimit = env.AILAB_DAILY_CALL_LIMIT,
 } = {}) => ({
     async runSkinAnalysis(imageBuffer) {
         try {
@@ -473,7 +487,29 @@ export const createSkinAnalysisService = ({
         let finalError;
 
         for (let attempt = 0; attempt <= retryAttempts; attempt += 1) {
+            let budgetReservationId = null;
+            const finalizeBudgetSafely = async (details) => {
+                if (!budgetReservationId) return;
+                const reservationId = budgetReservationId;
+                budgetReservationId = null;
+                try {
+                    await finalizeBudget(reservationId, details);
+                } catch (error) {
+                    // A reserved row still consumes capacity if finalization fails.
+                    serviceLogger.error('Skin provider usage finalization failed', {
+                        provider: 'ailabtools',
+                        operation: PROVIDER_OPERATION,
+                        code: error.publicCode || 'PROVIDER_BUDGET_UNAVAILABLE',
+                    });
+                }
+            };
+
             try {
+                const budgetReservation = await reserveBudget(
+                    'ailabtools',
+                    providerDailyLimit
+                );
+                budgetReservationId = budgetReservation.reservationId;
                 const form = createProviderForm(imageBuffer);
                 const response = await httpClient.post(apiUrl, form, {
                     headers: {
@@ -493,6 +529,7 @@ export const createSkinAnalysisService = ({
                 }
 
                 const normalized = normalizeProviderResponse(response.data);
+                await finalizeBudgetSafely({ state: 'succeeded', outcome: 'success' });
                 circuitBreaker.recordSuccess();
                 serviceLogger.info('Skin provider request completed', {
                     provider: 'ailabtools',
@@ -504,6 +541,10 @@ export const createSkinAnalysisService = ({
                 return normalized;
             } catch (error) {
                 const serviceError = normalizeThrownError(error);
+                await finalizeBudgetSafely({
+                    state: 'failed',
+                    outcome: budgetOutcomeFor(serviceError),
+                });
                 finalError = serviceError;
 
                 if (
