@@ -34,7 +34,7 @@ jobs:
           test "$CONFIRMATION" = "I_ACKNOWLEDGE_STAGING_ONLY"
           printf '%s' "$EXPECTED_SHA" | grep -Eq '^[a-fA-F0-9]{40}$'
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.release_sha }}
 
