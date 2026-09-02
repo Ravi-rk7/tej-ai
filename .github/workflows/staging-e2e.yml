@@ -141,7 +141,7 @@ jobs:
 
       - name: Upload privacy-safe HTML report on failure
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: staging-e2e-report-${{ github.run_id }}
           path: frontend/playwright-report
