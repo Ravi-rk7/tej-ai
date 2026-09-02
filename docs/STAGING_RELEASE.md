@@ -382,7 +382,7 @@ open.
 - A staging-only provider-budget verifier sends eight concurrent database
   reservations, requires exactly one grant, and makes zero AILabTools/OpenAI
   HTTP calls. It requires distinct staging and production project references.
-- The final Day 14 local gate passes 179 backend tests, 34 frontend tests, the
+- The final Day 14 local gate passes 180 backend tests, 35 frontend tests, the
   Next.js production build, and dependency audits with zero known
   vulnerabilities. The compatibility suite enumerates 24 tests across six
   browser/device projects, while the protected release journey retains six

@@ -154,7 +154,7 @@ async function run() {
         );
     });
 
-    await check('pre-Day-9 webhook remains quarantined', async () => {
+    await check('billing webhook remains fail-closed while disabled', async () => {
         const response = await fetch(endpoint('/api/webhook'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -162,7 +162,7 @@ async function run() {
         });
         const body = await readJson(response);
         assert(response.status === 503, `received HTTP ${response.status}`);
-        assert(body.code === 'WEBHOOK_NOT_READY', `received code ${body.code || 'missing'}`);
+        assert(body.code === 'WEBHOOK_DISABLED', `received code ${body.code || 'missing'}`);
     });
 
     for (const relay of [

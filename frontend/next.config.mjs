@@ -63,6 +63,10 @@ export const buildReleaseHeader = (value) => {
   return { key: "X-TejAI-Release", value: releaseSha };
 };
 
+export const resolveReleaseSha = (environment = process.env) => (
+  environment.NEXT_PUBLIC_RELEASE_SHA || environment.VERCEL_GIT_COMMIT_SHA || ""
+);
+
 const compactPolicy = (directives) => directives
   .map(([name, values]) => [name, values.filter(Boolean).join(" ")].filter(Boolean).join(" "))
   .join("; ");
@@ -101,7 +105,7 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
-const releaseHeader = buildReleaseHeader(process.env.NEXT_PUBLIC_RELEASE_SHA);
+const releaseHeader = buildReleaseHeader(resolveReleaseSha());
 if (releaseHeader) securityHeaders.push(releaseHeader);
 
 if (["staging", "production"].includes(appEnvironment)) {

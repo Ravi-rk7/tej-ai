@@ -51,3 +51,11 @@ test('Day 9 migration can replace both legacy and current checkout shape constra
         assert.ok(sql.indexOf(drop) < sql.indexOf(add));
     }
 });
+
+test('Day 14 staging smoke recognizes the current disabled webhook contract', async () => {
+    const smoke = await readFile(new URL('../scripts/smoke-test.js', import.meta.url), 'utf8');
+
+    assert.match(smoke, /billing webhook remains fail-closed while disabled/);
+    assert.match(smoke, /body\.code === 'WEBHOOK_DISABLED'/);
+    assert.doesNotMatch(smoke, /WEBHOOK_NOT_READY/);
+});

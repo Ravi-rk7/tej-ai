@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import nextConfig, { buildReleaseHeader } from "../next.config.mjs";
+import nextConfig, { buildReleaseHeader, resolveReleaseSha } from "../next.config.mjs";
 
 test("frontend security headers constrain frames, objects, connections, and browser capabilities", async () => {
   const entries = await nextConfig.headers();
@@ -33,4 +33,13 @@ test("release headers expose only bounded Git commit identifiers", () => {
   });
   assert.equal(buildReleaseHeader(""), null);
   assert.throws(() => buildReleaseHeader("not-a-release"), /commit SHA/);
+});
+
+test("release identity falls back to Vercel's immutable Git commit", () => {
+  assert.equal(resolveReleaseSha({
+    NEXT_PUBLIC_RELEASE_SHA: "explicit123",
+    VERCEL_GIT_COMMIT_SHA: "vercel456",
+  }), "explicit123");
+  assert.equal(resolveReleaseSha({ VERCEL_GIT_COMMIT_SHA: "vercel456" }), "vercel456");
+  assert.equal(resolveReleaseSha({}), "");
 });
