@@ -35,3 +35,19 @@ test('Day 14 workflow keeps compatibility provider-free and release SHA bound', 
     assert.match(compatibility, /url\.pathname === "\/api\/scan"/);
     assert.doesNotMatch(compatibility, /E2E_CONSENTED_JPEG_URL|DODO_TEST_API_KEY/);
 });
+
+test('Day 9 migration can replace both legacy and current checkout shape constraints', async () => {
+    const migration = await readFile(new URL(
+        '../db/migrations/202608280001_day_9_billing_webhooks_quotas.sql',
+        import.meta.url
+    ), 'utf8');
+    const schema = await readFile(new URL('../db/schema.sql', import.meta.url), 'utf8');
+    const drop = 'DROP CONSTRAINT IF EXISTS billing_checkout_attempts_shape_check';
+    const add = 'ADD CONSTRAINT billing_checkout_attempts_shape_check';
+
+    for (const sql of [migration, schema]) {
+        assert.match(sql, /DROP CONSTRAINT IF EXISTS billing_checkout_attempts_check/i);
+        assert.ok(sql.indexOf(drop) >= 0);
+        assert.ok(sql.indexOf(drop) < sql.indexOf(add));
+    }
+});

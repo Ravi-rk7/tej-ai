@@ -307,7 +307,8 @@ ALTER TABLE public.subscriptions
 
 ALTER TABLE public.billing_checkout_attempts
     DROP CONSTRAINT IF EXISTS billing_checkout_attempts_state_check,
-    DROP CONSTRAINT IF EXISTS billing_checkout_attempts_check;
+    DROP CONSTRAINT IF EXISTS billing_checkout_attempts_check,
+    DROP CONSTRAINT IF EXISTS billing_checkout_attempts_shape_check;
 
 ALTER TABLE public.billing_checkout_attempts
     ADD COLUMN IF NOT EXISTS fulfilled_at TIMESTAMPTZ,
