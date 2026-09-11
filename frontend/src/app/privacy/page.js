@@ -1,72 +1,15 @@
-import LegalPage from "@/components/layout/LegalPage";
-import { LEGAL_CONFIG } from "@/lib/legalConfig";
-
-export const metadata = {
-    title: "Privacy Notice — TejAi",
-    description: "How TejAi processes face photos, scan results, account data, and billing information.",
-};
-
-const businessName = LEGAL_CONFIG.legalBusinessName || LEGAL_CONFIG.brandName;
-
-export default function PrivacyPage() {
-    return (
-        <LegalPage eyebrow="Privacy" title="Privacy Notice" summary="This notice explains what TejAi processes, why it is needed, which providers receive it, how long it is kept, and how you can exercise your choices.">
-            <section>
-                <h2>Who is responsible</h2>
-                <p className="mt-3">{businessName} operates TejAi. {LEGAL_CONFIG.operatingCountry ? `The service operates from ${LEGAL_CONFIG.operatingCountry}.` : "The operating-country disclosure is pending legal approval."} {LEGAL_CONFIG.businessAddress ? `Business address: ${LEGAL_CONFIG.businessAddress}.` : "A business address will be published if required."}</p>
-                <p className="mt-3">Effective date: {LEGAL_CONFIG.privacyEffectiveDate || "pending legal approval"}.</p>
-            </section>
-
-            <section>
-                <h2>Information we process</h2>
-                <ul className="mt-3">
-                    <li>Account information such as your email address, authentication identifiers, and session information.</li>
-                    <li>A JPG face photograph that you explicitly choose to submit for one scan.</li>
-                    <li>Derived cosmetic results including skin type, Glow Score, concern scores, routine steps, and result timestamps.</li>
-                    <li>Subscription status, plan, checkout references, and limited billing-event records. Dodo Payments collects and manages payment details on its hosted pages.</li>
-                    <li>Limited security and service logs needed to operate and protect the application.</li>
-                </ul>
-            </section>
-
-            <section>
-                <h2>Face-photo processing and consent</h2>
-                <p className="mt-3">Before the uploader is enabled, TejAi asks for a clear affirmative choice. The photograph is held in transient server memory, sent over an encrypted connection to AILabTools for cosmetic skin analysis, and released after the request succeeds or fails. TejAi does not save the image, its filename, a base64 copy, or the provider&apos;s raw response.</p>
-                <p className="mt-3">AILabTools documents that uploaded Skin Analyze Pro files are not stored. You can withdraw face-scan consent in Settings. Withdrawal prevents future scans but does not automatically erase results you previously chose to save.</p>
-            </section>
-
-            <section>
-                <h2>Service providers and disclosures</h2>
-                <ul className="mt-3">
-                    <li><a href="https://supabase.com/privacy" target="_blank" rel="noreferrer">Supabase</a> provides authentication and database infrastructure.</li>
-                    <li><a href="https://www.ailabtools.com/docs/file-storage-policy" target="_blank" rel="noreferrer">AILabTools</a> receives the selected face photograph to return cosmetic analysis scores.</li>
-                    <li><a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noreferrer">OpenAI</a> receives only derived skin type and concern key/severity. It does not receive the photograph, email, filename, TejAi user ID, or raw AILabTools response. OpenAI states that API data is not used for training by default; ordinary abuse-monitoring logs may be retained for up to 30 days unless enhanced retention controls apply.</li>
-                    <li><a href="https://dodopayments.com/privacy-policy" target="_blank" rel="noreferrer">Dodo Payments</a> hosts checkout and billing management and may retain payment or transaction records where required by law.</li>
-                </ul>
-                <p className="mt-3">We describe processor disclosures accurately instead of making an absolute third-party-sharing promise.</p>
-            </section>
-
-            <section>
-                <h2>Retention and deletion</h2>
-                <ul className="mt-3">
-                    <li>Face bytes: only for the active analysis request; not stored by TejAi.</li>
-                    <li>Saved results and routines: until you delete the scan or your account.</li>
-                    <li>Consent history: while the account exists.</li>
-                    <li>Pseudonymous deletion evidence and billing tombstones: 365 days, subject to final legal approval or a longer period required by law.</li>
-                    <li>OpenAI derived request content: subject to its API data controls, ordinarily up to 30 days in abuse-monitoring logs.</li>
-                    <li>Dodo payment records: according to applicable tax, payment, fraud-prevention, and record-retention obligations.</li>
-                </ul>
-                <p className="mt-3">You can delete an individual result from History or Results. Settings provides consent withdrawal and permanent account deletion. Account deletion cancels a linked paid subscription before removing the TejAi authentication account and user-owned application records.</p>
-            </section>
-
-            <section>
-                <h2>Browser storage and cookies</h2>
-                <p className="mt-3">TejAi uses browser storage required to maintain your Supabase authentication session. The current TejAi application does not include advertising or behavioral-analytics trackers. Dodo&apos;s separately hosted checkout and portal are governed by Dodo&apos;s own storage and cookie disclosures.</p>
-            </section>
-
-            <section>
-                <h2>Your choices and contact</h2>
-                <p className="mt-3">You may withdraw consent, delete saved scans, delete your account, or ask a privacy question. {LEGAL_CONFIG.privacyEmail ? <>Contact <a href={`mailto:${LEGAL_CONFIG.privacyEmail}`}>{LEGAL_CONFIG.privacyEmail}</a>.</> : "A verified privacy contact must be configured before launch."}</p>
-            </section>
-        </LegalPage>
-    );
-}
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import { LEGAL_CONFIG } from '@/lib/legalConfig';
+import styles from '@/components/portfolio/portfolio.module.css';
+export const metadata = { title: 'Privacy notice · TejAi' };
+export default function Privacy() { return <><Navbar /><main className={styles.page}>
+  <p className={styles.eyebrow}>Portfolio privacy notice · September 11, 2026</p><h1 className={styles.title}>What the project stores.</h1>
+  <div className={styles.card}>
+    <h2>Sample workspace</h2><p className={styles.lead}>The demo contains synthetic data. Only its sample clock and check-in choices are stored in your browser under tejai.demo.v1. Reset demo clears those choices. The demo does not initialize account authentication or call the live API. Hosting still receives ordinary page and asset requests.</p>
+    <h2>Live account and routines</h2><p className={styles.lead}>GitHub sign-in is handled by Supabase. The live application uses your account identifier and email, stores session credentials through the authentication client, and saves your timezone, routine check-ins and normalized analysis results. Real routine and scan records are not cached in browser storage by this application.</p>
+    <h2>Optional portrait processing</h2><p className={styles.lead}>When live scanning is enabled, an adult user must explicitly consent before uploading a portrait. The Express API validates and normalizes the JPEG in memory, strips metadata and sends it to Face++ using its US endpoint. The application saves normalized observations, not the original portrait, raw response or face tokens. Buffers are cleared when processing ends. Images are not used to identify a person or build a face-search collection.</p>
+    <h2>External provider and location</h2><p className={styles.lead}>Face++ is an external processor with its own processing and retention terms. The application cannot guarantee that the provider immediately deletes a portrait. Live scanning remains disabled until the operator has reviewed those terms and verified access. This deployment does not promise EU-only processing. Review the provider’s <a href="https://www.faceplusplus.com/privacy-policy/" target="_blank" rel="noreferrer">privacy policy</a> before choosing to upload.</p>
+    <h2>Controls and retention</h2><p className={styles.lead}>Withdraw scan consent in Settings, delete a saved result from its page, or delete your account after GitHub confirmation. Withdrawal does not delete previous records. Account deletion removes routine preferences and check-ins with the account. Anonymous provider-attempt records become eligible for deletion after 90 days. Cleanup runs on later scan requests; an inactive deployment needs manual cleanup. Limited pseudonymous deletion audits follow the operator’s configured retention period (365 days by default) and require the documented purge procedure. Hosting and provider records follow their own policies.</p>
+    <h2>Contact</h2><p className={styles.lead}>{LEGAL_CONFIG.privacyEmail ? <a href={`mailto:${LEGAL_CONFIG.privacyEmail}`}>{LEGAL_CONFIG.privacyEmail}</a> : 'A private privacy contact must be configured before opening live access to the public. Please do not post portraits, tokens or personal account information in public GitHub issues.'}</p>
+  </div></main><Footer /></>; }

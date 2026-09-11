@@ -1,5 +1,5 @@
 import express from 'express';
-import { getDashboard } from '../controllers/dashboardController.js';
+import { portfolioDashboard as getDashboard } from '../controllers/portfolioController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import rateLimitMiddleware from '../middleware/rateLimitMiddleware.js';
 

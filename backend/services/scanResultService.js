@@ -1,4 +1,5 @@
 import { CONCERN_DEFINITIONS, severityForScore } from './skinInsightsService.js';
+import { normalizePortfolioResult } from '../../shared/portfolio.js';
 
 const SEVERITY_RANK = Object.freeze({ severe: 0, moderate: 1, mild: 2, none: 3 });
 
@@ -67,7 +68,7 @@ export const normalizeStoredRoutine = (routine) => {
     const night = normalizeSteps(routine.night);
     if (!morning.length && !night.length) return null;
 
-    const source = ['openai', 'fallback', 'legacy'].includes(routine.source)
+    const source = ['openai', 'fallback', 'legacy', 'rules'].includes(routine.source)
         ? routine.source
         : 'legacy';
     return {
@@ -177,6 +178,15 @@ const safeMetrics = (metrics, fallbackScore, concernDetails, warnings) => {
 export const serializeScanResult = (row) => {
     if (!isRecord(row)) throw new Error('Invalid persisted scan row');
 
+    if (row.metrics?.schemaVersion === 2) {
+        const result = normalizePortfolioResult({ ...row.metrics.portfolio,
+            scanId: row.id, createdAt: row.created_at, source: 'live', routine: row.routine }, { source: 'live' });
+        if (!result || result.provider.name !== row.provider || result.provider.version !== row.provider_version) {
+            throw new Error('Invalid portfolio result provenance');
+        }
+        return result;
+    }
+
     const metricsValue = isRecord(row.metrics) ? row.metrics : {};
     const glowScore = isScore(row.glow_score) ? row.glow_score : null;
     const storedDetails = Array.isArray(metricsValue.concernDetails)
@@ -196,6 +206,7 @@ export const serializeScanResult = (row) => {
 
     return {
         schemaVersion: 1,
+        provider: { name: row.provider || 'ailabtools', version: row.provider_version || 'skin-analysis-pro-v1.7.1', mappingVersion: 'legacy-health-v1' },
         scanId: cleanText(row.id),
         createdAt: cleanText(row.created_at),
         glowScore,

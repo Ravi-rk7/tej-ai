@@ -39,29 +39,3 @@ export const parseHistoryQuery = (query = {}) => {
         cursor: decodeHistoryCursor(query.cursor),
     };
 };
-
-export const buildHistoryPage = ({ rows = [], limit = 12 }) => {
-    const hasMore = rows.length > limit;
-    const items = rows.slice(0, limit).map((row) => ({
-        scanId: row.id,
-        createdAt: row.created_at,
-        glowScore: row.glow_score,
-        skinType: row.skin_type || null,
-        concerns: Array.isArray(row.concerns)
-            ? row.concerns.map((concern) => typeof concern === 'string' ? concern : concern?.label).filter(Boolean)
-            : [],
-    }));
-    const last = items.at(-1);
-    return {
-        schemaVersion: 1,
-        items,
-        pageInfo: {
-            hasMore,
-            nextCursor: hasMore && last
-                ? encodeHistoryCursor({ createdAt: last.createdAt, scanId: last.scanId })
-                : null,
-        },
-    };
-};
-
-export default { buildHistoryPage, decodeHistoryCursor, encodeHistoryCursor, parseHistoryQuery };

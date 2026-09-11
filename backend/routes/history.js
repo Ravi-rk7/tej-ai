@@ -1,5 +1,5 @@
 import express from 'express';
-import { getHistory } from '../controllers/historyController.js';
+import { portfolioHistory as getHistory } from '../controllers/portfolioController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import rateLimitMiddleware from '../middleware/rateLimitMiddleware.js';
 

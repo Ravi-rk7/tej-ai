@@ -1,11 +1,7 @@
 import express from 'express';
-import { scan } from '../controllers/scanController.js';
+import { portfolioScan as scan, liveScanEnabled } from '../controllers/portfolioController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import { scanRateLimitMiddleware } from '../middleware/rateLimitMiddleware.js';
-import {
-    reserveScanQuotaMiddleware,
-    scanQuotaPrecheck,
-} from '../middleware/scanLimitMiddleware.js';
 import {
     prepareScanImage,
     uploadScanImage,
@@ -21,12 +17,11 @@ const router = express.Router();
 router.post(
     '/scan',
     authMiddleware,
+    liveScanEnabled,
     scanRateLimitMiddleware,
     privacyConsentMiddleware,
-    scanQuotaPrecheck,
     uploadScanImage,
     prepareScanImage,
-    reserveScanQuotaMiddleware,
     scan
 );
 

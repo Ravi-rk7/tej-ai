@@ -1,18 +1,8 @@
 import crypto from 'node:crypto';
-import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 import env from '../config/env.js';
 import logger from '../utils/logger.js';
-import { deleteAuthUser, signInWithPassword } from './authService.js';
-
-const TERMINAL_SUBSCRIPTION_STATUSES = new Set(['cancelled', 'failed', 'expired']);
-
-const CancelledSubscriptionSchema = z.object({
-    subscription_id: z.string().trim().min(1).max(255),
-    status: z.literal('cancelled'),
-    cancelled_at: z.string().datetime({ offset: true }).nullable().optional(),
-}).passthrough();
+import { deleteAuthUser } from './authService.js';
 
 export class DeletionError extends Error {
     constructor(publicCode, publicMessage, statusCode = 503) {
@@ -135,25 +125,6 @@ export const createDeletionRepository = ({ databaseClient } = {}) => {
         }
     };
 
-    const prepareBillingDeletion = async ({
-        auditId,
-        subscriptionId,
-        subscriptionHash,
-        customerHash,
-        cancelledAt,
-        expiresAt,
-    }) => {
-        const row = await rpc('prepare_account_billing_deletion', {
-            p_audit_id: auditId,
-            p_subscription_id: subscriptionId,
-            p_subscription_hash: subscriptionHash,
-            p_customer_hash: customerHash,
-            p_cancelled_at: cancelledAt,
-            p_expires_at: expiresAt,
-        });
-        if (row?.prepared !== true) throw deletionUnavailable();
-    };
-
     const clearLegacyImageReferences = async (userId) => {
         try {
             const { error } = await getDatabase()
@@ -177,76 +148,13 @@ export const createDeletionRepository = ({ databaseClient } = {}) => {
         deleteScan,
         getAccountSubscription,
         markAudit,
-        prepareBillingDeletion,
     });
-};
-
-const getDodoBaseUrl = (runtimeEnv) => {
-    try {
-        const parsed = new URL(runtimeEnv.DODO_API_BASE_URL);
-        const expected = runtimeEnv.DODO_ENVIRONMENT === 'live_mode'
-            ? 'https://live.dodopayments.com'
-            : 'https://test.dodopayments.com';
-        if (parsed.origin !== expected || parsed.pathname !== '/') throw new Error('Invalid Dodo URL');
-        return parsed.origin;
-    } catch {
-        throw deletionUnavailable('DELETION_CONFIGURATION_ERROR');
-    }
-};
-
-const cancelProviderSubscription = async ({ subscriptionId, httpClient, runtimeEnv }) => {
-    const apiKey = String(runtimeEnv.DODO_API_KEY || '').trim();
-    if (!apiKey) throw deletionUnavailable('DELETION_CONFIGURATION_ERROR');
-
-    try {
-        const response = await httpClient.patch(
-            `${getDodoBaseUrl(runtimeEnv)}/subscriptions/${encodeURIComponent(subscriptionId)}`,
-            {
-                status: 'cancelled',
-                cancel_reason: 'cancelled_by_customer',
-                cancellation_comment: 'Account deletion request',
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${apiKey}`,
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                timeout: 10_000,
-                maxRedirects: 0,
-            }
-        );
-        const parsed = CancelledSubscriptionSchema.safeParse(response?.data);
-        if (!parsed.success || parsed.data.subscription_id !== subscriptionId) {
-            throw new DeletionError(
-                'ACCOUNT_BILLING_CANCELLATION_UNCONFIRMED',
-                'Billing cancellation could not be confirmed',
-                502
-            );
-        }
-        return parsed.data.cancelled_at || new Date().toISOString();
-    } catch (error) {
-        if (error instanceof DeletionError) throw error;
-        if (axios.isAxiosError(error) && ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code)) {
-            throw new DeletionError(
-                'ACCOUNT_BILLING_CANCELLATION_TIMEOUT',
-                'Billing cancellation could not be confirmed',
-                504
-            );
-        }
-        throw new DeletionError(
-            'ACCOUNT_BILLING_CANCELLATION_FAILED',
-            'Billing cancellation could not be confirmed',
-            502
-        );
-    }
 };
 
 export const createDeletionService = ({
     repository = createDeletionRepository(),
-    httpClient = axios,
     runtimeEnv = env,
-    verifyPassword = signInWithPassword,
+    reauthenticate = null,
     removeAuthUser = deleteAuthUser,
     deletionLogger = logger,
     now = () => new Date(),
@@ -267,13 +175,14 @@ export const createDeletionService = ({
         return { scanId, deleted: true };
     };
 
-    const deleteAccount = async ({ userId, email, currentPassword, clientIp }) => {
+    const deleteAccount = async ({ userId, authEvidence }) => {
         const secret = requireAuditSecret(runtimeEnv);
-        const verified = await verifyPassword({ email, password: currentPassword, clientIp });
+        if (typeof reauthenticate !== 'function') throw new DeletionError('ACCOUNT_REAUTHENTICATION_FAILED', 'Complete GitHub confirmation before deleting your account.', 403);
+        const verified = await reauthenticate({ userId, authEvidence });
         if (verified.error || verified.data?.user?.id !== userId) {
             throw new DeletionError(
                 'ACCOUNT_REAUTHENTICATION_FAILED',
-                'Current password is incorrect',
+                'Account confirmation failed',
                 403
             );
         }
@@ -306,31 +215,8 @@ export const createDeletionService = ({
 
         try {
             const subscription = await repository.getAccountSubscription(userId);
-            const subscriptionId = subscription?.dodo_subscription_id || null;
-            let cancelledAt = subscription?.cancelled_at || current.toISOString();
-
-            if (subscriptionId && !TERMINAL_SUBSCRIPTION_STATUSES.has(subscription.status)) {
-                cancelledAt = await cancelProviderSubscription({
-                    subscriptionId,
-                    httpClient,
-                    runtimeEnv,
-                });
-                await repository.markAudit(claim.auditId, {
-                    stage: 'provider_cancelled',
-                });
-            }
-
-            if (subscriptionId) {
-                await repository.prepareBillingDeletion({
-                    auditId: claim.auditId,
-                    subscriptionId,
-                    subscriptionHash: hashDeletionReference(`subscription:${subscriptionId}`, secret),
-                    customerHash: subscription.dodo_customer_id
-                        ? hashDeletionReference(`customer:${subscription.dodo_customer_id}`, secret)
-                        : null,
-                    cancelledAt,
-                    expiresAt: purgeAfter,
-                });
+            if (subscription?.dodo_subscription_id) {
+                throw new DeletionError('LEGACY_BILLING_ACCOUNT', 'Resolve legacy billing before deleting this account.', 409);
             }
 
             await repository.clearLegacyImageReferences(userId);
@@ -365,13 +251,11 @@ export const createDeletionService = ({
 const defaultDeletionService = createDeletionService();
 
 export const deleteOwnedScan = (input) => defaultDeletionService.deleteScan(input);
-export const deleteUserAccount = (input) => defaultDeletionService.deleteAccount(input);
 
 export default {
     DeletionError,
     createDeletionRepository,
     createDeletionService,
     deleteOwnedScan,
-    deleteUserAccount,
     hashDeletionReference,
 };

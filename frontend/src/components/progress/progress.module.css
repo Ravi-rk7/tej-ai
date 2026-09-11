@@ -1,0 +1,251 @@
+.section {
+  min-width: 0;
+  margin-bottom: 24px;
+  color: #1a1930;
+}
+.card {
+  min-width: 0;
+  border: 1px solid #ded9eb;
+  border-radius: 24px;
+  padding: 24px;
+  background: white;
+}
+.heading {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.muted {
+  font-size: 14px;
+  color: #656174;
+  line-height: 1.6;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.button {
+  border: 1px solid #5845cb;
+  border-radius: 14px;
+  padding: 12px 18px;
+  color: #5845cb;
+  background: #f5f2ff;
+  cursor: pointer;
+  font-weight: 700;
+}
+.button[aria-pressed="true"],
+.primary {
+  background: #5845cb;
+  color: white;
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.button:focus-visible,
+.select:focus-visible,
+.cell:focus-visible {
+  outline: 2px solid #1a1930;
+  outline-offset: 3px;
+}
+.select {
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #bfb8d2;
+  border-radius: 10px;
+  background: white;
+  color: #1a1930;
+}
+.big {
+  font-size: 32px;
+  font-weight: 800;
+  color: #5845cb;
+}
+.status {
+  min-height: 24px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.calendarShell {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+  margin-top: 16px;
+}
+.weekdays {
+  flex: 0 0 30px;
+  display: grid;
+  grid-template-rows: 22px repeat(7, 12px);
+  row-gap: 3px;
+  font-size: 10px;
+  color: #656174;
+}
+.scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 3px 3px 10px;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: #a39ab8 #f5f2ff;
+}
+.scroll::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+  height: 6px;
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: #a39ab8;
+  border-radius: 6px;
+}
+.scroll::-webkit-scrollbar-track {
+  background: #f5f2ff;
+}
+.months {
+  display: grid;
+  height: 25px;
+  font-size: 10px;
+  color: #656174;
+}
+.grid {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+  width: max-content;
+}
+.gridRow {
+  display: contents;
+}
+.cell {
+  width: 12px;
+  height: 12px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 9px;
+  text-align: center;
+  color: #1a1930;
+}
+.cell[data-state="untracked"] {
+  background: white;
+  border-color: #d9d5e2;
+}
+.cell[data-state="missed"] {
+  background: #ece9f3;
+}
+.cell[data-state="partial"] {
+  background: #bdb1ff;
+}
+.cell[data-state="complete"] {
+  background: #5845cb;
+  color: white;
+}
+.cell[data-state="future"] {
+  background: transparent;
+  cursor: default;
+}
+.cell[data-state="unknown"] {
+  background: white;
+  border: 1px dashed #656174;
+}
+.cell[data-today="true"] {
+  outline: 2px solid #1a1930;
+  outline-offset: 1px;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  margin-top: 16px;
+  color: #656174;
+}
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tooltip {
+  min-height: 44px;
+  margin-top: 14px;
+  border-radius: 10px;
+  background: #f7f4fc;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.skeleton {
+  height: 150px;
+  background: #ece9f3;
+  border-radius: 24px;
+}
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 20px;
+}
+.table {
+  width: 100%;
+  font-size: 13px;
+  text-align: left;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid #ece9f3;
+}
+@media (max-width: 600px) {
+  .overview {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section *,
+  .section *::before,
+  .section *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (forced-colors: active) {
+  .cell {
+    forced-color-adjust: none;
+    background: Canvas !important;
+    border-color: CanvasText !important;
+    color: CanvasText !important;
+  }
+  .cell[data-state="complete"] {
+    background: Highlight !important;
+    color: HighlightText !important;
+  }
+  .cell[data-state="partial"] {
+    border-style: dashed !important;
+  }
+  .cell[data-state="future"] {
+    border-color: transparent !important;
+  }
+  .cell[data-today="true"],
+  .cell:focus-visible {
+    outline-color: Highlight;
+  }
+  .button {
+    border: 1px solid ButtonText;
+  }
+}

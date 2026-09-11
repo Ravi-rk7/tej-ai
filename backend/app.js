@@ -7,10 +7,9 @@ import scanRoutes from './routes/scan.js';
 import resultRoutes from './routes/results.js';
 import dashboardRoutes from './routes/dashboard.js';
 import historyRoutes from './routes/history.js';
-import paymentRoutes from './routes/payment.js';
-import webhookRoutes from './routes/webhook.js';
-import authRoutes from './routes/auth.js';
 import privacyRoutes from './routes/privacy.js';
+import routineRoutes from './routes/routine.js';
+import progressRoutes from './routes/progress.js';
 import requestContextMiddleware from './middleware/requestContextMiddleware.js';
 import securityHeadersMiddleware, {
     apiSecurityPolicyMiddleware,
@@ -37,7 +36,7 @@ const corsOptions = {
         callback(error);
     },
     credentials: false,
-    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
     exposedHeaders: [
         'X-Request-ID',
@@ -56,12 +55,18 @@ app.set('trust proxy', 1);
 app.use(requestContextMiddleware);
 app.use(securityHeadersMiddleware);
 app.use('/api', apiSecurityPolicyMiddleware);
+app.use(['/api/routine', '/api/progress', '/api/account', '/api/history'], (_req, res, next) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.set('Pragma', 'no-cache');
+    next();
+});
 app.use(cors(corsOptions));
 app.use(requestShapeMiddleware);
 
-// Dodo signs the exact request bytes. This route must run before the JSON
-// parser so no middleware can reserialize the body before verification.
-app.use('/api', webhookRoutes);
+// Commercial endpoints are retired. No payment code or webhook parser is mounted.
+app.use(['/api/billing', '/api/payment', '/api/webhook', '/api/webhooks', '/api/create-subscription'], (_req, res) => res.status(410).json({
+    success: false, code: 'BILLING_RETIRED', error: 'Billing is not available in this portfolio project.',
+}));
 
 app.use(express.json({
     limit: '1mb',
@@ -74,14 +79,21 @@ app.get('/api/health', (req, res) => successResponse(res, {
     releaseSha: env.RELEASE_SHA || null,
 }));
 app.get('/api/ready', readiness);
+app.get('/api/capabilities', (_req, res) => successResponse(res, {
+    profile: 'portfolio', liveScanEnabled: env.LIVE_SCAN_ENABLED,
+    provider: 'facepp', routineMode: 'rules', monthlyUserLimit: 3, dailyUserLimit: 1,
+}));
 
 app.use('/api', scanRoutes);
 app.use('/api', resultRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', historyRoutes);
-app.use('/api', paymentRoutes);
 app.use('/api', privacyRoutes);
-app.use('/api', authRoutes);
+app.use('/api', routineRoutes);
+app.use('/api', progressRoutes);
+app.use('/api/auth', (_req, res) => res.status(410).json({
+    success: false, code: 'AUTH_FLOW_RETIRED', error: 'Use GitHub sign-in through Supabase.',
+}));
 
 app.use((req, res) => res.status(404).json({
     success: false,

@@ -1,14 +1,9 @@
 import { z } from 'zod';
 import logger from '../utils/logger.js';
 import { errorResponse, successResponse } from '../utils/responseFormatter.js';
-import { deleteOwnedScan, deleteUserAccount } from '../services/deletionService.js';
+import { deleteOwnedScan } from '../services/deletionService.js';
 
 const ScanIdSchema = z.string().uuid();
-const AccountDeletionSchema = z.object({
-    confirmation: z.literal('DELETE MY ACCOUNT'),
-    currentPassword: z.string().min(1).max(128),
-}).strict();
-
 const setPrivateNoStore = (res) => {
     res.set('Cache-Control', 'private, no-store');
     res.set('Pragma', 'no-cache');
@@ -43,33 +38,6 @@ export const createDeleteScanHandler = ({
     }
 };
 
-export const createDeleteAccountHandler = ({
-    deleteAccount = deleteUserAccount,
-    deletionLogger = logger,
-} = {}) => async (req, res) => {
-    setPrivateNoStore(res);
-    const parsed = AccountDeletionSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return errorResponse(
-            res,
-            'Enter the required confirmation phrase and current password',
-            400,
-            'ACCOUNT_DELETION_CONFIRMATION_INVALID'
-        );
-    }
-    try {
-        return successResponse(res, await deleteAccount({
-            userId: req.user.id,
-            email: req.user.email,
-            currentPassword: parsed.data.currentPassword,
-            clientIp: req.ip,
-        }));
-    } catch (error) {
-        return deletionFailure(res, error, deletionLogger);
-    }
-};
-
 export const deleteScan = createDeleteScanHandler();
-export const deleteAccount = createDeleteAccountHandler();
 
-export default { deleteAccount, deleteScan };
+export default { deleteScan };

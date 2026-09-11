@@ -1,149 +1,33 @@
-"use client";
-
-import Link from "next/link";
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { GuestOnly } from "@/components/auth/AuthProvider";
-import { loginWithPassword } from "@/lib/api";
-import { buildAuthPath, getNextFromSearch } from "@/lib/authRedirect";
-
-function AuthInput(props) {
-    return (
-        <input
-            {...props}
-            className="w-full rounded-2xl border px-4 py-3.5 text-sm outline-none transition"
-            style={{
-                borderColor: "rgba(200,196,214,0.65)",
-                background: "#fff",
-                color: "#1a1930",
-                fontFamily: "'Inter', sans-serif",
-            }}
-        />
-    );
+'use client';
+import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { liveAuthConfigured } from '@/lib/supabaseClient';
+import { signInWithGithub } from '@/lib/oauth';
+import { getSafeInternalPath } from '@/lib/authRedirect';
+import Navbar from '@/components/layout/Navbar';
+import styles from '@/components/portfolio/portfolio.module.css';
+function Login() {
+  const { session, loading } = useAuth();
+  const params = useSearchParams();
+  const router = useRouter();
+  const next = getSafeInternalPath(params.get('next'));
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!loading && session) router.replace(next); }, [session, loading, next, router]);
+  const login = async () => {
+    setBusy(true); setMessage('Opening GitHub…');
+    try { await signInWithGithub(next); } catch (error) { setMessage(error.message); setBusy(false); }
+  };
+  return <><Navbar /><main className={styles.page} style={{ maxWidth: 630, paddingTop: 70 }}>
+    <p className={styles.eyebrow}>Your personal journal</p><h1 className={styles.title}>Make room for a little care.</h1>
+    <p className={styles.lead}>Sign in with GitHub to save your routine and private history. Live scans are optional and have a small shared allowance.</p>
+    <article className={styles.card}><h2>Welcome to TejAi</h2>
+      {liveAuthConfigured ? <button className={`${styles.button} ${styles.primary}`} disabled={busy || loading} onClick={login}>Continue with GitHub</button> : <p className={styles.muted}>Live sign-in is not configured in this deployment. The complete sample workspace is available below.</p>}
+      <p role="status" className={styles.status}>{message}</p><Link className={styles.button} href="/demo">Explore the sample demo</Link>
+      <p className={styles.muted} style={{ marginTop: 20 }}>Using the live app is subject to the <Link href="/terms">terms</Link> and <Link href="/privacy">privacy notice</Link>. Face-scan consent is requested separately.</p>
+    </article>
+  </main></>;
 }
-
-function AuthButton({ loading, children }) {
-    return (
-        <button
-            type="submit"
-            disabled={loading}
-            className="glow-button w-full rounded-full px-6 py-4 text-base font-bold disabled:cursor-not-allowed disabled:opacity-70"
-            style={{
-                color: "#fff",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-        >
-            {loading ? "Signing in..." : children}
-        </button>
-    );
-}
-
-function LoginContent() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const nextPath = getNextFromSearch(searchParams);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-    const passwordUpdated = searchParams.get("password") === "updated";
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setError("");
-        setLoading(true);
-
-        try {
-            await loginWithPassword({ email: email.trim(), password });
-            router.replace(nextPath);
-        } catch (signInError) {
-            setError(
-                signInError?.message || "We could not sign you in. Please try again."
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <GuestOnly redirectTo={nextPath}>
-        <main className="min-h-screen px-5 py-16" style={{ background: "#fcf8ff" }}>
-            <section className="mx-auto mt-10 w-full max-w-md rounded-[30px] p-7 sm:p-8"
-                style={{
-                    background: "rgba(255,255,255,0.9)",
-                    border: "1px solid rgba(200,196,214,0.42)",
-                    boxShadow: "0 24px 70px -28px rgba(88,69,203,0.35)",
-                }}
-            >
-                <div className="mb-7 text-center">
-                    <h1 className="text-3xl font-black" style={{ color: "#1a1930" }}>
-                        Welcome Back
-                    </h1>
-                    <p className="mt-2 text-sm" style={{ color: "#474554" }}>
-                        Sign in to view your Glow Score and scan history.
-                    </p>
-                </div>
-
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                    <AuthInput
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        placeholder="Email address"
-                        autoComplete="email"
-                        required
-                    />
-
-                    <AuthInput
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder="Password"
-                        autoComplete="current-password"
-                        required
-                    />
-
-                    <div className="text-right">
-                        <Link
-                            href="/forgot-password"
-                            className="text-sm font-bold"
-                            style={{ color: "#5845cb" }}
-                        >
-                            Forgot password?
-                        </Link>
-                    </div>
-
-                    {passwordUpdated && !error && (
-                        <p className="text-sm font-semibold" style={{ color: "#1a6645" }}>
-                            Password updated. Sign in with your new password.
-                        </p>
-                    )}
-
-                    {error && (
-                        <p className="text-sm font-semibold" style={{ color: "#ba1a1a" }}>
-                            {error}
-                        </p>
-                    )}
-
-                    <AuthButton loading={loading}>Sign In</AuthButton>
-                </form>
-
-                <p className="mt-6 text-center text-sm" style={{ color: "#474554" }}>
-                    Don&apos;t have an account?{" "}
-                    <Link href={buildAuthPath("/signup", nextPath)} className="font-bold" style={{ color: "#5845cb" }}>
-                        Sign up
-                    </Link>
-                </p>
-            </section>
-        </main>
-        </GuestOnly>
-    );
-}
-
-export default function LoginPage() {
-    return (
-        <Suspense fallback={<main className="min-h-screen" style={{ background: "#fcf8ff" }} />}>
-            <LoginContent />
-        </Suspense>
-    );
-}
+export default function Page() { return <Suspense fallback={<p role="status">Preparing sign-in…</p>}><Login /></Suspense>; }

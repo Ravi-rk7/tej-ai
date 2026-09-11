@@ -1,0 +1,49 @@
+# Deploy from the repository root: backend imports the pure shared/ contract.
+services:
+  - type: web
+    name: tejai-portfolio-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm --prefix backend ci --omit=dev
+    startCommand: npm --prefix backend start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: API_BASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: SECURITY_HMAC_SECRET
+        generateValue: true
+      - key: DELETION_AUDIT_HMAC_SECRET
+        generateValue: true
+      - key: LIVE_SCAN_ENABLED
+        value: 'false'
+      - key: SKIN_ANALYSIS_PROVIDER
+        value: facepp
+      - key: ROUTINE_MODE
+        value: rules
+      - key: PRIVACY_NOTICE_VERSION
+        value: facepp-portfolio-2026-09
+      - key: PRIVACY_CONSENT_ENFORCEMENT
+        value: 'true'
+      - key: FACEPP_WINDOW_CALL_LIMIT
+        value: '80'
+      - key: FACEPP_DAILY_CALL_LIMIT
+        value: '5'
+      - key: SENTRY_DSN
+        value: ''

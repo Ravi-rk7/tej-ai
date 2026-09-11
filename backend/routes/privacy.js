@@ -5,9 +5,9 @@ import {
     withdrawConsent,
 } from '../controllers/privacyController.js';
 import {
-    deleteAccount,
     deleteScan,
 } from '../controllers/deletionController.js';
+import { portfolioDeletionHandlers } from '../controllers/portfolioDeletionController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import rateLimitMiddleware, {
     accountDeletionRateLimitMiddleware,
@@ -21,6 +21,7 @@ router.get('/privacy/status', authMiddleware, rateLimitMiddleware, getStatus);
 router.post('/privacy/consent', authMiddleware, privacyMutationRateLimitMiddleware, grantConsent);
 router.post('/privacy/consent/withdraw', authMiddleware, privacyMutationRateLimitMiddleware, withdrawConsent);
 router.delete('/scans/:scanId', authMiddleware, scanDeletionRateLimitMiddleware, deleteScan);
-router.delete('/account', authMiddleware, accountDeletionRateLimitMiddleware, deleteAccount);
+router.post('/account/deletion-challenge', authMiddleware, accountDeletionRateLimitMiddleware, portfolioDeletionHandlers.challenge);
+router.delete('/account', authMiddleware, accountDeletionRateLimitMiddleware, portfolioDeletionHandlers.deleteAccount);
 
 export default router;

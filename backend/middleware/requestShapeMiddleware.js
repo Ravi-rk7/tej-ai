@@ -2,6 +2,8 @@ import { errorResponse } from '../utils/responseFormatter.js';
 
 const QUERY_ALLOWLIST = new Map([
     ['/api/history', new Set(['limit', 'cursor'])],
+    ['/api/routine/summary', new Set(['weeks'])],
+    ['/api/progress/scans', new Set(['range'])],
     // Provider-controlled callback query values are deliberately discarded by
     // fixed redirects and never influence application state.
     ['/api/billing/return', null],

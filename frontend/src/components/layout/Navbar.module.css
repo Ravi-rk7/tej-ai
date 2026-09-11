@@ -1,0 +1,17 @@
+.header { background: #fcfaf7; border-bottom: 1px solid #ece5ed; }
+.nav { max-width: 1240px; margin: auto; padding: 20px 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.brand { display: flex; align-items: center; gap: 7px; color: #352c42; font-size: 25px; letter-spacing: -.06em; font-weight: 700; text-decoration: none; }
+.brand > span:first-child { color: #8868ab; font-size: 29px; font-weight: 400; margin-right: 2px; }
+.brand .brandDot { color: #8868ab; margin-left: -6px; }
+.middle, .actions { display: flex; align-items: center; gap: 28px; }
+.middle a, .actions a { font-size: 11px; color: #766b7e; text-decoration: none; transition: color .2s, background .2s; }
+.middle a:hover, .actions .signIn:hover { color: #563988; }
+.middle span { margin-left: 6px; }
+.actions .demo { color: #6950a1; background: #eee7f6; padding: 11px 16px; border: 1px solid #e1d6ed; border-radius: 8px; font-weight: 600; }
+.demo span { margin-left: 14px; }
+.actions .demo:hover { background: #e2d5f0; }
+.nav a:focus-visible { outline: 3px solid #9674b8; outline-offset: 5px; border-radius: 4px; }
+@media (max-width: 960px) { .nav { padding-inline: 36px; } .middle, .actions { gap: 18px; } }
+@media (max-width: 700px) { .nav { padding: 15px 24px; gap: 12px; } .middle { display: none; } .actions { gap: 14px; } .brand { font-size: 23px; } }
+@media (max-width: 360px) { .nav { padding-inline: 18px; } .actions { gap: 10px; } .actions .demo { padding: 9px 11px; } .demo span { margin-left: 5px; } }
+@media (prefers-reduced-motion: reduce) { .nav a { transition: none; } }

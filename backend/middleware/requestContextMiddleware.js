@@ -4,6 +4,10 @@ import logger from '../utils/logger.js';
 const UUID_SEGMENT = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi;
 
 export const safeRouteTemplate = (req) => {
+    // Do not retain a chosen period or forged habit/date fields even when a
+    // routine request fails before Express has matched a route.
+    const path = String(req.originalUrl || req.url || '').split('?')[0];
+    if (/^\/api\/routine(?:\/|$)/.test(path)) return '/api/routine';
     const routePath = typeof req.route?.path === 'string' ? req.route.path : '';
     const mountedPath = typeof req.baseUrl === 'string' ? req.baseUrl : '';
     if (routePath) return `${mountedPath}${routePath}`.replace(UUID_SEGMENT, ':id');

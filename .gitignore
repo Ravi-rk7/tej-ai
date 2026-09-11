@@ -1,0 +1,42 @@
+# Secrets and local configuration
+.env*
+!.env.example
+!.env.*.example
+*.pem
+.vercel/
+.playwright-auth/
+.vscode/
+.idea/
+
+# Dependencies and generated output
+node_modules/
+.next/
+.next-test/
+coverage/
+test-results/
+playwright-report/
+output/
+out/
+build/
+logs/
+tmp/
+pids/
+*.log
+*.pid
+*.pid.lock
+*.tsbuildinfo
+next-env.d.ts
+
+# Private uploads and local editor artifacts
+uploads/
+test/consented-images/
+test_images/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Next.js regenerates these assistant instructions during local development.
+/frontend/AGENTS.md
+/frontend/CLAUDE.md

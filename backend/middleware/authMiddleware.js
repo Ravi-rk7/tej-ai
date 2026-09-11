@@ -52,6 +52,13 @@ export const createAuthMiddleware = ({
             email: data.user.email,
         };
 
+        // Decode only AFTER Supabase has verified this exact bearer token.
+        // Reauthentication uses signed AMR timestamps and session identity, not JWT iat.
+        try {
+            const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+            req.verifiedAuth = claims.sub === data.user.id ? { sessionId: claims.session_id, amr: claims.amr } : null;
+        } catch { req.verifiedAuth = null; }
+
         next();
     } catch (err) {
         if (err instanceof z.ZodError) {

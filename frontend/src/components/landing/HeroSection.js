@@ -1,253 +1,57 @@
-"use client";
+﻿'use client';
+import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import styles from './HeroSection.module.css';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+function Icon({ name }) {
+  const paths = {
+    arrow: <path d="M4 12h15m-6-6 6 6-6 6" />,
+    sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>,
+    check: <path d="m5 12 4 4L19 6" />,
+    scan: <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M3 12h18" />,
+    sparkle: <path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5ZM20 2v4m-2-2h4" />,
+  };
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+}
 
 export default function HeroSection() {
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    // Trigger fade-in animation on mount
-    const t = setTimeout(() => setLoaded(true), 80);
-    return () => clearTimeout(t);
-  }, []);
-
-  return (
-    <section
-      className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden"
-      style={{ background: "#fcf8ff" }}
-    >
-      {/* ── Ambient background blobs ── */}
-      <div
-        className="pointer-events-none absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(168,139,255,0.22) 0%, transparent 70%)",
-          filter: "blur(60px)",
-          zIndex: 0,
-        }}
-      />
-      <div
-        className="pointer-events-none absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(255,215,243,0.35) 0%, transparent 70%)",
-          filter: "blur(60px)",
-          zIndex: 0,
-        }}
-      />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-
-          {/* ── LEFT: Copy ── */}
-          <div
-            className="flex flex-col gap-7 max-w-xl"
-            style={{
-              opacity: loaded ? 1 : 0,
-              transform: loaded ? "translateY(0)" : "translateY(24px)",
-              transition: "opacity 0.8s ease, transform 0.8s ease",
-            }}
-          >
-            {/* Badge */}
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full w-fit text-sm font-semibold"
-              style={{
-                background: "#e4dfff",
-                color: "#5845cb",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              <span className="w-2 h-2 rounded-full bg-[#5845cb] animate-pulse" />
-              AI Skincare • Cosmetic wellness analysis
-            </div>
-
-            {/* Headline */}
-            <h1
-              className="text-[2.75rem] md:text-[3.5rem] lg:text-[4rem] font-black leading-[1.08] tracking-tight"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#1a1930" }}
-            >
-              Explore Your Skin{" "}
-              <br className="hidden md:block" />
-              With Your Skin —
-              <br />
-              <span className="gradient-text">With One Clear Photo</span>
-            </h1>
-
-            {/* Subtext */}
-            <p
-              className="text-lg leading-relaxed"
-              style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}
-            >
-              Submit one clear photo to review cosmetic skin characteristics and receive a{" "}
-              <span className="font-semibold" style={{ color: "#1a1930" }}>safe wellness routine</span>.
-              Results are automated guidance, not a medical diagnosis.
-            </p>
-
-            {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Link
-                href="/scan"
-                id="hero-cta-primary"
-                className="glow-button px-8 py-4 rounded-2xl text-white font-bold text-base text-center transition-all duration-200"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                Scan My Skin Free →
-              </Link>
-              <a
-                href="#how-it-works"
-                className="px-8 py-4 rounded-2xl text-sm font-semibold text-center transition-all duration-200 flex items-center justify-center gap-2"
-                style={{
-                  background: "#efebff",
-                  color: "#5845cb",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
-              >
-                See How It Works
-              </a>
-            </div>
-
-            {/* Trust text */}
-            <p
-              className="text-sm flex items-center gap-2"
-              style={{ color: "#787585", fontFamily: "'Inter', sans-serif" }}
-            >
-              <span className="text-base">🔒</span>
-              Account required • Images are not stored by TejAi • Cosmetic wellness only
-            </p>
-
-            <p className="text-sm" style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}>
-              Explicit consent is required before the photo uploader is enabled.
-            </p>
+  const [paused, setPaused] = useState(false);
+  return <div className={styles.home} data-paused={paused}>
+    <section className={styles.hero} aria-labelledby="home-title">
+      <div className={styles.ambient} aria-hidden="true" />
+      <div className={styles.container}>
+        <div className={styles.copy}>
+          <div className={styles.eyebrow}><span className={styles.dot} /> A little care. A little more you.</div>
+          <h1 id="home-title" className={styles.heading}>Good skin days<br />start with<br /><span>little habits.</span><svg className={styles.underline} viewBox="0 0 360 18" fill="none" aria-hidden="true"><path d="M4 12C91 0 229 0 355 9M41 16c86-7 205-8 284-4" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg></h1>
+          <p className={styles.description}>Get to know your skin. Find your daily rhythm.<br /> Keep your care, routines, and progress in one calm place.</p>
+          <div className={styles.actions}><Link href="/demo" className={styles.primary}>Explore the demo <Icon name="arrow" /></Link><Link href="/login" prefetch={false} className={styles.secondary}>Start your routine <span aria-hidden="true">↗</span></Link></div>
+          <div className={styles.notes}><span><Icon name="check" /> No signup for the demo</span><span><Icon name="check" /> No subscriptions</span></div>
+          <a href="#your-rhythm" className={styles.discover}><span aria-hidden="true">↓</span> Small steps. Something worth keeping.</a>
+        </div>
+        <div className={styles.visual}>
+          <div className={styles.orbit} aria-hidden="true" /><span className={styles.sparkleOne} aria-hidden="true">✳</span><span className={styles.sparkleTwo} aria-hidden="true">✧</span>
+          <div className={styles.portraitFrame}>
+            <Image src="/images/hero-portrait.png" alt="AI-generated editorial portrait of a woman with natural skin texture" fill sizes="(max-width: 600px) 88vw, (max-width: 960px) 440px, 460px" loading="eager" fetchPriority="high" className={styles.portrait} />
+            <div className={styles.previewBadge}><span /> SCAN PREVIEW</div>
+            <div className={styles.scanFrame} aria-hidden="true"><i /><i /><i /><i /><div className={styles.scanSweep} /><svg viewBox="0 0 240 300" className={styles.faceMesh}><path d="m68 88 51-22 54 23-7 72-44 59-48-58Zm0 0 54 64 51-63M74 162l48-10 44 9M119 66l3 86v68" /><g><circle cx="68" cy="88" r="3" /><circle cx="119" cy="66" r="3" /><circle cx="173" cy="89" r="3" /><circle cx="74" cy="162" r="3" /><circle cx="122" cy="152" r="3" /><circle cx="166" cy="161" r="3" /><circle cx="122" cy="220" r="3" /></g></svg></div>
+            <div className={styles.portraitCaption}><span>A moment for yourself.</span><strong>Care starts with curiosity.</strong></div>
           </div>
-
-          {/* ── RIGHT: Hero visual ── */}
-          <div
-            className="relative flex items-center justify-center"
-            style={{
-              opacity: loaded ? 1 : 0,
-              transition: "opacity 1s ease 0.25s",
-            }}
-          >
-            {/* Floating image wrapper */}
-            <div
-              className="relative w-full max-w-[440px] aspect-[3/4] rounded-[40px] overflow-hidden"
-              style={{
-                animation: "float 6s ease-in-out infinite",
-                boxShadow: "0 40px 80px -16px rgba(88, 69, 203, 0.22)",
-              }}
-            >
-              {/* Hero image */}
-              <Image
-                src="/girl_heroImg.jpg"
-                alt="Woman with healthy glowing skin — TejAi AI scan preview"
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover object-center"
-                priority
-              />
-
-              {/* Scan-line overlay */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Corner brackets */}
-                {[
-                  "top-6 left-6 border-t-4 border-l-4 rounded-tl-xl",
-                  "top-6 right-6 border-t-4 border-r-4 rounded-tr-xl",
-                  "bottom-6 left-6 border-b-4 border-l-4 rounded-bl-xl",
-                  "bottom-6 right-6 border-b-4 border-r-4 rounded-br-xl",
-                ].map((cls, i) => (
-                  <div
-                    key={i}
-                    className={`absolute w-7 h-7 ${cls}`}
-                    style={{ borderColor: "rgba(124,108,242,0.8)" }}
-                  />
-                ))}
-
-                {/* Scanning line */}
-                <div
-                  className="absolute left-6 right-6 h-0.5 opacity-60"
-                  style={{
-                    background: "linear-gradient(90deg, transparent, #7C6CF2, transparent)",
-                    animation: "scan-line 2.5s linear infinite",
-                    top: 0,
-                  }}
-                />
-              </div>
-
-              {/* Bottom gradient */}
-              <div
-                className="absolute bottom-0 left-0 right-0 h-36"
-                style={{
-                  background: "linear-gradient(to top, rgba(88,69,203,0.45), transparent)",
-                }}
-              />
-            </div>
-
-            {/* ── Floating Glow Score badge ── */}
-            <div
-              className="absolute -bottom-4 left-0 glass-panel rounded-2xl p-4 flex items-center gap-3 w-[220px]"
-              style={{
-                animation: "float 6s ease-in-out 1s infinite, glow-pulse 3s ease-in-out infinite",
-                boxShadow: "0 16px 40px -8px rgba(88, 69, 203, 0.2)",
-              }}
-            >
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl text-white flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #5845cb, #a88bff)" }}
-              >
-                78
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#5845cb", fontFamily: "'Inter', sans-serif" }}>
-                  Glow Score
-                </p>
-                <p className="text-sm font-semibold" style={{ color: "#1a1930", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                  Cosmetic snapshot
-                </p>
-              </div>
-            </div>
-
-            {/* ── Concern pills ── */}
-            <div
-              className="absolute -top-4 right-0 flex flex-col gap-2"
-              style={{
-                animation: "float 6s ease-in-out 2s infinite",
-              }}
-            >
-              {[
-                { label: "Mild Acne", color: "#ba1a1a", bg: "#ffdad6" },
-                { label: "Uneven Tone", color: "#a01e96", bg: "#ffd7f3" },
-              ].map(({ label, color, bg }) => (
-                <div
-                  key={label}
-                  className="px-4 py-2 rounded-full text-xs font-bold glass-panel"
-                  style={{ color, background: bg, fontFamily: "'Inter', sans-serif" }}
-                >
-                  ● {label}
-                </div>
-              ))}
-            </div>
-
-            {/* ── AI Insight floating card ── */}
-            <div
-              className="absolute top-1/2 -left-8 glass-panel rounded-2xl p-3 flex items-center gap-2.5 w-[180px] hidden lg:flex"
-              style={{
-                animation: "float 6s ease-in-out 3s infinite",
-              }}
-            >
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm"
-                style={{ background: "#e4dfff" }}
-              >
-                🧬
-              </div>
-              <div>
-                <p className="text-[11px] font-bold" style={{ color: "#5845cb", fontFamily: "'Inter', sans-serif" }}>AI Detected</p>
-                <p className="text-[11px] font-medium" style={{ color: "#474554", fontFamily: "'Inter', sans-serif" }}>Combo Skin</p>
-              </div>
-            </div>
-          </div>
+          <div className={styles.insightCard}><span className={styles.iconTile}><Icon name="scan" /></span><div><small>A closer look</small><strong>Understand your skin</strong><div className={styles.miniBars} aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div></div><span className={styles.cardSparkle} aria-hidden="true">✧</span></div>
+          <div className={styles.routineCard}><div className={styles.routineHeading}><span className={styles.sunIcon}><Icon name="sun" /></span><div><small>YOUR DAILY MOMENT</small><strong>Morning, made simple.</strong></div><span className={styles.checkCircle}><Icon name="check" /></span></div><div className={styles.routineSteps}><span>Cleanse</span><i /><span>Moisturize</span><i /><span>Protect</span></div></div>
+          <div className={styles.visualFooter}><span>Illustrative animation · AI-generated portrait</span><button onClick={() => setPaused(value => !value)} aria-pressed={paused} className={styles.motionToggle}>{paused ? 'Resume motion' : 'Pause motion'}</button></div>
         </div>
       </div>
+      <div className={styles.ribbon}><span>LESS GUESSWORK. MORE CONSISTENCY.</span><div><Icon name="sun" /> Daily routines</div><b aria-hidden="true">✧</b><div><Icon name="scan" /> Optional skin insights</div><b aria-hidden="true">✧</b><div><Icon name="sparkle" /> Your progress, in perspective</div></div>
     </section>
-  );
+    <section id="your-rhythm" className={styles.features} aria-labelledby="features-title">
+      <div className={styles.sectionIntro}><div><p className={styles.sectionLabel}>BUILT AROUND YOUR EVERYDAY</p><h2 id="features-title">A routine that feels<br />like <span>second nature.</span></h2></div><p>You don’t need a perfect routine.<br />Just a place to start, and a reason to come back.</p></div>
+      <div className={styles.featureGrid}>
+        <article className={`${styles.feature} ${styles.habitFeature}`}><div className={styles.featureTop}><span>01 / FIND YOUR RHYTHM</span><Icon name="sun" /></div><div className={styles.weekPreview} aria-label="Illustrative weekly routine check-ins">{['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => <div key={index}><small>{day}</small><span className={index < 5 ? styles.dayComplete : styles.dayEmpty}>{index < 5 ? <Icon name="check" /> : '·'}</span></div>)}</div><h3>Little rituals. Real consistency.</h3><p>Check in morning and night. See your habits take shape, one local day at a time.</p><Link href="/demo">Find your daily rhythm <Icon name="arrow" /></Link></article>
+        <article className={`${styles.feature} ${styles.progressFeature}`}><div className={styles.featureTop}><span>02 / SEE THE BIGGER PICTURE</span><Icon name="sparkle" /></div><div className={styles.progressPreview} aria-hidden="true"><span>Every check-in is a small step.</span><div>{[28, 46, 39, 62, 53, 77, 68, 90, 80, 100].map((height, i) => <i key={i} style={{ '--bar-height': `${height}%`, '--bar-delay': `${i * 55}ms` }} />)}</div></div><h3>Your story, over time.</h3><p>A home for your check-ins and saved observations. Follow patterns with a little perspective.</p><Link href="/demo/progress">Explore sample progress <Icon name="arrow" /></Link></article>
+        <article className={`${styles.feature} ${styles.exploreFeature}`}><div className={styles.featureTop}><span>03 / MAKE YOURSELF AT HOME</span><Icon name="scan" /></div><div className={styles.demoPreview} aria-hidden="true"><div className={styles.demoSymbol}>✳</div><span>Room to explore.<br /><strong>Zero pressure.</strong></span></div><h3>Curious? Come on in.</h3><p>Try a complete sample workspace. No account, photo, or live analysis needed. Reset it anytime.</p><Link href="/demo/history">Take a look around <Icon name="arrow" /></Link></article>
+      </div>
+      <div className={styles.closing}><span className={styles.closingSymbol} aria-hidden="true">✳</span><div><h2>Your next little habit starts here.</h2><p>A personal portfolio project, made for thoughtful daily care. Demo data is synthetic.</p></div><Link href="/demo" className={styles.primary}>Make yourself at home <Icon name="arrow" /></Link></div>
+    </section>
+  </div>;
 }

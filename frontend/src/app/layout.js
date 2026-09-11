@@ -1,7 +1,5 @@
 import "./globals.css";
-import AuthProvider from "@/components/auth/AuthProvider";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
-import ObservabilityProvider from "@/components/ObservabilityProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,10 +14,10 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: "TejAi — Cosmetic Skin Wellness",
+  title: "TejAi — Skincare & Routine Tracking",
   description:
-    "Scan your face, explore cosmetic skin concerns, and get a personalized wellness routine.",
-  keywords: "AI skincare, skin analysis, glow score, skincare routine, face scan",
+    "Explore an interactive skincare tracking demo, build a routine, and follow your progress. A software engineering portfolio project.",
+  keywords: "skincare routine, progress tracking, software engineering portfolio",
   openGraph: {
     title: "TejAi — Cosmetic Skin Wellness",
     description: "Explore cosmetic skin insights and a personalized wellness routine.",
@@ -29,15 +27,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <body className={`${inter.className} ${inter.variable} ${plusJakartaSans.variable} min-h-full flex flex-col antialiased`}>
-        <ObservabilityProvider configuration={{
-          dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-          environment: process.env.APP_ENV,
-          release: process.env.NEXT_PUBLIC_RELEASE_SHA,
-        }}>
-          <AuthProvider>{children}</AuthProvider>
-        </ObservabilityProvider>
+        {children}
       </body>
     </html>
   );

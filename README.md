@@ -1,66 +1,37 @@
 # TejAi
 
-TejAi is an AI-assisted skincare wellness SaaS. The repository contains a
-Next.js frontend and an Express API backed by Supabase.
+Skincare routine journal using Next.js, React, Express, Supabase/PostgreSQL and Upstash. Includes private routine tracking, optional Face++ observations and an account-free sample workspace.
 
-The project is currently in a 15-day production-MVP hardening cycle. A green
-build means the repository compiles; it does not mean external provider flows
-are ready until the launch acceptance suite passes.
+## Run
 
-## Requirements
+Requires Node.js 22 and npm. From the repository root:
 
-- Node.js 22
-- npm 10+
-- Staging accounts for Supabase, AILabTools, OpenAI, Upstash, and Dodo Payments
-
-## Setup
-
-1. Copy `backend/.env.example` to `backend/.env` and add staging credentials.
-2. Copy `frontend/.env.example` to `frontend/.env.local` and add the public
-   staging configuration.
-3. Install dependencies with `npm run install:all` from the repository root.
-4. Apply the ordered SQL migrations documented in
-   `backend/db/SCHEMA_SETUP.md`.
-5. Run the backend and frontend in separate terminals:
-
-```powershell
-npm run dev:backend
+```sh
+npm run install:all
 npm run dev:frontend
 ```
 
-Frontend: `http://localhost:3000`
+Open http://localhost:3000/demo for the sample workspace; no credentials are required.
 
-Backend health: `http://localhost:3001/api/health`
+For live features, copy `backend/.env.example` to `backend/.env` and `frontend/.env.example` to `frontend/.env.local`. Configure Supabase, Upstash, and two independent security/audit secrets. In Supabase, enable GitHub OAuth, use the Supabase callback URL in the GitHub OAuth app, and allow the frontend's `/auth/callback` URL. Never expose service-role or provider credentials in frontend variables.
 
-Backend readiness: `http://localhost:3001/api/ready` (database and rate-limit
-store only; paid providers are never called by this endpoint).
+For a fresh Supabase database, apply `backend/db/migrations/*.sql` in filename order, or apply `backend/db/schema.sql` once, never both. For existing databases, back up first and apply only missing migrations. Historical migrations preserve existing-data compatibility.
 
-## Quality gate
+Run `npm run dev:backend` in a second terminal. Live scanning defaults off; only enable it after configuring Face++ credentials, confirming provider terms and obtaining scan consent.
 
-```powershell
-npm run check
-npm run audit
+## Build and deploy
+
+```sh
+npm run check    # Lint and frontend production build
+npm run audit    # Production dependency audit
 ```
 
-CI runs backend lint/tests/audit and frontend lint/build/audit on every pull
-request and push to `main`.
+Use `render.yaml` for the backend (repository root); deploy the Next.js frontend from `frontend/` with access to `shared/`. Use each service's `.env.example` as the variable list; set `APP_ENV=production`, backend `NODE_ENV=production`, and your HTTPS frontend/API origins in the host settings. Frontend public variables are embedded at build time. Start built services with `npm --prefix backend start` and `npm --prefix frontend start`. Backend `/api/health` checks liveness; `/api/ready` checks database and throttling availability.
 
-## Security rules
+`frontend/` contains pages, components and browser state; `backend/` contains the API and database definitions; `shared/` contains result normalization and comparison rules. CI runs lint, build and dependency/secret checks. Automated test suites are not included.
 
-- Never commit `.env` or `.env.local` files.
-- Never expose the Supabase service-role key through a `NEXT_PUBLIC_` variable.
-- Browser clients may read only their own scans and subscription status.
-- Subscription entitlements and scan records are written by the backend only.
-- Do not log tokens, provider payloads, email addresses, or image bytes.
-- Use test-mode payment credentials outside production.
+## Limitations and attribution
 
-See `STAGING_DEPLOYMENT.md` for the deployment runbook.
+Hosted OAuth and a real Face++ account still need verification. Face++ categories are cosmetic observations, not medical advice or numerical health scores. Free services can sleep or pause; the sample workspace remains independent. The configured provider endpoint is in the US.
 
-## Delivery tracking
-
-- `docs/ISSUE_BOARD.md` is the P0/P1/P2 execution board.
-- `docs/LAUNCH_CHECKLIST.md` contains the release gates that must be checked
-  before production launch.
-- Staging and production use distinct `*.env.<environment>.example` templates
-  in both application directories. Copy a template to the local ignored env
-  filename; never put real values in a committed template.
+The homepage portrait is an original AI-generated fictional adult illustration created September 11, 2026, not a real scan, user upload or treatment result. Scanning graphics use CSS/SVG; the homepage makes no vision-provider requests. No paid LLM is used.

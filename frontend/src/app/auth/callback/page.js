@@ -1,41 +1,22 @@
-"use client";
-
-import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { getSafeInternalPath } from "@/lib/authRedirect";
-
-export default function AuthCallbackPage() {
-    const router = useRouter();
-    const { loading, session } = useAuth();
-    const failed = !loading && !session;
-
-    useEffect(() => {
-        if (loading) return;
-
-        if (!session) return;
-
-        const requestedPath = new URLSearchParams(window.location.search).get("next");
-        router.replace(getSafeInternalPath(requestedPath));
-    }, [loading, router, session]);
-
-    return (
-        <main className="min-h-screen flex items-center justify-center px-5" style={{ background: "#fcf8ff" }}>
-            <section className="w-full max-w-md rounded-[30px] bg-white p-8 text-center">
-                {failed ? (
-                    <>
-                        <h1 className="text-2xl font-black" style={{ color: "#1a1930" }}>Confirmation link expired</h1>
-                        <p className="mt-3 text-sm" style={{ color: "#474554" }}>Sign in or create your account again to receive a new link.</p>
-                        <Link href="/login" className="mt-6 inline-flex font-bold" style={{ color: "#5845cb" }}>Go to sign in</Link>
-                    </>
-                ) : (
-                    <>
-                        <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-[#e4dfff] border-t-[#5845cb]" />
-                        <p className="mt-4 text-sm font-semibold" style={{ color: "#474554" }}>Confirming your account...</p>
-                    </>
-                )}
-            </section>
-        </main>
-    );
+'use client';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { getSafeInternalPath } from '@/lib/authRedirect';
+import styles from '@/components/portfolio/portfolio.module.css';
+function Callback() {
+  const { session, loading } = useAuth();
+  const router = useRouter();
+  const params = useSearchParams();
+  const [expired, setExpired] = useState(false);
+  const failed = params.has('error') || params.has('error_code');
+  useEffect(() => {
+    if (session && !failed) router.replace(getSafeInternalPath(params.get('next')));
+    const timer = setTimeout(() => setExpired(true), 15000);
+    return () => clearTimeout(timer);
+  }, [session, failed, params, router]);
+  const rejected = failed || expired || (!loading && !session);
+  return <main className={styles.page}><h1 className={styles.title}>{rejected ? 'Sign-in could not be completed' : 'Completing your sign-in…'}</h1><p className={styles.lead} role="status">{rejected ? 'The sign-in link may have expired, been denied, or opened in another browser. Start again in this browser.' : 'Verifying your GitHub session.'}</p>{rejected && <Link href="/login" className={styles.button}>Try sign-in again</Link>}<Link href="/demo" className={styles.button}>Explore demo</Link></main>;
 }
+export default function Page() { return <Suspense fallback={<p role="status">Completing sign-in…</p>}><Callback /></Suspense>; }

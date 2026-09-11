@@ -15,6 +15,7 @@ export class ApiError extends Error {
 export const isUnauthorizedError = (error) => error?.status === 401;
 
 export const getJwtToken = async () => {
+    if (!supabase) return null;
     const { data, error } = await supabase.auth.getSession();
     if (error || !data.session) {
         return null;
@@ -37,6 +38,9 @@ export const getJwtToken = async () => {
 const request = async (path, options = {}) => {
     const { authenticated = true, ...fetchOptions } = options;
     const token = authenticated ? await getJwtToken() : null;
+    if (authenticated && !token) {
+        throw new ApiError('Sign in to use the live application.', 401, { success: false, code: 'AUTH_REQUIRED' });
+    }
 
     const isMultipart = typeof FormData !== "undefined"
         && fetchOptions.body instanceof FormData;
@@ -52,6 +56,7 @@ const request = async (path, options = {}) => {
 
     const response = await fetch(`${API_BASE_URL}${path}`, {
         ...fetchOptions,
+        signal: AbortSignal.any([fetchOptions.signal || new AbortController().signal, AbortSignal.timeout(path === '/api/scan' ? 30000 : 15000)]),
         headers,
     });
 
@@ -83,13 +88,15 @@ const request = async (path, options = {}) => {
  * Send one JPG as multipart data. The browser supplies the multipart boundary;
  * setting Content-Type manually would make the request invalid.
  */
-export const scanSkinFile = async (file) => {
+export const scanSkinFile = async (file, { idempotencyKey = crypto.randomUUID(), signal } = {}) => {
     const form = new FormData();
     form.append("image", file, "scan.jpg");
 
     return request("/api/scan", {
         method: "POST",
         body: form,
+        headers: { 'Idempotency-Key': idempotencyKey },
+        signal,
     });
 };
 
@@ -107,33 +114,16 @@ export const getDashboard = async (options = {}) =>
         cache: "no-store",
     });
 
-export const loginWithPassword = async ({ email, password }) => {
-    const data = await request("/api/auth/login", {
-        method: "POST",
-        authenticated: false,
-        body: JSON.stringify({ email, password }),
-    });
-
-    const { error } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-    });
-
-    if (error) {
-        throw new ApiError("We could not start your session. Please try again.", 401);
-    }
-
-    return data.user;
-};
-
-export const requestPasswordReset = async (email) => request(
-    "/api/auth/password-reset",
-    {
-        method: "POST",
-        authenticated: false,
-        body: JSON.stringify({ email }),
-    }
-);
+export const getRoutineSummary = ({ weeks = 53, signal } = {}) =>
+    request(`/api/routine/summary?weeks=${encodeURIComponent(weeks)}`, { method: 'GET', cache: 'no-store', signal });
+export const saveRoutineTimezone = (timezone, { signal } = {}) =>
+    request('/api/routine/preferences', { method: 'PUT', body: JSON.stringify({ timezone }), cache: 'no-store', signal });
+export const completeRoutinePeriod = (period, { signal } = {}) =>
+    request(`/api/routine/check-ins/today/${encodeURIComponent(period)}`, { method: 'PUT', cache: 'no-store', signal });
+export const undoRoutinePeriod = (period, { signal } = {}) =>
+    request(`/api/routine/check-ins/today/${encodeURIComponent(period)}`, { method: 'DELETE', cache: 'no-store', signal });
+export const getScanProgress = ({ range = '90d', signal } = {}) =>
+    request(`/api/progress/scans?range=${encodeURIComponent(range)}`, { method: 'GET', cache: 'no-store', signal });
 
 export const getHistory = async ({ limit = 12, cursor, signal } = {}) => {
     const params = new URLSearchParams({ limit: String(limit) });
@@ -144,29 +134,6 @@ export const getHistory = async ({ limit = 12, cursor, signal } = {}) => {
         signal,
     });
 };
-
-export const createCheckoutSession = async (plan, { idempotencyKey, signal } = {}) =>
-    request("/api/billing/checkout", {
-        method: "POST",
-        headers: {
-            "Idempotency-Key": idempotencyKey,
-        },
-        body: JSON.stringify({ plan }),
-        signal,
-    });
-
-export const getSubscription = async ({ signal } = {}) =>
-    request("/api/billing/subscription", {
-        method: "GET",
-        cache: "no-store",
-        signal,
-    });
-
-export const createCustomerPortalSession = async ({ signal } = {}) =>
-    request("/api/billing/portal", {
-        method: "POST",
-        signal,
-    });
 
 export const getPrivacyStatus = ({ signal } = {}) =>
     request("/api/privacy/status", {
@@ -199,15 +166,15 @@ export const deleteScan = (scanId, { signal } = {}) =>
         signal,
     });
 
-export const deleteAccount = ({ confirmation, currentPassword, signal } = {}) =>
+export const deleteAccount = ({ confirmation, challengeId, signal } = {}) =>
     request("/api/account", {
         method: "DELETE",
         body: JSON.stringify({
             confirmation,
-            currentPassword,
+            challengeId,
         }),
         signal,
     });
 
-export const isLimitError = (error) =>
-    error?.status === 403 && error?.body?.code === "SCAN_LIMIT_REACHED";
+export const getCapabilities = ({ signal } = {}) => request('/api/capabilities', { authenticated: false, cache: 'no-store', signal });
+export const createDeletionChallenge = () => request('/api/account/deletion-challenge', { method: 'POST', body: '{}' });

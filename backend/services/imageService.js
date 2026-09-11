@@ -1,6 +1,7 @@
 import sharp from 'sharp';
 
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+export const MAX_NORMALIZED_BYTES = 2 * 1024 * 1024;
 export const MIN_IMAGE_DIMENSION = 200;
 export const MAX_PROVIDER_DIMENSION = 4096;
 export const RECOMMENDED_FACE_DIMENSION = 400;
@@ -93,15 +94,15 @@ export const processScanImage = async (inputBuffer) => {
 
         // A noisy image can grow during normalization. Re-encode once at a lower
         // quality before rejecting it at the same provider byte boundary.
-        if (outputBuffer.length > MAX_IMAGE_BYTES) {
+        if (outputBuffer.length > MAX_NORMALIZED_BYTES) {
             clearImageBuffer(outputBuffer);
             outputBuffer = await encodeNormalizedJpeg(inputBuffer, 76);
         }
 
-        if (outputBuffer.length > MAX_IMAGE_BYTES) {
+        if (outputBuffer.length > MAX_NORMALIZED_BYTES) {
             clearImageBuffer(outputBuffer);
             outputBuffer = undefined;
-            throw imageError('Processed image exceeds the 8 MB limit', 413, 'IMAGE_TOO_LARGE');
+            throw imageError('Processed image exceeds the 2 MB provider limit', 413, 'IMAGE_TOO_LARGE');
         }
 
         const outputMetadata = await sharp(outputBuffer, {

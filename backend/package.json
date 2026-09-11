@@ -1,31 +1,19 @@
 {
   "name": "tej-ai-backend",
   "version": "1.0.0",
-  "description": "Production-grade backend for TejAi AI skincare SaaS",
+  "description": "TejAi skincare routine and progress portfolio API",
   "main": "server.js",
   "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test --test-concurrency=1 test/*.test.js",
-    "test:coverage": "node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include=controllers/**/*.js --test-coverage-include=middleware/**/*.js --test-coverage-include=services/**/*.js --test-coverage-include=utils/**/*.js --test-coverage-exclude=utils/logger.js --test-coverage-exclude=services/supabaseService.js --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 test/*.test.js",
-    "test:watch": "node --test --watch --test-concurrency=1 test/*.test.js",
-    "test:provider": "node scripts/verify-ailab-provider.js",
-    "test:billing-products": "node scripts/verify-dodo-products.js",
-    "test:rls": "node scripts/verify-rls-isolation.js",
-    "test:load": "node scripts/load-test.js",
-    "test:provider-budget": "node scripts/verify-provider-budget-concurrency.js",
-    "report:provider-usage": "node scripts/report-provider-usage.js",
-    "smoke": "node scripts/smoke-test.js",
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "check": "npm run lint && npm test"
+    "check": "npm run lint"
   },
   "keywords": [
     "skincare",
     "ai",
-    "saas",
+    "portfolio",
     "nodejs",
     "express"
   ],
@@ -42,9 +30,8 @@
     "express": "^5.2.1",
     "form-data": "^4.0.6",
     "helmet": "^8.3.0",
-    "multer": "^2.2.0",
-    "sharp": "^0.35.3",
-    "standardwebhooks": "1.0.0",
+    "multer": "^2.3.0",
+    "sharp": "^0.35.4",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
   },
@@ -52,8 +39,7 @@
     "@eslint/js": "^9.39.4",
     "eslint": "^9.39.4",
     "globals": "^16.4.0",
-    "nodemon": "^3.0.2",
-    "prettier": "^3.1.1"
+    "nodemon": "^3.0.2"
   },
   "engines": {
     "node": "22.x"

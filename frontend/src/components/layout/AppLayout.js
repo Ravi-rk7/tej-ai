@@ -10,7 +10,7 @@ export default function AppLayout({ children }) {
 
       {/* Main content area — pushed right on desktop only */}
       <main
-        className="flex-1 w-full"
+        className="flex-1 w-full min-w-0"
         style={{
           /* On md+ screens, leave space for the 288px sidebar */
           marginLeft: 0,

@@ -40,10 +40,17 @@ export default function AuthProvider({ children }) {
     useEffect(() => {
         let active = true;
 
+        if (!supabase) {
+            queueMicrotask(() => { if (active) setLoading(false); });
+            return () => { active = false; };
+        }
+
         supabase.auth.getSession().then(({ data, error }) => {
             if (!active) return;
             setSession(error ? null : data.session);
             setLoading(false);
+        }).catch(() => {
+            if (active) { setSession(null); setLoading(false); }
         });
 
         const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -59,6 +66,7 @@ export default function AuthProvider({ children }) {
     }, []);
 
     const signOut = useCallback(async () => {
+        if (!supabase) return;
         const { error } = await supabase.auth.signOut();
         if (error) {
             await supabase.auth.signOut({ scope: "local" });

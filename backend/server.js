@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import app from './app.js';
-import env, { validateEnvironment } from './config/env.js';
+import env from './config/env.js';
+import { validatePortfolioEnvironment as validateEnvironment } from './config/portfolioConfig.js';
 import logger from './utils/logger.js';
 import {
     flushObservability,

@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 
 /* ─── Nav items config ──────────────────────────── */
 const NAV_ITEMS = [
+  { href: '/progress', label: 'Progress', icon: <span aria-hidden="true">↗</span> },
   {
     href: "/dashboard",
     label: "Dashboard",
