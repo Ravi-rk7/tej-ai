@@ -3,7 +3,7 @@ import { createDeletionRepository, createDeletionService, DeletionError } from '
 import { portfolioRepository } from './portfolioScanService.js';
 
 const UUID = z.string().uuid();
-const rejection = () => new DeletionError('ACCOUNT_REAUTHENTICATION_FAILED', 'Sign in with GitHub again to confirm account deletion.', 403);
+const rejection = () => new DeletionError('ACCOUNT_REAUTHENTICATION_FAILED', 'Sign in with your provider again to confirm account deletion.', 403);
 
 export const createPortfolioDeletionService = ({ rpc = portfolioRepository.rpc,
   deletionRepository = createDeletionRepository(), removeAuthUser, runtimeEnv } = {}) => {

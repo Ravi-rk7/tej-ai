@@ -28,7 +28,7 @@ npm run audit    # Production dependency audit
 
 Use `render.yaml` for the backend (repository root); deploy the Next.js frontend from `frontend/` with access to `shared/`. Use each service's `.env.example` as the variable list; set `APP_ENV=production`, backend `NODE_ENV=production`, and your HTTPS frontend/API origins in the host settings. Frontend public variables are embedded at build time. Start built services with `npm --prefix backend start` and `npm --prefix frontend start`. Backend `/api/health` checks liveness; `/api/ready` checks database and throttling availability.
 
-`frontend/` contains pages, components and browser state; `backend/` contains the API and database definitions; `shared/` contains result normalization and comparison rules. CI runs lint, build and dependency/secret checks. Automated test suites are not included.
+`frontend/` contains pages, components and browser state; `backend/` contains the API and database definitions; `shared/` contains result normalization and comparison rules. CI runs backend tests, lint, build and dependency/secret checks. Run `npm --prefix backend test` for tests and `npm --prefix backend run check:live` for live configuration checks. See [LIVE_SETUP.md](LIVE_SETUP.md) for Google/GitHub OAuth and deployment setup.
 
 ## Limitations and attribution
 

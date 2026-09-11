@@ -17,6 +17,6 @@ function Callback() {
     return () => clearTimeout(timer);
   }, [session, failed, params, router]);
   const rejected = failed || expired || (!loading && !session);
-  return <main className={styles.page}><h1 className={styles.title}>{rejected ? 'Sign-in could not be completed' : 'Completing your sign-in…'}</h1><p className={styles.lead} role="status">{rejected ? 'The sign-in link may have expired, been denied, or opened in another browser. Start again in this browser.' : 'Verifying your GitHub session.'}</p>{rejected && <Link href="/login" className={styles.button}>Try sign-in again</Link>}<Link href="/demo" className={styles.button}>Explore demo</Link></main>;
+  return <main className={styles.page}><h1 className={styles.title}>{rejected ? 'Sign-in could not be completed' : 'Completing your sign-in…'}</h1><p className={styles.lead} role="status">{rejected ? 'The sign-in link may have expired, been denied, or opened in another browser. Start again in this browser.' : 'Verifying your session.'}</p>{rejected && <Link href="/login" className={styles.button}>Try sign-in again</Link>}<Link href="/demo" className={styles.button}>Explore demo</Link></main>;
 }
 export default function Page() { return <Suspense fallback={<p role="status">Completing sign-in…</p>}><Callback /></Suspense>; }

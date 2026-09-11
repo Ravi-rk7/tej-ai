@@ -11,7 +11,7 @@ export const createPortfolioDeletionHandlers = ({ service = createPortfolioDelet
   },
   deleteAccount: async (req, res) => {
     const parsed = Body.safeParse(req.body);
-    if (!parsed.success) return errorResponse(res, 'Type DELETE MY ACCOUNT and complete GitHub confirmation.', 400, 'ACCOUNT_DELETION_CONFIRMATION_INVALID');
+    if (!parsed.success) return errorResponse(res, 'Type DELETE MY ACCOUNT and complete identity confirmation.', 400, 'ACCOUNT_DELETION_CONFIRMATION_INVALID');
     try {
       return successResponse(res, await service.deleteAccount({ userId: req.user.id,
         authEvidence: { ...req.verifiedAuth, challengeId: parsed.data.challengeId } }));

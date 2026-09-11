@@ -177,7 +177,7 @@ export const createDeletionService = ({
 
     const deleteAccount = async ({ userId, authEvidence }) => {
         const secret = requireAuditSecret(runtimeEnv);
-        if (typeof reauthenticate !== 'function') throw new DeletionError('ACCOUNT_REAUTHENTICATION_FAILED', 'Complete GitHub confirmation before deleting your account.', 403);
+        if (typeof reauthenticate !== 'function') throw new DeletionError('ACCOUNT_REAUTHENTICATION_FAILED', 'Complete identity confirmation before deleting your account.', 403);
         const verified = await reauthenticate({ userId, authEvidence });
         if (verified.error || verified.data?.user?.id !== userId) {
             throw new DeletionError(

@@ -92,7 +92,7 @@ app.use('/api', privacyRoutes);
 app.use('/api', routineRoutes);
 app.use('/api', progressRoutes);
 app.use('/api/auth', (_req, res) => res.status(410).json({
-    success: false, code: 'AUTH_FLOW_RETIRED', error: 'Use GitHub sign-in through Supabase.',
+    success: false, code: 'AUTH_FLOW_RETIRED', error: 'Use Google or GitHub sign-in through Supabase.',
 }));
 
 app.use((req, res) => res.status(404).json({
